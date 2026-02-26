@@ -72,10 +72,10 @@ Date: `26/02/2026`
 
 ## Authors and acknowledgment
 
-LCOM Project for group GRUPO_2LEIC<m><n>_<p>.
-Group members:
+LCOM Project for group GRUPO_2LEIC05_3.
+Group members: 
 
-<first name> <family name> (<email address>)
-<first name> <family name> (<email address>)
-<first name> <family name> (<email address>)
-<first name> <family name> (<email address>)
+Afonso Sousa (afonso.rocha@outlook.com)\
+Dario Amaral (dgamaral2006@gmail.com)\
+Tiago Carvalho (tiagoc8ribeiro@gmail.com)\
+Tiago Rocha (tiago.alves.rocha1223@gmail.com)
