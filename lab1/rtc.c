@@ -1,77 +1,67 @@
 #include "rtc.h"
-#include "stdbool.h"
 #include <minix/syslib.h>
+#include <minix/drivers.h>
 
-#define TODO return -1
+#define RTC_ADDR_REG    0x70
+#define RTC_DATA_REG    0x71
+#define RTC_REG_A       0x0A
+#define RTC_REG_B       0x0B
+#define RTC_REG_CENTURY 0x32  // Optional century register
+#define RTC_REG_DAY     0x07
+#define RTC_REG_MONTH   0x08
+#define RTC_REG_YEAR    0x09
+#define RTC_UIP_MSK     (1 << 7)
+#define RTC_DM_MSK      (1 << 2)
 
-#define RTC_ADDR_REG 0x70
-#define RTC_DATA_REG 0x71
-#define RTC_REG_A 0x0A
-#define RTC_REG_B 0x0B
-#define RTC_REG_DAY 0x07
-#define RTC_REG_MONTH 0x08
-#define RTC_REG_YEAR 0x09
-#define RTC_UIP_MSK (1 << 7)
-#define RTC_DM_MSK (1 << 2)
-#define RTC_1224_MSK (1)
-
-
-static int bcd_to_bin(uint8_t bcd) { 
-    int left = 0;
-    int right = 0;
-
-    left = (bcd >> 4);
-    right = (bcd & 0xFF);
-
-    return (left | right);
+static int bcd_to_bin(uint8_t bcd) {
+    return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
-static int rtc_req_read(int req, uint32_t *data)
-{
-    int status = -1;
-    status = sys_outb(RTC_ADDR_REG, req);
-    if (status < 0)
-        printf("error1");
-    status= sys_inb(RTC_DATA_REG, data);
-    if (status < 0)
-        printf("error2");
-    return (status);
-}
+int rtc_read_date(rtc_date *date) {
+    if (date == NULL) return -1;
 
-int rtc_read_date(rtc_date *date) { 
+    uint32_t day, month, year, status_a, status_b;
+    int is_bcd;
 
-    bool data_mode = false, twenty4 = false; 
-    uint32_t data = 0;
-    rtc_req_read(RTC_REG_A, &data);
+    // 1. Wait until the Update In Progress (UIP) bit clears
+    // This ensures we don't read the registers while they are being updated.
+    do {
+        sys_outb(RTC_ADDR_REG, RTC_REG_A);
+        sys_inb(RTC_DATA_REG, &status_a);
+    } while (status_a & RTC_UIP_MSK);
 
-    // stall while update in progress
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
+    // 2. Read Status Register B to check Data Mode (DM)
+    // DM = 0 means BCD mode, DM = 1 means Binary mode.
+    sys_outb(RTC_ADDR_REG, RTC_REG_B);
+    sys_inb(RTC_DATA_REG, &status_b);
+    is_bcd = !(status_b & RTC_DM_MSK);
 
-    // Ctrl bits
-    rtc_req_read(RTC_REG_B, &data);
-    data_mode = data & RTC_DM_MSK; // 0 -> BCD, 1 -> BIN
-    twenty4 = data & RTC_1224_MSK; // 0 -> 12, 1 -> 24
+    // 3. Read raw Day, Month, and Year values
+    sys_outb(RTC_ADDR_REG, RTC_REG_DAY);
+    sys_inb(RTC_DATA_REG, &day);
 
-    // Day
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
-    rtc_req_read(RTC_REG_DAY, &data);
-    if (!data_mode) // 
-        data = bcd_to_bin(data);
-    date->day = data;
+    sys_outb(RTC_ADDR_REG, RTC_REG_MONTH);
+    sys_inb(RTC_DATA_REG, &month);
 
-    // Month
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
-    rtc_req_read(RTC_REG_MONTH, &data);
-    if (!data_mode) // 
-        data = bcd_to_bin(data);
-    date->month = data;
+    sys_outb(RTC_ADDR_REG, RTC_REG_YEAR);
+    sys_inb(RTC_DATA_REG, &year);
 
-    // Year
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
-    rtc_req_read(RTC_REG_YEAR, &data);
-    if (!data_mode) // 
-        data = bcd_to_bin(data);
-    date->year = data;
+    // 4. Convert values from BCD to Binary if necessary
+    if (is_bcd) {
+        day   = bcd_to_bin((uint8_t)day);
+        month = bcd_to_bin((uint8_t)month);
+        year  = bcd_to_bin((uint8_t)year);
+    }
 
-    return (0);
+    // 5. Fill the rtc_date structure
+    // Since date->year is uint8_t, we provide the 2-digit year (e.g., 26).
+    // Storing 2026 in an 8-bit field causes overflow (resulting in 234).
+    date->day   = (uint8_t)day;
+    date->month = (uint8_t)month;
+    date->year  = (uint8_t)year; 
+
+    // Optional debug line to verify output in your terminal
+    // printf("RTC READ: %02d/%02d/%02d\n", date->day, date->month, date->year);
+
+    return 0;
 }
