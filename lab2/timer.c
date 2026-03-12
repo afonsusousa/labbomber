@@ -55,8 +55,7 @@ int (timer_display_conf)(uint8_t timer, uint8_t st,
 
   else if (field == tsf_mode) {
       val.count_mode = (st >> 1) & 0x07;
-      if (val.count_mode > 5)
-          val.count_mode &= 0x03;
+      if (val.count_mode > 5) val.count_mode &= 0x03;
   }
 
   else if (field == tsf_base) val.bcd = st & 0x01;
