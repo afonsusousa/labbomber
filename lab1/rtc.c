@@ -1,8 +1,6 @@
 #include "rtc.h"
-#include "stdbool.h"
+#include <stdbool.h>
 #include <minix/syslib.h>
-
-#define TODO return -1
 
 #define RTC_ADDR_REG 0x70
 #define RTC_DATA_REG 0x71
@@ -13,65 +11,82 @@
 #define RTC_REG_YEAR 0x09
 #define RTC_UIP_MSK (1 << 7)
 #define RTC_DM_MSK (1 << 2)
-#define RTC_1224_MSK (1)
 
-
-static int bcd_to_bin(uint8_t bcd) { 
-    int left = 0;
-    int right = 0;
-
-    left = (bcd >> 4);
-    right = (bcd & 0xFF);
-
-    return (left | right);
+static int bcd_to_bin(uint8_t bcd) {
+    int tens = (bcd >> 4) & 0x0F;
+    int units = bcd & 0x0F;
+    return tens * 10 + units;
 }
 
-static int rtc_req_read(int req, uint32_t *data)
-{
-    int status = -1;
-    status = sys_outb(RTC_ADDR_REG, req);
-    if (status < 0)
-        printf("error1");
-    status= sys_inb(RTC_DATA_REG, data);
-    if (status < 0)
-        printf("error2");
-    return (status);
+static int rtc_req_read(uint8_t req, uint8_t *data) {
+    uint32_t raw = 0;
+
+    if (data == NULL)
+        return 1;
+
+    if (sys_outb(RTC_ADDR_REG, req) != 0)
+        return 1;
+
+    if (sys_inb(RTC_DATA_REG, &raw) != 0)
+        return 1;
+
+    *data = (uint8_t)(raw & 0xFF);
+    return 0;
 }
 
-int rtc_read_date(rtc_date *date) { 
+static int rtc_wait_for_stable_update(void) {
+    uint8_t reg_a = 0;
 
-    bool data_mode = false, twenty4 = false; 
-    uint32_t data = 0;
-    rtc_req_read(RTC_REG_A, &data);
+    do {
+        if (rtc_req_read(RTC_REG_A, &reg_a) != 0)
+            return 1;
+    } while (reg_a & RTC_UIP_MSK);
 
-    // stall while update in progress
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
+    return 0;
+}
 
-    // Ctrl bits
-    rtc_req_read(RTC_REG_B, &data);
-    data_mode = data & RTC_DM_MSK; // 0 -> BCD, 1 -> BIN
-    twenty4 = data & RTC_1224_MSK; // 0 -> 12, 1 -> 24
+int rtc_read_date(rtc_date *date) {
+    uint8_t reg_b = 0;
+    uint8_t day = 0;
+    uint8_t month = 0;
+    uint8_t year = 0;
+    bool data_mode_binary = false;
 
-    // Day
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
-    rtc_req_read(RTC_REG_DAY, &data);
-    if (!data_mode) // 
-        data = bcd_to_bin(data);
-    date->day = data;
+    if (date == NULL)
+        return 1;
 
-    // Month
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
-    rtc_req_read(RTC_REG_MONTH, &data);
-    if (!data_mode) // 
-        data = bcd_to_bin(data);
-    date->month = data;
+    if (rtc_wait_for_stable_update() != 0)
+        return 1;
 
-    // Year
-    while (data & RTC_UIP_MSK) rtc_req_read(RTC_REG_A, &data);
-    rtc_req_read(RTC_REG_YEAR, &data);
-    if (!data_mode) // 
-        data = bcd_to_bin(data);
-    date->year = data;
+    if (rtc_req_read(RTC_REG_B, &reg_b) != 0)
+        return 1;
 
-    return (0);
+    data_mode_binary = (reg_b & RTC_DM_MSK) != 0;
+
+    if (rtc_wait_for_stable_update() != 0)
+        return 1;
+    if (rtc_req_read(RTC_REG_DAY, &day) != 0)
+        return 1;
+
+    if (rtc_wait_for_stable_update() != 0)
+        return 1;
+    if (rtc_req_read(RTC_REG_MONTH, &month) != 0)
+        return 1;
+
+    if (rtc_wait_for_stable_update() != 0)
+        return 1;
+    if (rtc_req_read(RTC_REG_YEAR, &year) != 0)
+        return 1;
+
+    if (!data_mode_binary) {
+        day = (uint8_t)bcd_to_bin(day);
+        month = (uint8_t)bcd_to_bin(month);
+        year = (uint8_t)bcd_to_bin(year);
+    }
+
+    date->day = day;
+    date->month = month;
+    date->year = year;
+
+    return 0;
 }
