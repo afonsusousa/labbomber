@@ -5,8 +5,8 @@
 
 #include "i8254.h"
 
-static int timer_hook_id = 0;
-static uint32_t timer_counter = 0;
+int       timer_hook_id = 0;
+uint32_t  timer_counter = 0;
 
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 
@@ -20,7 +20,7 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
   uint8_t old_status = 0;
   if (timer_get_conf(timer, &old_status) != OK) return 1;
 
-  uint8_t ctrl_word = TIMER_RB_SEL(timer) | TIMER_LSB_MSB | (old_status & 0x0F); // bits 0..4  are status and bcd, we want to preserve them
+  uint8_t ctrl_word = (timer << 6) | TIMER_LSB_MSB | (old_status & 0x0F); // bits 0..3 are mode and bcd, we want to preserve them
 
   if (sys_outb(TIMER_CTRL, ctrl_word) != 0) return 1;
 
@@ -40,7 +40,7 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 int (timer_subscribe_int)(uint8_t *bit_no) {
   if (bit_no == NULL) return 1;
 
-  *bit_no = BIT(timer_hook_id);
+  *bit_no = timer_hook_id;
 
   if (sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &timer_hook_id) != OK) return 1;
 
