@@ -18,7 +18,7 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
   if (div > 0xFFFF) return 1;
 
   uint8_t old_status = 0;
-  if (timer_get_conf(timer, old_status) != OK) return 1;
+  if (timer_get_conf(timer, &old_status) != OK) return 1;
 
   uint8_t ctrl_word = TIMER_RB_SEL(timer) | TIMER_LSB_MSB | (old_status & 0x0F); // bits 0..4  are status and bcd, we want to preserve them
 

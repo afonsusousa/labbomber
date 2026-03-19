@@ -68,24 +68,12 @@ int(timer_test_int)(uint8_t time) {
     if (is_ipc_notify(ipc_status)) {
       if (_ENDPOINT_P(msg.m_source) == HARDWARE) {
 
-<<<<<<< Updated upstream
         // Check if the interrupt came from the timer
         if (msg.m_notify.interrupts & BIT(irq_set)) {
           timer_int_handler(); // handle timer interrupt
           counter++;           // increment interrupt count
         }
 
-=======
-        case HARDWARE:
-          if (msg.m_notify.interrupts & irq_set) {
-            timer_int_handler();
-            counter++;
-          }
-          break;
-
-        default:
-          break;
->>>>>>> Stashed changes
       }
     }
   }
