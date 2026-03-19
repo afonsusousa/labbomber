@@ -5,30 +5,56 @@
 
 #include "i8254.h"
 
-int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+static int timer_hook_id = 0;
+static uint32_t timer_counter = 0;
 
-  return 1;
+int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
+
+
+  if (timer > 2 || freq > TIMER_FREQ || freq < 1)
+    return (1);
+   
+  uint32_t div = TIMER_FREQ / freq;
+  if (div > 0xFFFF) return 1;
+
+  uint8_t old_status = 0;
+  if (timer_get_conf(timer, old_status) != OK) return 1;
+
+  uint8_t ctrl_word = TIMER_RB_SEL(timer) | TIMER_LSB_MSB | (old_status & 0x0F); // bits 0..4  are status and bcd, we want to preserve them
+
+  if (sys_outb(TIMER_CTRL, ctrl_word) != 0) return 1;
+
+  uint8_t reg = TIMER_0 + timer;
+  uint8_t lsb = 0;
+  uint8_t msb = 0;
+
+  if (util_get_LSB((uint16_t) div, &lsb) != 0) return 1;
+  if (util_get_MSB((uint16_t) div, &msb) != 0) return 1;
+
+  if (sys_outb(reg, lsb) != 0) return 1;
+  if (sys_outb(reg, msb) != 0) return 1;
+
+  return 0;
 }
 
 int (timer_subscribe_int)(uint8_t *bit_no) {
-    /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  if (bit_no == NULL) return 1;
 
-  return 1;
+  *bit_no = BIT(timer_hook_id);
+
+  if (sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &timer_hook_id) != OK) return 1;
+
+  return 0;
 }
 
 int (timer_unsubscribe_int)() {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  if (sys_irqrmpolicy(&timer_hook_id) != OK) return 1;
 
-  return 1;
+  return 0;
 }
 
 void (timer_int_handler)() {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  timer_counter++;
 }
 
 // Reads the status byte of the selected timer
