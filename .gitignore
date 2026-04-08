@@ -1,0 +1,23 @@
+# Objetos compilados
+*.o
+
+# Dependências geradas pelo compilador
+*.d
+
+# Executáveis
+*.out
+*.exe
+lab2
+timer
+utils
+
+# Ficheiros de output
+output.txt
+trace.txt
+
+# Pastas de build (se existirem)
+build/
+bin/
+
+# Ficheiros temporários
+*~
