@@ -1,5 +1,8 @@
 #include <lcom/lcf.h>
+
+#include <stdbool.h>
 #include <stdint.h>
+
 #include "kbc.h"
 
 static int      kbc_hook_id = 1;
@@ -22,25 +25,23 @@ int kbc_unsubscribe_int() {
 }
 
 void (kbc_ih)() {
-  uint8_t status;
-  has_error = false;
+  uint8_t status = 0;
 
-  // Read status register
+  has_error = true;
+
   if (util_sys_inb(KBC_STATUS_REG, &status) != OK) {
-    has_error = true;
     return;
   }
 
-  // Read output buffer
+  if (!KBC_OBF_FULL(status)) return;
+
   if (util_sys_inb(KBC_OUTBUF_REG, &current_scancode) != OK) {
-    has_error = true;
     return;
   }
 
-  // Check for errors
-  if (ERROR_PARITY(status) || ERROR_TIMEOUT(status)) {
-    has_error = true;
-  }
+  if (ERROR_PARITY(status) || ERROR_TIMEOUT(status) || KBC_AUX_DATA(status)) return;
+
+  has_error = false;
 }
 
 uint8_t get_current_scancode() {
