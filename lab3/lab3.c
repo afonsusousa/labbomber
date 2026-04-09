@@ -87,11 +87,51 @@ int(kbd_test_scan)() {
   return 0;
 }
 
-int(kbd_test_poll)() {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
+int (kbd_test_poll)() {
+  // 1. Ler e guardar o command byte atual
+  uint8_t cmd_byte;
+  if (kbc_write_cmd(KBC_READ_CMD) != OK) return 1;
+  if (kbc_read_outbuf(&cmd_byte) != OK) return 1;
 
-  return 1;
+  // 2. Loop de polling
+  uint8_t scancode_bytes[2];
+  uint8_t size = 0;
+  bool done = false;
+
+  while (!done) {
+    uint8_t byte;
+
+    // Tentar ler um byte — se falhar, continuar a tentar
+    if (kbc_read_outbuf(&byte) != OK) continue;
+
+    if (size == 0 && byte == SCANCODE_2BYTE) {
+      // Prefixo de scancode de 2 bytes — guardar e esperar pelo segundo
+      scancode_bytes[0] = byte;
+      size = 1;
+    }
+    else {
+      // Byte final do scancode
+      scancode_bytes[size] = byte;
+      size++;
+
+      bool is_make = !(byte & 0x80); // bit 7 = 0 → makecode
+
+      kbd_print_scancode(is_make, size, scancode_bytes);
+
+      // Verificar se é o breakcode do ESC
+      if (size == 1 && byte == ESC_BREAKCODE) {
+        done = true;
+      }
+
+      size = 0; // reset para o próximo scancode
+    }
+  }
+
+  // 3. Restaurar o command byte (reativa interrupções)
+  if (kbc_write_cmd(KBC_WRITE_CMD) != OK) return 1;
+  if (kbc_write_arg(cmd_byte) != OK) return 1;
+
+  return 0;
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {

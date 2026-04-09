@@ -22,7 +22,7 @@ int kbc_unsubscribe_int() {
 }
 
 void (kbc_ih)() {
-  uint8_t status;
+  uint8_t status;  
   has_error = false;
 
   // Read status register
@@ -50,3 +50,64 @@ uint8_t get_current_scancode() {
 bool check_kbc_error() {
   return has_error;
 }
+
+
+// Lê um byte do Output Buffer com verificação de status
+int kbc_read_outbuf(uint8_t *byte) {
+  uint8_t status;
+  uint32_t tries = 0;
+
+  while (tries < KBC_MAX_TRIES) {
+    if (util_sys_inb(KBC_STATUS_REG, &status) != OK) return 1;
+
+    if (ERROR_PARITY(status) || ERROR_TIMEOUT(status)) return 1;
+
+    if (KBC_OBF_FULL(status)) {
+      if (KBC_AUX_DATA(status)) return 1; // são dados do rato, ignorar
+      return util_sys_inb(KBC_OUTBUF_REG, byte);
+    }
+
+    tickdelay(micros_to_ticks(KBC_DELAY_US));
+    tries++;
+  }
+  return 1; // timeout
+}
+
+// Escreve um comando no KBC (espera IBF estar livre)
+int kbc_write_cmd(uint8_t cmd) {
+  uint8_t status;
+  uint32_t tries = 0;
+
+  while (tries < KBC_MAX_TRIES) {
+    if (util_sys_inb(KBC_STATUS_REG, &status) != OK) return 1;
+
+    if (!KBC_IBF_FULL(status)) {
+      return sys_outb(KBC_CMD_REG, cmd);
+    }
+
+    tickdelay(micros_to_ticks(KBC_DELAY_US));
+    tries++;
+  }
+  return 1; // timeout
+}
+
+// Escreve um argumento no Input Buffer (espera IBF estar livre)
+int kbc_write_arg(uint8_t arg) {
+  uint8_t status;
+  uint32_t tries = 0;
+
+  while (tries < KBC_MAX_TRIES) {
+    if (util_sys_inb(KBC_STATUS_REG, &status) != OK) return 1;
+
+    if (!KBC_IBF_FULL(status)) {
+      return sys_outb(KBC_INBUF_REG, arg);
+    }
+
+    tickdelay(micros_to_ticks(KBC_DELAY_US));
+    tries++;
+  }
+  return 1;
+}
+
+
+

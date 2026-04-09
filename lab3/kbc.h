@@ -6,6 +6,19 @@
 #define KBC_STATUS_REG  0x64 // read    Status Register  - Read the KBC status
 #define KBC_CMD_REG     0x64 // write   Command Register - Write KBC commands
 
+#define KBC_MAX_TRIES   10
+#define KBC_DELAY_US    20000  // 20ms entre tentativas
+
+#define KBC_READ_CMD    0x20   // ler command byte
+#define KBC_WRITE_CMD   0x60   // escrever command byte
+#define KBC_INT_BIT     (1<<0) // bit de interrupção no command byte
+
+#define ESC_BREAKCODE   0x81
+#define SCANCODE_2BYTE  0xE0   // prefixo de scancode 2 bytes
+
+int kbc_read_outbuf(uint8_t *byte);
+int kbc_write_cmd(uint8_t cmd);
+int kbc_write_arg(uint8_t arg);
 
 /*
     STATUS REGISTER BYTE
