@@ -45,3 +45,10 @@
     5 - After reading the scancode in the Interrupt Handler, KBC signals the C@KBD via serial bus that the Output Buffer is now empty
 */
 
+int kbc_subscribe_int(uint8_t *bit_no);
+int kbc_unsubscribe_int();
+
+void (kbc_ih)();
+uint8_t get_current_scancode();
+bool check_kbc_error();
+
