@@ -1,23 +1,22 @@
-# Objetos compilados
 *.o
 
-# Dependências geradas pelo compilador
 *.d
 
-# Executáveis
 *.out
 *.exe
 lab2
+lab3/lab3
 timer
 utils
 
-# Ficheiros de output
+*.a
+
 output.txt
 trace.txt
 
-# Pastas de build (se existirem)
 build/
 bin/
 
-# Ficheiros temporários
+.gdbinit
+
 *~
