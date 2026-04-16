@@ -125,6 +125,21 @@ int mouse_disable_data_reporting() {
     return 1;
 }
 
+int mouse_cmd_enable_data_reporting() {
+    uint8_t resp = 0;
+
+    for (int i = 0; i < KBC_MAX_TRIES; i++) {
+      if (kbc_write_to_mouse(MOUSE_ENABLE_DATA) != 0) return 1;
+      if (mouse_read_response(&resp) != 0) return 1;
+
+      if (resp == MOUSE_ACK) return 0;
+      if (resp == MOUSE_NACK) continue;
+      if (resp == MOUSE_ERROR) return 1;
+    }
+
+    return 1;
+}
+
 uint8_t mouse_get_byte() {
   return current_mouse_byte;
 }
