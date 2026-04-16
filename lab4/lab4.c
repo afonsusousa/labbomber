@@ -78,7 +78,7 @@ int (mouse_test_packet)(uint32_t cnt) {
   }
 
   if (mouse_unsubscribe_int() != 0) return 1;
-  return 0;
+  return 0; 
 }
 
 int (mouse_test_async)(uint8_t idle_time) {
