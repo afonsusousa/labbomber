@@ -9,6 +9,7 @@ int mouse_unsubscribe_int();
 
 void (mouse_ih)();
 
+int mouse_cmd_enable_data_reporting();
 int mouse_disable_data_reporting();
 uint8_t mouse_get_byte();
 bool mouse_has_error();
