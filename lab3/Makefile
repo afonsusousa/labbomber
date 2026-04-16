@@ -6,12 +6,12 @@ SRCS = lab3.c kbc.c utils.c
 
 # additional compilation flags
 # "-Wall -Wextra -Werror -I . -std=c11 -Wno-unused-parameter" are already set
-CFLAGS += -pedantic -DLAB3
+CFLAGS += -pedantic -DLAB3 -I../lab2
 
 # list of library dependencies
-DPADD += ${LIBLCF} ${LIB_NAME}
-LDADD += -llcf -L.
-LDADD += -lkbc
+DPADD += ${LIBLCF} ${LIB_NAME} ../lab2/libtimer.a
+LDADD += -llcf -L. -L../lab2
+LDADD += -lkbc -ltimer
 
 LIB_NAME = libkbc.a
 LIB_SRCS = kbc.c utils.c

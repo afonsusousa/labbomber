@@ -1,10 +1,17 @@
 #include <lcom/lcf.h>
 
 #include <lcom/lab3.h>
+#include <lcom/timer.h>
 #include "kbc.h"
 
 #include <stdbool.h>
 #include <stdint.h>
+
+int (timer_subscribe_int)(uint8_t *bit_no);
+int (timer_unsubscribe_int)();
+void (timer_int_handler)();
+
+extern uint32_t timer_counter;
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -35,23 +42,163 @@ int(kbd_test_scan)() {
   message msg;
   uint8_t irq_set;
 
+  // Subscribe to keyboard interrupts and save the notification bit.
   if (kbc_subscribe_int(&irq_set) != 0) return 1;
+
+  uint8_t bytes[2];           // buffer to assemble one or two-byte scancodes
+  uint8_t size = 0;          // number of bytes in the current scancode
+  bool two_bytes = false;    // whether the next byte is the second half
+  bool done = false;         // loop termination flag
+
+  while (!done) {
+    if (driver_receive(ANY, &msg, &ipc_status) != 0)
+      continue; // ignore failed receives and wait for the next message
+
+    if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
+      if (msg.m_notify.interrupts & BIT(irq_set)) {
+        // Keyboard interrupt received
+        kbc_ih();
+
+        if (check_kbc_error())
+          continue; // skip invalid scancode reads
+
+        uint8_t data = get_current_scancode();
+
+        if (data == 0xE0) {
+          // First byte of a two-byte scancode
+          two_bytes = true;
+          bytes[0] = data;
+          size = 1;
+        }
+        else {
+          if (two_bytes) {
+            // Complete the two-byte scancode
+            bytes[1] = data;
+            size = 2;
+            two_bytes = false;
+          } else {
+            // Single-byte scancode
+            bytes[0] = data;
+            size = 1;
+          }
+
+          bool make = !(bytes[size - 1] & BIT(7));
+          kbd_print_scancode(make, size, bytes);
+
+          // Exit when the break code for ESC (0x81) is received
+          if (size == 1 && bytes[0] == 0x81)
+            done = true;
+        }
+      }
+    }
+  }
+
+  // Restore keyboard interrupt policy
+  if (kbc_unsubscribe_int() != 0)
+    return 1;
+
+  return 0;
+}
+
+int(kbd_test_poll)() {
+  uint8_t bytes[2] = {0};      // buffer for the current scancode
+  uint8_t size = 0;            // current scancode size
+  bool two_bytes = false;      // waiting for second scancode byte
+  bool done = false;           // loop termination flag
+
+  while (!done) {
+    uint8_t status = 0;
+    uint8_t data = 0;
+
+    // Read the KBC status register to check if the output buffer has data.
+    if (util_sys_inb(KBC_STATUS_REG, &status) != 0) return 1;
+
+    if (!KBC_OBF_FULL(status)) {
+      // No data yet, wait a short period and poll again.
+      tickdelay(micros_to_ticks(20000));
+      continue;
+    }
+
+    if (util_sys_inb(KBC_OUTBUF_REG, &data) != 0) return 1;
+
+    // Discard invalid data when there are communication errors or mouse bytes.
+    if (ERROR_PARITY(status) || ERROR_TIMEOUT(status) || KBC_AUX_DATA(status)) {
+      tickdelay(micros_to_ticks(20000));
+      continue;
+    }
+
+    if (data == 0xE0) {
+      // Start of a two-byte scancode sequence.
+      two_bytes = true;
+      bytes[0] = data;
+      size = 1;
+      continue;
+    }
+
+    if (two_bytes) {
+      // Complete the multi-byte scancode from the second byte.
+      bytes[1] = data;
+      size = 2;
+      two_bytes = false;
+    }
+    else {
+      // Single-byte scancode received.
+      bytes[0] = data;
+      size = 1;
+    }
+
+    bool make = !(bytes[size - 1] & BIT(7));
+    if (kbd_print_scancode(make, size, bytes) != 0) return 1;
+
+    // Exit when the ESC break code is received.
+    if (size == 1 && bytes[0] == 0x81) done = true;
+  }
+
+  return 0;
+}
+
+int(kbd_test_timed_scan)(uint8_t n) {
+  int ipc_status;
+  message msg;
+  uint8_t kbc_irq_set;
+  uint8_t timer_irq_set;
+
+  // Subscribe to keyboard interrupts.
+  if (kbc_subscribe_int(&kbc_irq_set) != 0) return 1;
+
+  // Subscribe to timer interrupts.
+  if (timer_subscribe_int(&timer_irq_set) != 0) {
+    kbc_unsubscribe_int();
+    return 1;
+  }
 
   uint8_t bytes[2];
   uint8_t size = 0;
   bool two_bytes = false;
   bool done = false;
+  timer_counter = 0; // reset the elapsed time counter
 
   while (!done) {
     if (driver_receive(ANY, &msg, &ipc_status) != 0)
-      continue;
+      continue; // ignore failed receives
 
     if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
-      if (msg.m_notify.interrupts & BIT(irq_set)) {
+      if (msg.m_notify.interrupts & BIT(timer_irq_set)) {
+        // Timer interrupt: update the shared timer counter.
+        timer_int_handler();
+
+        if (timer_counter >= n * 60)
+          done = true; // timeout reached
+      }
+
+      if (msg.m_notify.interrupts & BIT(kbc_irq_set)) {
+        // Keyboard interrupt: read scancode as in kbd_test_scan.
         kbc_ih();
 
-        if (check_kbc_error()) 
+        if (check_kbc_error())
           continue;
+
+        timer_counter = 0; // reset timer on any keyboard activity
 
         uint8_t data = get_current_scancode();
 
@@ -60,13 +207,13 @@ int(kbd_test_scan)() {
           bytes[0] = data;
           size = 1;
         }
-
         else {
           if (two_bytes) {
             bytes[1] = data;
             size = 2;
             two_bytes = false;
-          } else {
+          }
+          else {
             bytes[0] = data;
             size = 1;
           }
@@ -74,6 +221,7 @@ int(kbd_test_scan)() {
           bool make = !(bytes[size - 1] & BIT(7));
           kbd_print_scancode(make, size, bytes);
 
+          // Exit when ESC break code is received.
           if (size == 1 && bytes[0] == 0x81)
             done = true;
         }
@@ -81,62 +229,14 @@ int(kbd_test_scan)() {
     }
   }
 
-  if (kbc_unsubscribe_int() != 0)
+  // Unsubscribe from timer interrupts first to avoid leaving timer notifications active.
+  if (timer_unsubscribe_int() != 0) {
+    kbc_unsubscribe_int();
     return 1;
-
-  return 0;
-}
-
-int (kbd_test_poll)() {
-  // 1. Ler e guardar o command byte atual
-  uint8_t cmd_byte;
-  if (kbc_write_cmd(KBC_READ_CMD) != OK) return 1;
-  if (kbc_read_outbuf(&cmd_byte) != OK) return 1;
-
-  // 2. Loop de polling
-  uint8_t scancode_bytes[2];
-  uint8_t size = 0;
-  bool done = false;
-
-  while (!done) {
-    uint8_t byte;
-
-    // Tentar ler um byte — se falhar, continuar a tentar
-    if (kbc_read_outbuf(&byte) != OK) continue;
-
-    if (size == 0 && byte == SCANCODE_2BYTE) {
-      // Prefixo de scancode de 2 bytes — guardar e esperar pelo segundo
-      scancode_bytes[0] = byte;
-      size = 1;
-    }
-    else {
-      // Byte final do scancode
-      scancode_bytes[size] = byte;
-      size++;
-
-      bool is_make = !(byte & 0x80); // bit 7 = 0 → makecode
-
-      kbd_print_scancode(is_make, size, scancode_bytes);
-
-      // Verificar se é o breakcode do ESC
-      if (size == 1 && byte == ESC_BREAKCODE) {
-        done = true;
-      }
-
-      size = 0; // reset para o próximo scancode
-    }
   }
 
-  // 3. Restaurar o command byte (reativa interrupções)
-  if (kbc_write_cmd(KBC_WRITE_CMD) != OK) return 1;
-  if (kbc_write_arg(cmd_byte) != OK) return 1;
+  // Unsubscribe from keyboard interrupts.
+  if (kbc_unsubscribe_int() != 0) return 1;
 
   return 0;
-}
-
-int(kbd_test_timed_scan)(uint8_t n) {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
 }
