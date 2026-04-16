@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lcom/lcf.h>
+#include "utils.h"
 
 uint8_t lsb(uint16_t bytes) { return (bytes & 0xFF); }
 
