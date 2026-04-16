@@ -9,9 +9,9 @@ int mouse_unsubscribe_int();
 
 void (mouse_ih)();
 
-int mouse_enable_data_reporting();
 int mouse_disable_data_reporting();
 uint8_t mouse_get_byte();
 bool mouse_has_error();
+void mouse_build_packet(const uint8_t bytes[3], struct packet *pp);
 
 #endif
