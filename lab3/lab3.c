@@ -37,6 +37,35 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+static int kbd_restore() {
+  uint8_t cmd_byte;
+  uint8_t status;
+
+  // 1. Garantir que o Input Buffer está vazio antes de enviar o comando
+  if (util_sys_inb(KBC_STATUS_REG, &status) != 0) return 1;
+  if (status & BIT(1)) tickdelay(micros_to_ticks(20000));
+
+  // 2. Enviar comando 0x20 para ler o Command Byte atual
+  if (sys_outb(KBC_CMD_REG, 0x20) != 0) return 1;
+
+  // 3. Ler o byte resultante do Output Buffer
+  if (util_sys_inb(KBC_OUTBUF_REG, &cmd_byte) != 0) return 1;
+
+  // 4. Modificar o byte: Ativar bit 0 (interrupções) e limpar bit 4 (interface teclado)
+  cmd_byte |= BIT(0);
+  cmd_byte &= ~BIT(4);
+
+  // 5. Enviar comando 0x60 para avisar que vamos escrever o Command Byte
+  if (sys_outb(KBC_CMD_REG, 0x60) != 0) return 1;
+
+  // 6. Escrever o byte modificado para a porta de dados (0x60)
+  if (sys_outb(0x60, cmd_byte) != 0) return 1;
+
+  return 0;
+}
+
+
+
 int(kbd_test_scan)() {
   int ipc_status;
   message msg;
@@ -97,6 +126,8 @@ int(kbd_test_scan)() {
   if (kbc_unsubscribe_int() != 0)
     return 1;
 
+  if (kbd_restore() != 0) return 1;
+
   return 0;
 }
 
@@ -153,6 +184,10 @@ int(kbd_test_poll)() {
     // Exit when the ESC break code is received.
     if (size == 1 && bytes[0] == 0x81) done = true;
   }
+
+  // Restore keyboard to working state (re-enable interrupts + interface)
+  if (kbd_restore() != 0) return 1;
+
 
   return 0;
 }
