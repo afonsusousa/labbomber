@@ -1,5 +1,6 @@
 // IMPORTANT: you must include the following line in all your C files
 #include <lcom/lcf.h>
+#include <lcom/lab4.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -42,6 +43,7 @@ int (mouse_test_packet)(uint32_t cnt) {
     return 1;
   }
 
+
   uint8_t packet_bytes[3] = {0};
   uint8_t index = 0;
   uint32_t printed_packets = 0;
@@ -64,7 +66,7 @@ int (mouse_test_packet)(uint32_t cnt) {
 
       if (index == 3) {
         struct packet pp;
-        mouse_parse_packet(packet_bytes, &pp);
+        mouse_build_packet(packet_bytes, &pp);
         mouse_print_packet(&pp);
         printed_packets++;
         index = 0;
