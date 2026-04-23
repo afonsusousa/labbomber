@@ -73,18 +73,10 @@ int (mouse_test_packet)(uint32_t cnt) {
       mouse_ih();
       if (mouse_has_error()) continue;
 
-      uint8_t byte = mouse_get_byte();
-
-      if (index == 0 && !(byte & BIT(3))) continue;
-
-      packet_bytes[index++] = byte;
-
-      if (index == 3) {
-        struct packet pp;
-        mouse_build_packet(packet_bytes, &pp);
+      struct packet pp;
+      if (mouse_sync_bytes(mouse_get_byte(), packet_bytes, &index, &pp)) {
         mouse_print_packet(&pp);
         printed_packets++;
-        index = 0;
       }
     }
   }
@@ -144,18 +136,10 @@ int (mouse_test_async)(uint8_t idle_time) {
       mouse_ih();
       if (mouse_has_error()) continue;
 
-      uint8_t byte = mouse_get_byte();
-      if (index == 0 && !(byte & BIT(3))) continue;
-
-      packet_bytes[index++] = byte;
-
-      if (index == 3) {
-        struct packet pp;
-        mouse_build_packet(packet_bytes, &pp);
+      struct packet pp;
+      if (mouse_sync_bytes(mouse_get_byte(), packet_bytes, &index, &pp)) {
         mouse_print_packet(&pp);
-
         idle_ticks = 0;
-        index = 0;
       }
     }
 

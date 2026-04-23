@@ -110,11 +110,11 @@ void (mouse_ih)() {
     ih_error = false;
 }
 
-int mouse_disable_data_reporting() {
+int mouse_write_cmd(uint8_t cmd) {
     uint8_t resp = 0;
 
     for (int i = 0; i < KBC_MAX_TRIES; i++) {
-      if (kbc_write_to_mouse(MOUSE_DISABLE_DATA) != 0) return 1;
+      if (kbc_write_to_mouse(cmd) != 0) return 1;
       if (mouse_read_response(&resp) != 0) return 1;
 
       if (resp == MOUSE_ACK) return 0;
@@ -125,19 +125,12 @@ int mouse_disable_data_reporting() {
     return 1;
 }
 
+int mouse_disable_data_reporting() {
+    return mouse_write_cmd(MOUSE_DISABLE_DATA);
+}
+
 int mouse_cmd_enable_data_reporting() {
-    uint8_t resp = 0;
-
-    for (int i = 0; i < KBC_MAX_TRIES; i++) {
-      if (kbc_write_to_mouse(MOUSE_ENABLE_DATA) != 0) return 1;
-      if (mouse_read_response(&resp) != 0) return 1;
-
-      if (resp == MOUSE_ACK) return 0;
-      if (resp == MOUSE_NACK) continue;
-      if (resp == MOUSE_ERROR) return 1;
-    }
-
-    return 1;
+    return mouse_write_cmd(MOUSE_ENABLE_DATA);
 }
 
 uint8_t mouse_get_byte() {
@@ -164,4 +157,19 @@ void mouse_build_packet(const uint8_t bytes[3], struct packet *pp) {
 
   pp->delta_x = (bytes[0] & BIT(4)) ? (int16_t)(0xFF00 | bytes[1]) : (int16_t)bytes[1];
   pp->delta_y = (bytes[0] & BIT(5)) ? (int16_t)(0xFF00 | bytes[2]) : (int16_t)bytes[2];
+}
+
+bool mouse_sync_bytes(uint8_t byte, uint8_t bytes[3], uint8_t *index, struct packet *pp) {
+  if (*index == 0 && !(byte & BIT(3))) return false;
+
+  bytes[*index] = byte;
+  *index += 1;
+
+  if (*index == 3) {
+    mouse_build_packet(bytes, pp);
+    *index = 0;
+    return true;
+  }
+
+  return false;
 }
