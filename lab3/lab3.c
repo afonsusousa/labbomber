@@ -138,6 +138,36 @@ int(kbd_test_poll)() {
     kbd_process_scancode(data, bytes, &size, &two_bytes, &done);
   }
 
+  // Restore keyboard interrupts
+  uint8_t cmd_byte = 0;
+
+  // 1. Send "Read Command Byte" command
+  if (kbc_write_cmd(KBC_READ_CMD) != 0) return 1;
+
+  // 2. Read the Command Byte
+  for (int i = 0; i < KBC_MAX_TRIES; i++) {
+    uint8_t status;
+    if (util_sys_inb(KBC_STATUS_REG, &status) != 0) return 1;
+
+    if (KBC_OBF_FULL(status)) {
+      if (util_sys_inb(KBC_OUTBUF_REG, &cmd_byte) != 0) return 1;
+      if (ERROR_PARITY(status) || ERROR_TIMEOUT(status)) return 1;
+      break;
+    }
+    tickdelay(micros_to_ticks(KBC_DELAY_US));
+  }
+
+  // 3. Set the keyboard interrupt enable bit flag
+  cmd_byte |= KBC_INT_BIT;
+
+  // 4. Send "Write Command Byte" command
+  if (kbc_write_cmd(KBC_WRITE_CMD) != 0) return 1;
+
+  // 5. Send the updated Command Byte argument
+  if (kbc_write_arg(cmd_byte) != 0) return 1;
+
+  // End of polling restore
+
   return 0;
 }
 
