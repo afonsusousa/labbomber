@@ -13,6 +13,38 @@ void (timer_int_handler)();
 
 extern uint32_t timer_counter;
 
+#include "utils.h"
+
+void kbd_process_scancode(uint8_t data, uint8_t *bytes, uint8_t *size, bool *two_bytes, bool *done) {
+  if (data == 0xE0) {
+    *two_bytes = true;
+    bytes[0] = data; // Store the prefix temporarily if needed (though kbd_print_scancode takes the full array)
+    *size = 1;
+    return; // Wait for the second byte
+  }
+
+  uint16_t scancode = data;
+  if (*two_bytes) {
+    scancode |= (0xE0 << 8);
+    *two_bytes = false;
+  }
+
+  if (is_single_byte(scancode)) {
+    *size = 1;
+    bytes[0] = lsb(scancode);
+  } else {
+    *size = 2;
+    bytes[0] = msb(scancode);
+    bytes[1] = lsb(scancode);
+  }
+
+  bool make = !(lsb(scancode) & BIT(7));
+  kbd_print_scancode(make, *size, bytes);
+
+  if (scancode == 0x81)
+    *done = true;
+}
+
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
   lcf_set_language("EN-US");
@@ -93,31 +125,7 @@ int(kbd_test_scan)() {
 
         uint8_t data = get_current_scancode();
 
-        if (data == 0xE0) {
-          // First byte of a two-byte scancode
-          two_bytes = true;
-          bytes[0] = data;
-          size = 1;
-        }
-        else {
-          if (two_bytes) {
-            // Complete the two-byte scancode
-            bytes[1] = data;
-            size = 2;
-            two_bytes = false;
-          } else {
-            // Single-byte scancode
-            bytes[0] = data;
-            size = 1;
-          }
-
-          bool make = !(bytes[size - 1] & BIT(7));
-          kbd_print_scancode(make, size, bytes);
-
-          // Exit when the break code for ESC (0x81) is received
-          if (size == 1 && bytes[0] == 0x81)
-            done = true;
-        }
+        kbd_process_scancode(data, bytes, &size, &two_bytes, &done);
       }
     }
   }
@@ -158,31 +166,7 @@ int(kbd_test_poll)() {
       continue;
     }
 
-    if (data == 0xE0) {
-      // Start of a two-byte scancode sequence.
-      two_bytes = true;
-      bytes[0] = data;
-      size = 1;
-      continue;
-    }
-
-    if (two_bytes) {
-      // Complete the multi-byte scancode from the second byte.
-      bytes[1] = data;
-      size = 2;
-      two_bytes = false;
-    }
-    else {
-      // Single-byte scancode received.
-      bytes[0] = data;
-      size = 1;
-    }
-
-    bool make = !(bytes[size - 1] & BIT(7));
-    if (kbd_print_scancode(make, size, bytes) != 0) return 1;
-
-    // Exit when the ESC break code is received.
-    if (size == 1 && bytes[0] == 0x81) done = true;
+    kbd_process_scancode(data, bytes, &size, &two_bytes, &done);
   }
 
   // Restore keyboard to working state (re-enable interrupts + interface)
@@ -237,29 +221,7 @@ int(kbd_test_timed_scan)(uint8_t n) {
 
         uint8_t data = get_current_scancode();
 
-        if (data == 0xE0) {
-          two_bytes = true;
-          bytes[0] = data;
-          size = 1;
-        }
-        else {
-          if (two_bytes) {
-            bytes[1] = data;
-            size = 2;
-            two_bytes = false;
-          }
-          else {
-            bytes[0] = data;
-            size = 1;
-          }
-
-          bool make = !(bytes[size - 1] & BIT(7));
-          kbd_print_scancode(make, size, bytes);
-
-          // Exit when ESC break code is received.
-          if (size == 1 && bytes[0] == 0x81)
-            done = true;
-        }
+        kbd_process_scancode(data, bytes, &size, &two_bytes, &done);
       }
     }
   }

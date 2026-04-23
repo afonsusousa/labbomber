@@ -56,3 +56,30 @@ uint8_t get_current_scancode() {
 bool check_kbc_error() {
   return has_error;
 }
+
+int kbc_write_cmd(uint8_t cmd) {
+  uint8_t status;
+  for (int i = 0; i < KBC_MAX_TRIES; i++) {
+    if (util_sys_inb(KBC_STATUS_REG, &status) != OK) return 1;
+
+    if (!KBC_IBF_FULL(status)) {
+      return sys_outb(KBC_CMD_REG, cmd);
+    }
+    tickdelay(micros_to_ticks(KBC_DELAY_US));
+  }
+  return 1;
+}
+
+int kbc_write_arg(uint8_t arg) {
+  uint8_t status;
+  for (int i = 0; i < KBC_MAX_TRIES; i++) {
+    if (util_sys_inb(KBC_STATUS_REG, &status) != OK) return 1;
+
+    if (!KBC_IBF_FULL(status)) {
+      return sys_outb(KBC_INBUF_REG, arg);
+    }
+    tickdelay(micros_to_ticks(KBC_DELAY_US));
+  }
+  return 1;
+}
+
