@@ -1,11 +1,8 @@
-// IMPORTANT: you must include the following line in all your C files
 #include <lcom/lcf.h>
 #include <lcom/lab5.h>
 
 #include <stdint.h>
 #include <stdio.h>
-
-// Any header files included below this line should have been created by you
 
 #include "video.h"
 
@@ -33,6 +30,29 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+int wait_esc() {
+    int ipc_status, r;
+    message msg;
+    uint32_t scancode = 0;
+    int hook_id = 1;
+    uint8_t irq_set = BIT(1);
+
+    if (sys_irqsetpolicy(1, IRQ_REENABLE | IRQ_EXCLUSIVE, &hook_id) != 0) return 1;
+
+    while (scancode != 0x81) {  // ESC break code
+        if ((r = driver_receive(ANY, &msg, &ipc_status)) != 0) continue;
+
+        if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
+            if (msg.m_notify.interrupts & irq_set) {
+                sys_inb(0x60, &scancode);
+            }
+        }
+    }
+
+    if (sys_irqrmpolicy(&hook_id) != 0) return 1;
+    return 0;
+}
+
 int(video_test_init)(uint16_t mode, uint8_t delay) {
     if (vg_init_mode(mode) != 0) {
         printf("Error initializing video mode\n");
@@ -51,16 +71,33 @@ int(video_test_init)(uint16_t mode, uint8_t delay) {
 
 int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint32_t color) {
-    /* To be completed */
-    printf("%s(0x%03X, %u, %u, %u, %u, 0x%08x): under construction\n",
-            __func__, mode, x, y, width, height, color);
+    
+    if (init_video_mem(mode) != 0) return 1;
+    if (vg_init_mode(mode) != 0) return 1;
 
-    return 1;
+    draw_rectangle(x, y, width, height, color);
+
+    wait_esc();
+    vg_exit();
+
+    return 0;
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-    /* To be completed */
-    printf("%s(%8p, %u, %u): under construction\n", __func__, xpm, x, y);
+    if (init_video_mem(0x105) != 0) return 1; // VBE_MODE_105 is usually the default for XPM lab
+    if (vg_init_mode(0x105) != 0) return 1;
 
-    return 1;
+    xpm_image_t img;
+    uint8_t *map = xpm_load(xpm, XPM_INDEXED, &img);
+    if (map == NULL) {
+        vg_exit();
+        return 1;
+    }
+
+    draw_xpm(map, img, x, y);
+
+    wait_esc();
+    vg_exit();
+
+    return 0;
 }

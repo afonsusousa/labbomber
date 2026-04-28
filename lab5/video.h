@@ -58,7 +58,7 @@ int     is_valid_mode(uint16_t mode);
 reg86_t vbe_reg();
 int     vg_init_mode(uint16_t mode);
 
-int     init_framebuffer(uint16_t mode);
+int     init_video_mem(uint16_t mode);
 char*   get_video_mem();
 vbe_mode_info_t get_vmi();
 unsigned get_bytes_per_pixel();
