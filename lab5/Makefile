@@ -1,6 +1,6 @@
 PROG=lab5
 
-SRCS=lab5.c video.c utils.c
+SRCS=lab5.c video.c utils.c draw.c framebuffer.c
 
 CFLAGS += -pedantic -Wall -Wextra
 

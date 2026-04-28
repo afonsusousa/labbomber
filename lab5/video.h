@@ -58,6 +58,13 @@ int     is_valid_mode(uint16_t mode);
 reg86_t vbe_reg();
 int     vg_init_mode(uint16_t mode);
 
+int     init_framebuffer(uint16_t mode);
+char*   get_video_mem();
+vbe_mode_info_t get_vmi();
+unsigned get_bytes_per_pixel();
+uint16_t get_hres();
+uint16_t get_vres();
+
 int     draw_pixel(uint16_t x, uint16_t y, uint32_t color);
 int     draw_hline(uint16_t x, uint16_t y, uint16_t len, uint32_t color);
 int     draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color);
