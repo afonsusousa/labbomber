@@ -27,8 +27,9 @@ int vg_init_mode(uint16_t mode) {
     
     reg86_t reg = vbe_reg();
 
-    reg.ah = BIOS_SET_VID_MODE;
-    reg.al = mode;
+    reg.ah = VBE_CALL;
+    reg.al = VBE_SET_MODE;
+    reg.bx = mode | LINEAR_FRAMEBUFR;
     
     if (sys_int86(&reg) != 0) {
         printf("Error setting video mode\n");

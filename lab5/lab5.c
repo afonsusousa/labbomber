@@ -84,8 +84,8 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-    if (init_video_mem(0x105) != 0) return 1; // VBE_MODE_105 is usually the default for XPM lab
-    if (vg_init_mode(0x105) != 0) return 1;
+    if (init_framebuffer(VBE_MODE_105) != 0) return 1;
+    if (vg_init_mode(VBE_MODE_105) != 0) return 1;
 
     xpm_image_t img;
     uint8_t *map = xpm_load(xpm, XPM_INDEXED, &img);
