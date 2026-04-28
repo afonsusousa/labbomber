@@ -84,7 +84,7 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-    if (init_framebuffer(VBE_MODE_105) != 0) return 1;
+    if (init_video_mem(VBE_MODE_105) != 0) return 1;
     if (vg_init_mode(VBE_MODE_105) != 0) return 1;
 
     xpm_image_t img;

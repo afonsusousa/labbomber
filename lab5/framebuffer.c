@@ -4,7 +4,7 @@ static char             *video_mem;         /* frame-buffer VM address */
 static vbe_mode_info_t  vmi;                /* VBE mode info */
 static unsigned         bytes_per_pixel;    /* Number of VRAM bytes per pixel */
 
-int init_framebuffer(uint16_t mode)
+int init_video_mem(uint16_t mode)
 {
     int                     r;
     unsigned int            vram_base; /* VRAM's physical addresss */
