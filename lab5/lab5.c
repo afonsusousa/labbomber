@@ -33,9 +33,15 @@ int main(int argc, char *argv[]) {
 int wait_esc() {
     int ipc_status, r;
     message msg;
+<<<<<<< HEAD
     uint32_t scancode = 0;
     int hook_id = 1;
     uint8_t irq_set = BIT(1);
+=======
+    uint8_t scancode = 0;
+    int hook_id = 1;
+    uint8_t irq_set = BIT(hook_id);
+>>>>>>> lab5-pretty
 
     if (sys_irqsetpolicy(1, IRQ_REENABLE | IRQ_EXCLUSIVE, &hook_id) != 0) return 1;
 
@@ -44,7 +50,14 @@ int wait_esc() {
 
         if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
             if (msg.m_notify.interrupts & irq_set) {
+<<<<<<< HEAD
                 sys_inb(0x60, &scancode);
+=======
+                uint32_t sc;
+                if (sys_inb(0x60, &sc) == 0) {
+                    scancode = (uint8_t)sc;
+                }
+>>>>>>> lab5-pretty
             }
         }
     }
@@ -54,7 +67,7 @@ int wait_esc() {
 }
 
 int(video_test_init)(uint16_t mode, uint8_t delay) {
-    if (vg_init_mode(mode) != 0) {
+    if (vg_init(mode) == NULL) {
         printf("Error initializing video mode\n");
         return 1;
     }
@@ -72,8 +85,7 @@ int(video_test_init)(uint16_t mode, uint8_t delay) {
 int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint32_t color) {
     
-    if (init_video_mem(mode) != 0) return 1;
-    if (vg_init_mode(mode) != 0) return 1;
+    if (vg_init(mode) == NULL) return 1;
 
     draw_rectangle(x, y, width, height, color);
 
@@ -84,8 +96,7 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-    if (init_video_mem(VBE_MODE_105) != 0) return 1;
-    if (vg_init_mode(VBE_MODE_105) != 0) return 1;
+    if (vg_init(VBE_MODE_105) == NULL) return 1;
 
     xpm_image_t img;
     uint8_t *map = xpm_load(xpm, XPM_INDEXED, &img);
