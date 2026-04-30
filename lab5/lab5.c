@@ -33,15 +33,9 @@ int main(int argc, char *argv[]) {
 int wait_esc() {
     int ipc_status, r;
     message msg;
-<<<<<<< HEAD
-    uint32_t scancode = 0;
-    int hook_id = 1;
-    uint8_t irq_set = BIT(1);
-=======
     uint8_t scancode = 0;
     int hook_id = 1;
     uint8_t irq_set = BIT(hook_id);
->>>>>>> lab5-pretty
 
     if (sys_irqsetpolicy(1, IRQ_REENABLE | IRQ_EXCLUSIVE, &hook_id) != 0) return 1;
 
@@ -50,14 +44,10 @@ int wait_esc() {
 
         if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
             if (msg.m_notify.interrupts & irq_set) {
-<<<<<<< HEAD
-                sys_inb(0x60, &scancode);
-=======
                 uint32_t sc;
                 if (sys_inb(0x60, &sc) == 0) {
                     scancode = (uint8_t)sc;
                 }
->>>>>>> lab5-pretty
             }
         }
     }
