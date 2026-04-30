@@ -4,11 +4,11 @@
 #include <minix/sysutil.h>
 #include <stdio.h>
 
-#include "timer/timer.h"
+#include "../lib/timer/timer.h"
 #include "../lib/keyboard/keyboard.h"
 #include "../lib/mouse/mouse.h"
 #include "../lib/keyboard/i8042.h"
-#include "utils/utils.h"
+#include "../lib/utils/utils.h"
 #include "game.h"
 
 int main(int argc, char *argv[]) {

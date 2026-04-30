@@ -6,8 +6,6 @@
 *.exe
 lab2
 lab3/lab3
-timer
-utils
 
 *.a
 
