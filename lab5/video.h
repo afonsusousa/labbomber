@@ -54,22 +54,19 @@
 #define VBE_MODE_11A      0x11A     // 1280x1024, Direct color, 16 bpp (5:6:5)
 #define VBE_MODE_14C      0x14C     // 1152x864, Direct color, 32 bpp (8:8:8:8)
 
-int     is_valid_mode(uint16_t mode);
-reg86_t vbe_reg();
-int     vg_init_mode(uint16_t mode);
+int             is_valid_mode(uint16_t mode);
+reg86_t         vbe_reg();
+int             vg_init_mode(uint16_t mode);
 
-int     vg_init_mem(uint16_t mode);
-char*   get_video_mem();
+int             vg_init_mem(uint16_t mode);
+char*           get_video_mem();
 vbe_mode_info_t get_vmi();
-unsigned get_bytes_per_pixel();
-uint16_t get_hres();
-uint16_t get_vres();
-unsigned get_bytes_per_scanline();
+unsigned        get_bytes_per_pixel();
+uint16_t        get_hres();
+uint16_t        get_vres();
+unsigned        get_bytes_per_scanline();
 
-int     draw_pixel(uint16_t x, uint16_t y, uint32_t color);
-int     draw_hline(uint16_t x, uint16_t y, uint16_t len, uint32_t color);
-int     draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color);
-
-int     draw_xpm(uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y);
+int             draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color);
+int             draw_xpm(uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y);
 
 #endif

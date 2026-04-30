@@ -1,38 +1,38 @@
 #include <lcom/lcf.h>
 #include "video.h"
 
-int draw_pixel(uint16_t x, uint16_t y, uint32_t color) {
-    uint16_t    hres = get_hres();
-    uint16_t    vres = get_vres();
-    unsigned    bpp = get_bytes_per_pixel();
-    char        *vmem = get_video_mem();
-    unsigned    bpl = get_bytes_per_scanline();
+static uint16_t hres = 0;
+static uint16_t vres = 0;
+static unsigned bpp = 0;
+static char     *vmem = NULL;
+static unsigned bpl = 0;
 
-    if (x >= hres || y >= vres) return (1);
-
-    memcpy(vmem + y * bpl + x * bpp, &color, bpp);
-    
-    return (0);
+static void init_globals() {
+    if (vmem != NULL) return;
+    hres = get_hres();
+    vres = get_vres();
+    bpp = get_bytes_per_pixel();
+    vmem = get_video_mem();
+    bpl = get_bytes_per_scanline();
 }
 
-int draw_hline(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
-    uint16_t    hres = get_hres();
-    uint16_t    vres = get_vres();
+static inline void draw_pixel(uint16_t x, uint16_t y, uint32_t color) {
+    if (x >= hres || y >= vres) return;
+    memcpy(vmem + y * bpl + x * bpp, &color, bpp);
+}
 
-    if (x >= hres || y >= vres) return (0);
+static inline void draw_hline(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
+    if (x >= hres || y >= vres) return;
     if (x + len > hres) len = hres - x; // clip
 
     for (uint16_t i = 0; i < len; i++) 
         draw_pixel(x + i, y, color);
-
-    return (0);
 }
 
 int draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color) {
-    uint16_t    hres = get_hres();
-    uint16_t    vres = get_vres();
+    init_globals();
 
-    if (x >= hres || y >= vres) return (0);
+    if (x >= hres || y >= vres) return (1);
     if (x + width > hres) width = hres - x; // clip
     if (y + height > vres) height = vres - y;
 
@@ -43,12 +43,9 @@ int draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint
 }
 
 int draw_xpm(uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y) {
-    uint16_t    hres = get_hres(), vres = get_vres();
-    unsigned    bpp = get_bytes_per_pixel();
-    char        *vmem = get_video_mem();
+    init_globals();
     uint32_t    transparent, color;
     uint8_t     *ptr = map;
-    unsigned    bpl = get_bytes_per_scanline();
 
     if (map == NULL) return (1);
 
