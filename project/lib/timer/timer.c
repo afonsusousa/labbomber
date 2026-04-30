@@ -2,7 +2,7 @@
 #include <minix/drivers.h>
 #include <stdint.h>
 #include "timer.h"
-#include "utils/utils.h"
+#include "../utils/utils.h"
 
 void hw_timer_init(hw_timer_t *timer) {
     if (timer == NULL) return;

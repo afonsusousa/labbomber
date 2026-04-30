@@ -113,7 +113,7 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x
             draw_x = x + j;
 
             if (color != transparent) {
-                vbe_draw_pixel(
+                hw_vbe_draw_pixel(
                     video,
                     draw_x,
                     draw_y,

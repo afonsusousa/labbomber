@@ -1,19 +1,32 @@
-# name of the program (Minix service)
+# Name of the executable program
 PROG = proj
 
-# Tell MINIX Make where to look for your .c files
+# Tell Make where to look for .c files
 .PATH: ${.CURDIR}/src
-.PATH: ${.CURDIR}/lib
+.PATH: ${.CURDIR}/lib/keyboard
+.PATH: ${.CURDIR}/lib/mouse
+.PATH: ${.CURDIR}/lib/rtc
+.PATH: ${.CURDIR}/lib/timer
+.PATH: ${.CURDIR}/lib/utils
+.PATH: ${.CURDIR}/lib/vbe
 
-# List ALL your .c files here (don't include the folder names, just the files)
-SRCS = main.c game.c # Add your other files like mouse.c, keyboard.c, timer.c, vbe.c
+# List EVERY .c file in your project here (no folder paths, just the names)
+SRCS = main.c game.c keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c
 
-# Include your lib folder so the compiler finds your .h files
-CFLAGS += -pedantic -D__LCOM_OPTIMIZED__ -I${.CURDIR}/lib
+# Compilation flags. 
+# We include all the lib folders so your #include "timer.h" statements work seamlessly.
+CFLAGS += -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__ 
+CFLAGS += -I${.CURDIR}/src
+CFLAGS += -I${.CURDIR}/lib/keyboard
+CFLAGS += -I${.CURDIR}/lib/mouse
+CFLAGS += -I${.CURDIR}/lib/rtc
+CFLAGS += -I${.CURDIR}/lib/timer
+CFLAGS += -I${.CURDIR}/lib/utils
+CFLAGS += -I${.CURDIR}/lib/vbe
 
-# list of library dependencies
+# Minix LCF Library dependencies
 DPADD += ${LIBLCF}
 LDADD += -llcf
 
-# include LCOM's makefile that does all the "heavy lifting"
+# Include LCOM's framework
 .include <minix.lcom.mk>

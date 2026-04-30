@@ -1,5 +1,5 @@
 #include "rtc.h"
-#include "utils/utils.h"
+#include "../utils/utils.h"
 #include <minix/syslib.h>
 #include <minix/drivers.h>
 

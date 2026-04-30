@@ -3,7 +3,7 @@
 #include <minix/syslib.h>
 #include <minix/drivers.h>
 
-void hw_keyboard_init(keyboard_t *kbd) {
+void hw_keyboard_init(hw_keyboard_t *kbd) {
     if (kbd == NULL) return;
 
     kbd->hook_id = KBC_IRQ;
@@ -11,7 +11,7 @@ void hw_keyboard_init(keyboard_t *kbd) {
     kbd->mask = BIT(kbd->irq_bit);
 }
 
-int hw_keyboard_subscribe_int(keyboard_t *kbd) {
+int hw_keyboard_subscribe_int(hw_keyboard_t *kbd) {
     if (kbd == NULL) return 1;
 
     if (kbd->hook_id == 0) kbd->hook_id = KBC_IRQ;
@@ -21,13 +21,13 @@ int hw_keyboard_subscribe_int(keyboard_t *kbd) {
     return sys_irqsetpolicy(KBC_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &kbd->hook_id);
 }
 
-int hw_keyboard_unsubscribe_int(keyboard_t *kbd) {
+int hw_keyboard_unsubscribe_int(hw_keyboard_t *kbd) {
     if (kbd == NULL) return 1;
 
     return sys_irqrmpolicy(&kbd->hook_id);
 }
 
-void hw_keyboard_ih(keyboard_t *kbd) {
+void hw_keyboard_ih(hw_keyboard_t *kbd) {
     uint8_t status = 0;
     uint8_t scancode = 0;
 
