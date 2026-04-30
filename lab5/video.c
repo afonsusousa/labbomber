@@ -55,7 +55,7 @@ int vg_init_mem(uint16_t mode)
     bytes_per_pixel = (vmi.BitsPerPixel + 7) / 8;
 
     vram_base = vmi.PhysBasePtr;
-    vram_size = vmi.XResolution * vmi.YResolution * bytes_per_pixel;
+    vram_size = vmi.BytesPerScanLine * vmi.YResolution;
 
     mr.mr_base = (phys_bytes)vram_base;
     mr.mr_limit = mr.mr_base + vram_size;
@@ -69,6 +69,12 @@ int vg_init_mem(uint16_t mode)
         panic("couldn't map video memory");
 
     return 0;
+}
+
+void *(vg_init)(uint16_t mode) {
+    if (vg_init_mem(mode) != 0) return NULL;
+    if (vg_init_mode(mode) != 0) return NULL;
+    return video_mem;
 }
 
 char* get_video_mem() {
@@ -89,4 +95,8 @@ uint16_t get_hres() {
 
 uint16_t get_vres() {
     return vmi.YResolution;
+}
+
+unsigned get_bytes_per_scanline() {
+    return vmi.BytesPerScanLine;
 }

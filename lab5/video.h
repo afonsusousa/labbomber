@@ -64,6 +64,7 @@ vbe_mode_info_t get_vmi();
 unsigned get_bytes_per_pixel();
 uint16_t get_hres();
 uint16_t get_vres();
+unsigned get_bytes_per_scanline();
 
 int     draw_pixel(uint16_t x, uint16_t y, uint32_t color);
 int     draw_hline(uint16_t x, uint16_t y, uint16_t len, uint32_t color);
