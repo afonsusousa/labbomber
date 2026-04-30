@@ -22,7 +22,7 @@ static uint8_t bcd_to_bin(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
-void rtc_init(rtc_t *rtc) {
+void hw_rtc_init(hw_rtc_t *rtc) {
     if (rtc == NULL) return;
 
     rtc->hook_id = RTC_IRQ;
@@ -46,7 +46,7 @@ static int rtc_wait_stable(void) {
     return 0;
 }
 
-int rtc_subscribe_int(rtc_t *rtc) {
+int hw_rtc_subscribe_int(hw_rtc_t *rtc) {
     if (rtc == NULL) return 1;
 
     if (rtc->hook_id == 0) rtc->hook_id = RTC_IRQ;
@@ -56,13 +56,13 @@ int rtc_subscribe_int(rtc_t *rtc) {
     return sys_irqsetpolicy(RTC_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &rtc->hook_id);
 }
 
-int rtc_unsubscribe_int(rtc_t *rtc) {
+int hw_rtc_unsubscribe_int(hw_rtc_t *rtc) {
     if (rtc == NULL) return 1;
 
     return sys_irqrmpolicy(&rtc->hook_id);
 }
 
-int rtc_get_time(rtc_t *info) {
+int hw_rtc_get_time(hw_rtc_t *info) {
     if (info == NULL) return 1;
 
     uint8_t reg_b = 0;

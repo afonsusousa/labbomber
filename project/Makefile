@@ -1,35 +1,19 @@
-CC = cc
+# name of the program (Minix service)
 PROG = proj
-CFLAGS = -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__ -I./lib
 
-BUILD_DIR = build
-SRC_DIR = src
+# Tell MINIX Make where to look for your .c files
+.PATH: ${.CURDIR}/src
+.PATH: ${.CURDIR}/lib
 
-SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/game.c
-OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/game.o
+# List ALL your .c files here (don't include the folder names, just the files)
+SRCS = main.c game.c # Add your other files like mouse.c, keyboard.c, timer.c, vbe.c
 
-LIB_DIR = $(BUILD_DIR)/lib
-LIBS = -L$(LIB_DIR) -lutils -ltimer -lkeyboard -lmouse -lvbe -lrtc
-LCOM_LIBS = -llm -llcf
+# Include your lib folder so the compiler finds your .h files
+CFLAGS += -pedantic -D__LCOM_OPTIMIZED__ -I${.CURDIR}/lib
 
-all: libs $(BUILD_DIR)/$(PROG)
+# list of library dependencies
+DPADD += ${LIBLCF}
+LDADD += -llcf
 
-libs:
-	$(MAKE) -C $(PROJECT_DIR)lib
-
-$(BUILD_DIR)/$(PROG): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIBS) $(LCOM_LIBS)
-
-$(BUILD_DIR)/src/main.o: src/main.c
-	@mkdir -p $(BUILD_DIR)/src
-	$(CC) $(CFLAGS) -c src/main.c -o $(BUILD_DIR)/src/main.o
-
-$(BUILD_DIR)/src/game.o: src/game.c
-	@mkdir -p $(BUILD_DIR)/src
-	$(CC) $(CFLAGS) -c src/game.c -o $(BUILD_DIR)/src/game.o
-
-clean:
-	$(MAKE) -C $(PROJECT_DIR)lib clean
-	rm -rf $(BUILD_DIR)/src/* $(BUILD_DIR)/$(PROG)
-
-.PHONY: all libs clean
+# include LCOM's makefile that does all the "heavy lifting"
+.include <minix.lcom.mk>

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
-static int map_video_memory(video_t *video, uint16_t mode) {
+static int map_video_memory(hw_video_t *video, uint16_t mode) {
     vbe_mode_info_t         vmi;
     struct minix_mem_range  mr;
     unsigned int            vram_base, vram_size;
@@ -64,7 +64,7 @@ static int set_vbe_mode(uint16_t mode) {
     return 0;
 }
 
-int vbe_init(video_t *video, uint16_t mode) {
+int hw_vbe_init(hw_video_t *video, uint16_t mode) {
     if (video == NULL) return 1;
     
     if (map_video_memory(video, mode) != 0) return 1;
@@ -83,7 +83,7 @@ static inline uint32_t extract_color(const uint8_t *pixel_data, unsigned bytes_p
     return color;
 }
 
-int vbe_draw_pixel(video_t *video, uint16_t x, uint16_t y, uint32_t color) {
+int hw_vbe_draw_pixel(hw_video_t *video, uint16_t x, uint16_t y, uint32_t color) {
     if (x >= video->screen_width || y >= video->screen_height) return 0;
 
     uint8_t *pixel_ptr = video->double_buffer 
@@ -95,7 +95,7 @@ int vbe_draw_pixel(video_t *video, uint16_t x, uint16_t y, uint32_t color) {
     return 0;
 }
 
-int vbe_draw_xpm(video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y) {
+int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y) {
     uint32_t    transparent, color = 0;
     uint16_t    draw_x, draw_y;
     uint8_t     *ptr; 
@@ -126,7 +126,7 @@ int vbe_draw_xpm(video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint
     return 0;
 }
 
-int vbe_clear_screen(video_t *video, uint32_t color) {
+int hw_vbe_clear_screen(hw_video_t *video, uint32_t color) {
     if (!video->double_buffer) return 1;
     
     uint32_t vram_size = video->bytes_per_scanline * video->screen_height;
@@ -145,7 +145,7 @@ int vbe_clear_screen(video_t *video, uint32_t color) {
     return 0;
 }
 
-void vbe_flip_buffer(video_t *video) {
+void hw_vbe_flip_buffer(hw_video_t *video) {
     if (video->frame_buffer && video->double_buffer) {
         uint8_t *temp = video->frame_buffer;
         video->frame_buffer = video->double_buffer;

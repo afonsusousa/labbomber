@@ -9,11 +9,11 @@
 #include "../lib/vbe/vbe.h"
 
 typedef struct {
-    timer_state_t   timer;
-    rtc_t           time_info;
-    mouse_t         mouse;
-    keyboard_t      keyboard;
-    video_t         video;
+    hw_timer_t          timer;
+    hw_rtc_t           time_info;
+    hw_mouse_t         mouse;
+    hw_keyboard_t      keyboard;
+    hw_video_t         video;
 
     bool            is_running; //move from here
 } hardware_t;

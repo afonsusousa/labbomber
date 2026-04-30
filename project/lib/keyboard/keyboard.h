@@ -11,9 +11,9 @@ typedef struct {
     uint8_t     scancode;
     bool        is_two_bytes;
     bool        keys_pressed[256];
-} keyboard_t;
+} hw_keyboard_t;
 
-void    keyboard_init(keyboard_t *kbd);
-int     keyboard_subscribe_int(keyboard_t *kbd);
-int     keyboard_unsubscribe_int(keyboard_t *kbd);
-void    keyboard_ih(keyboard_t *kbd);
+void    hw_keyboard_init(hw_keyboard_t *kbd);
+int     hw_keyboard_subscribe_int(hw_keyboard_t *kbd);
+int     hw_keyboard_unsubscribe_int(hw_keyboard_t *kbd);
+void    hw_keyboard_ih(hw_keyboard_t *kbd);

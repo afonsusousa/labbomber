@@ -4,7 +4,7 @@
 #include "timer.h"
 #include "utils/utils.h"
 
-void timer_init(timer_state_t *timer) {
+void hw_timer_init(hw_timer_t *timer) {
     if (timer == NULL) return;
 
     timer->hook_id = TIMER0_IRQ;
@@ -40,7 +40,7 @@ int timer_set_frequency(uint8_t timer, uint32_t freq) {
     return 0;
 }
 
-int timer_sub_int(timer_state_t *timer) {
+int hw_timer_subscribe_int(hw_timer_t *timer) {
     if (timer == NULL) return 1;
 
     if (timer->hook_id == 0) timer->hook_id = TIMER0_IRQ;
@@ -50,31 +50,31 @@ int timer_sub_int(timer_state_t *timer) {
     return sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &timer->hook_id);
 }
 
-int timer_unsub_int(timer_state_t *timer) {
+int hw_timer_unsubscribe_int(hw_timer_t *timer) {
     if (timer == NULL) return 1;
 
     return sys_irqrmpolicy(&timer->hook_id);
 }
 
-void timer_int_handler(timer_state_t *timer) {
+void hw_timer_int_handler(hw_timer_t *timer) {
     if (timer == NULL) return;
 
     timer->ticks++;
 }
 
-uint32_t timer_get_no_interrups(const timer_state_t *timer) {
+uint32_t hw_timer_get_no_interrups(const hw_timer_t *timer) {
     if (timer == NULL) return 0;
 
     return timer->ticks;
 }
 
-void timer_reset_ticks(timer_state_t *timer) {
+void hw_timer_reset_ticks(hw_timer_t *timer) {
     if (timer == NULL) return;
 
     timer->ticks = 0;
 }
 
-bool timer_elapsed(const timer_state_t *timer, uint32_t start_tick, uint32_t ticks_to_wait) {
+bool hw_timer_elapsed(const hw_timer_t *timer, uint32_t start_tick, uint32_t ticks_to_wait) {
     if (timer == NULL) return false;
 
     return (timer->ticks - start_tick) >= ticks_to_wait;

@@ -6,10 +6,10 @@ void init_hardware_state(hardware_t *hw_state) {
 
     memset(hw_state, 0, sizeof(hardware_t));
 
-    timer_init(&hw_state->timer);
-    rtc_init(&hw_state->time_info);
-    keyboard_init(&hw_state->keyboard);
-    mouse_init(&hw_state->mouse);
+    hw_timer_init(&hw_state->timer);
+    hw_rtc_init(&hw_state->time_info);
+    hw_keyboard_init(&hw_state->keyboard);
+    hw_mouse_init(&hw_state->mouse);
     
     hw_state->is_running = true;
     

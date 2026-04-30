@@ -15,9 +15,9 @@ typedef struct {
     uint8_t     hours;
     uint8_t     minutes;
     uint8_t     seconds;
-} rtc_t;
+} hw_rtc_t;
 
-void rtc_init(rtc_t *rtc);
-int rtc_subscribe_int(rtc_t *rtc);
-int rtc_unsubscribe_int(rtc_t *rtc);
-int rtc_get_time(rtc_t *info);
+void    hw_rtc_init(hw_rtc_t *rtc);
+int     hw_rtc_subscribe_int(hw_rtc_t *rtc);
+int     hw_rtc_unsubscribe_int(hw_rtc_t *rtc);
+int     hw_rtc_get_time(hw_rtc_t *info);

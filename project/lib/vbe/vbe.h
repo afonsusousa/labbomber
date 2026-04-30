@@ -14,7 +14,7 @@ typedef struct {
     uint8_t     *frame_buffer;   // this is the frame that will be flip flopped
     uint8_t     *double_buffer;
     unsigned    bytes_per_scanline;
-} video_t;
+} hw_video_t;
 
 #define BIOS_VID_INT        0x10
 #define VBE_CALL            0x4F
@@ -29,9 +29,9 @@ typedef struct {
 #define VBE_MODE_11A        0x11A     // 1280x1024, Direct color, 16 bpp
 #define VBE_MODE_14C        0x14C     // 1152x864, Direct color, 32 bpp
 
-int     vbe_init(video_t *video, uint16_t mode);
-int     vbe_clear_screen(video_t *video, uint32_t color);
-int     vbe_draw_pixel(video_t *video, uint16_t x, uint16_t y, uint32_t color);
-int     vbe_draw_xpm(video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y);
-void    vbe_flip_buffer(video_t *video);
-int     vbe_exit();
+int     hw_vbe_init(hw_video_t *video, uint16_t mode);
+int     hw_vbe_clear_screen(hw_video_t *video, uint32_t color);
+int     hw_vbe_draw_pixel(hw_video_t *video, uint16_t x, uint16_t y, uint32_t color);
+int     hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y);
+void    hw_vbe_flip_buffer(hw_video_t *video);
+int     hw_vbe_exit();

@@ -3,7 +3,7 @@
 #include <minix/syslib.h>
 #include <minix/drivers.h>
 
-void mouse_init(mouse_t *mouse) {
+void hw_mouse_init(hw_mouse_t *mouse) {
     if (mouse == NULL) return;
 
     mouse->hook_id = MOUSE_IRQ;
@@ -15,7 +15,7 @@ void mouse_init(mouse_t *mouse) {
     mouse->packet[2] = 0;
 }
 
-int mouse_subscribe_int(mouse_t *mouse) {
+int hw_mouse_subscribe_int(hw_mouse_t *mouse) {
     if (mouse == NULL) return 1;
 
     if (mouse->hook_id == 0) mouse->hook_id = MOUSE_IRQ;
@@ -25,7 +25,7 @@ int mouse_subscribe_int(mouse_t *mouse) {
     return sys_irqsetpolicy(MOUSE_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &mouse->hook_id);
 }
 
-int mouse_unsubscribe_int(mouse_t *mouse) {
+int hw_mouse_unsubscribe_int(hw_mouse_t *mouse) {
     if (mouse == NULL) return 1;
 
     return sys_irqrmpolicy(&mouse->hook_id);
@@ -92,7 +92,7 @@ int mouse_write_cmd(uint8_t cmd) {
     return 1;
 }
 
-bool mouse_ih(mouse_t *mouse_state) {
+bool hw_mouse_ih(hw_mouse_t *mouse_state) {
     uint8_t status = 0;
     uint8_t byte = 0;
 

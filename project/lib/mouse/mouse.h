@@ -17,10 +17,10 @@ typedef struct {
     bool        middle_click;
     uint8_t     byte_index;
     uint8_t     packet[3];
-} mouse_t;
+} hw_mouse_t;
 
-void    mouse_init(mouse_t *mouse);
-int     mouse_subscribe_int(mouse_t *mouse);
-int     mouse_unsubscribe_int(mouse_t *mouse);
-bool    mouse_ih(mouse_t *mouse);
+void    hw_mouse_init(hw_mouse_t *mouse);
+int     hw_mouse_subscribe_int(hw_mouse_t *mouse);
+int     hw_mouse_unsubscribe_int(hw_mouse_t *mouse);
+bool    hw_mouse_ih(hw_mouse_t *mouse);
 int     mouse_write_cmd(uint8_t cmd);
