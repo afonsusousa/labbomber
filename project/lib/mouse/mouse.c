@@ -119,7 +119,13 @@ bool hw_mouse_ih(hw_mouse_t *mouse_state) {
         
         mouse_state->x += mouse_state->delta_x;
         mouse_state->y -= mouse_state->delta_y; 
-        
+
+        if (mouse_state->x > mouse_state->max_x)  mouse_state->x = mouse_state->max_x;
+        else if (mouse_state->x < 0)  mouse_state->x = 0;
+
+        if (mouse_state->y > mouse_state->max_y)  mouse_state->y = mouse_state->max_y;
+        else if (mouse_state->y < 0)  mouse_state->y = 0;
+
         return true;
     }
 

@@ -7,6 +7,7 @@
 #include "../lib/keyboard/i8042.h"
 #include "../lib/utils/utils.h"
 #include "game.h"
+#include "draw.h"
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -35,9 +36,6 @@ int main(int argc, char *argv[]) {
 int(proj_main_loop)(int argc, char* argv[]) {
     hardware_t hw_state;
     init_hardware_state(&hw_state);
-    int speed = 2;
-    int x = hw_state.video.screen_width / 2;
-    int y = hw_state.video.screen_height / 2;
 
     if (timer_set_frequency(0, 144 /*fps*/) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
@@ -70,30 +68,16 @@ int(proj_main_loop)(int argc, char* argv[]) {
                     hw_state.is_running = false;
                     printf("at least we know esc was pressed\n");
                 }
-                if (hw_state.keyboard.keys_pressed[0x11]) {
-                    y -= speed; 
-                }
-                if (hw_state.keyboard.keys_pressed[0x1E]) {
-                    x -= speed;
-                }
-                if (hw_state.keyboard.keys_pressed[0x1F]) {
-                    y += speed;
-                }
-                if (hw_state.keyboard.keys_pressed[0x20]) {
-                    x += speed;
-                }
             }
             
             //mouse
             if (msg.m_notify.interrupts & hw_state.mouse.mask) {
                 if (hw_mouse_ih(&hw_state.mouse)) {
-                    // do something
+                    // clicks and etc;
                 }
             }
-            hw_vbe_draw_pixel(&hw_state.video, x, y, 0xFFFF00);
-            hw_vbe_draw_pixel(&hw_state.video, x + 1, y, 0xFFFF00);
-            hw_vbe_draw_pixel(&hw_state.video, x, y, 0xFFFF00);
-            hw_vbe_draw_pixel(&hw_state.video, x, y + 1, 0xFFFF00);
+            hw_vbe_clear_screen(&hw_state.video, 0x0);
+            draw_mouse(&hw_state.mouse, &hw_state.video);
             hw_vbe_flip_buffer(&hw_state.video);
         }
     }

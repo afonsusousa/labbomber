@@ -8,10 +8,16 @@ typedef struct {
     int         hook_id;
     uint8_t     irq_bit;
     uint32_t    mask;
-    int         x;
-    int         y;
+
+    int32_t     x;
+    int32_t     y;
+
+    int32_t     max_x;
+    int32_t     max_y;
+
     int16_t     delta_x;
     int16_t     delta_y;
+
     bool        left_click;
     bool        right_click;
     bool        middle_click;
