@@ -10,14 +10,11 @@ void init_hardware_state(hardware_t *hw_state) {
     hw_rtc_init(&hw_state->time_info);
     hw_keyboard_init(&hw_state->keyboard);
     hw_mouse_init(&hw_state->mouse);
+    hw_vbe_init(&hw_state->video, 0x110);
     
     hw_state->is_running = true;
     
     hw_state->mouse.x = 400;
     hw_state->mouse.y = 300; 
     
-    //placeholders
-    hw_state->video.screen_width = 800;
-    hw_state->video.screen_height = 600;
-    hw_state->video.bytes_per_pixel = 2;
 }

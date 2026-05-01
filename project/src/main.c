@@ -35,6 +35,9 @@ int main(int argc, char *argv[]) {
 int(proj_main_loop)(int argc, char* argv[]) {
     hardware_t hw_state;
     init_hardware_state(&hw_state);
+    int speed = 2;
+    int x = hw_state.video.screen_width / 2;
+    int y = hw_state.video.screen_height / 2;
 
     if (timer_set_frequency(0, 144 /*fps*/) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
@@ -65,6 +68,19 @@ int(proj_main_loop)(int argc, char* argv[]) {
                 hw_keyboard_ih(&hw_state.keyboard);
                 if (hw_state.keyboard.keys_pressed[0x01]) {
                     hw_state.is_running = false;
+                    printf("at least we know esc was pressed\n");
+                }
+                if (hw_state.keyboard.keys_pressed[0x11]) {
+                    y -= speed; 
+                }
+                if (hw_state.keyboard.keys_pressed[0x1E]) {
+                    x -= speed;
+                }
+                if (hw_state.keyboard.keys_pressed[0x1F]) {
+                    y += speed;
+                }
+                if (hw_state.keyboard.keys_pressed[0x20]) {
+                    x += speed;
                 }
             }
             
@@ -74,6 +90,11 @@ int(proj_main_loop)(int argc, char* argv[]) {
                     // do something
                 }
             }
+            hw_vbe_draw_pixel(&hw_state.video, x, y, 0xFFFF00);
+            hw_vbe_draw_pixel(&hw_state.video, x + 1, y, 0xFFFF00);
+            hw_vbe_draw_pixel(&hw_state.video, x, y, 0xFFFF00);
+            hw_vbe_draw_pixel(&hw_state.video, x, y + 1, 0xFFFF00);
+            hw_vbe_flip_buffer(&hw_state.video);
         }
     }
 
@@ -82,7 +103,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     mouse_write_cmd(MOUSE_DISABLE_DATA);
     hw_mouse_unsubscribe_int(&hw_state.mouse);
     
-    // vg_exit();
+    vg_exit();
 
     return 0;
 }

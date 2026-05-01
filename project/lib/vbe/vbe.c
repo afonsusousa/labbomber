@@ -42,7 +42,7 @@ static int map_video_memory(hw_video_t *video, uint16_t mode) {
         printf("Failed allocating double buffer.\n");
         return 1;
     }
-
+    hw_vbe_clear_screen(video, 0);
     return 0;
 }
 
@@ -91,6 +91,51 @@ int hw_vbe_draw_pixel(hw_video_t *video, uint16_t x, uint16_t y, uint32_t color)
                         + (x * video->bytes_per_pixel);
 
     memcpy(pixel_ptr, &color, video->bytes_per_pixel);
+
+    return 0;
+}
+
+int hw_vbe_draw_hline(hw_video_t *video, uint16_t x, uint16_t y, uint16_t length, uint32_t color) {
+    if (video == NULL || video->double_buffer == NULL) return 1;
+
+    for (uint16_t offset = 0; offset < length; offset++) {
+        if (x + offset >= video->screen_width) break;
+        hw_vbe_draw_pixel(video, x + offset, y, color);
+    }
+
+    return 0;
+}
+
+int hw_vbe_draw_vline(hw_video_t *video, uint16_t x, uint16_t y, uint16_t length, uint32_t color) {
+    if (video == NULL || video->double_buffer == NULL) return 1;
+
+    for (uint16_t offset = 0; offset < length; offset++) {
+        if (y + offset >= video->screen_height) break;
+        hw_vbe_draw_pixel(video, x, y + offset, color);
+    }
+
+    return 0;
+}
+
+int hw_vbe_draw_rect(hw_video_t *video, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color) {
+    if (video == NULL || video->double_buffer == NULL) return 1;
+    if (width == 0 || height == 0) return 0;
+
+    hw_vbe_draw_hline(video, x, y, width, color);
+
+    if (height > 1) {
+        hw_vbe_draw_hline(video, x, y + height - 1, width, color);
+    }
+
+    if (height > 2) {
+        hw_vbe_draw_vline(video, x, y + 1, height - 2, color);
+
+        if (width > 1) {
+            hw_vbe_draw_vline(video, x + width - 1, y + 1, height - 2, color);
+        }
+    } else if (width > 1) {
+        hw_vbe_draw_vline(video, x + width - 1, y, height, color);
+    }
 
     return 0;
 }
