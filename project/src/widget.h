@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "../lib/vbe/vbe.h"
 
 typedef enum {
     DIALOG,
@@ -23,7 +24,8 @@ typedef struct s_widget {
     struct s_widget *prev;
 
     bool            active;
-    bool            is_clicked;
+    bool            clicked;
+    bool            hovered;
 
     union {
         struct {
@@ -45,11 +47,16 @@ typedef struct s_widget {
         } dialog;
     } data;
 
-    // Function pointers for polymorphic behavior
-    void (*draw)(struct s_widget *self);
+    void (*draw)(struct s_widget *self, hw_video_t *video);
     void (*on_click)(struct s_widget *self);
     void (*on_key_press)(struct s_widget *self, uint8_t scancode);
 
 } t_widget;
+
+t_widget*   widget_create(e_widget_type type, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+void        widget_add_child(t_widget *parent, t_widget *child);
+void        widget_destroy(t_widget *widget);
+void        widget_hide(t_widget *widget);
+t_widget*   widget_get_at(t_widget *root, uint32_t x, uint32_t y);
 
 #endif /* _WIDGET_H_ */
