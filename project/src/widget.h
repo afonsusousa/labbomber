@@ -9,7 +9,8 @@ typedef enum {
     DIALOG,
     BUTTON,
     TEXT,
-    TEXT_INPUT
+    TEXT_INPUT,
+    CANVAS
 } e_widget_type;
 
 typedef struct s_widget {
@@ -24,8 +25,9 @@ typedef struct s_widget {
     struct s_widget *prev;
 
     bool            active;
-    bool            clicked;
+    bool            is_clicked;
     bool            hovered;
+    bool            hittable;
 
     union {
         struct {
@@ -45,11 +47,17 @@ typedef struct s_widget {
         struct {
             char *title;
         } dialog;
+        
+        struct {
+            void *state;
+        } canvas;
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);
     void (*on_click)(struct s_widget *self);
+    void (*on_hover)(struct s_widget *self);
     void (*on_key_press)(struct s_widget *self, uint8_t scancode);
+    void (*on_tick)(struct s_widget *self, void *data);
 
 } t_widget;
 

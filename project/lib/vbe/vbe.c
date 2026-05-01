@@ -121,21 +121,8 @@ int hw_vbe_draw_rect(hw_video_t *video, uint16_t x, uint16_t y, uint16_t width, 
     if (video == NULL || video->double_buffer == NULL) return 1;
     if (width == 0 || height == 0) return 0;
 
-    hw_vbe_draw_hline(video, x, y, width, color);
-
-    if (height > 1) {
-        hw_vbe_draw_hline(video, x, y + height - 1, width, color);
-    }
-
-    if (height > 2) {
-        hw_vbe_draw_vline(video, x, y + 1, height - 2, color);
-
-        if (width > 1) {
-            hw_vbe_draw_vline(video, x + width - 1, y + 1, height - 2, color);
-        }
-    } else if (width > 1) {
-        hw_vbe_draw_vline(video, x + width - 1, y, height, color);
-    }
+    for (uint16_t i = 0; i < height; i++)
+        hw_vbe_draw_hline(video, x, y + i, width, color);
 
     return 0;
 }
