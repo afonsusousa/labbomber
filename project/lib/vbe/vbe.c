@@ -24,25 +24,22 @@ static int map_video_memory(hw_video_t *video, uint16_t mode) {
     vram_size = video->bytes_per_scanline * video->screen_height;
 
     mr.mr_base  = (phys_bytes)vram_base;
-    mr.mr_limit = mr.mr_base + vram_size;
+    mr.mr_limit = mr.mr_base + (vram_size * 2);
 
     if (sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr) != 0) {
         printf("Failed mapping memory through sys_privctl.\n");
         return 1;
     }
 
-    video->frame_buffer = vm_map_phys(SELF, (void *)mr.mr_base, vram_size);
+    video->frame_buffer = vm_map_phys(SELF, (void *)mr.mr_base, vram_size * 2);
     if (video->frame_buffer == MAP_FAILED) {
         printf("Failed mapping video memory.\n");
         return 1;
     }
 
-    video->double_buffer = malloc(vram_size);
-    if (video->double_buffer == NULL) {
-        printf("Failed allocating double buffer.\n");
-        return 1;
-    }
-    hw_vbe_clear_screen(video, 0);
+    video->double_buffer = video->frame_buffer + vram_size;
+    memset(video->frame_buffer, 0, vram_size * 2);
+
     return 0;
 }
 
@@ -178,10 +175,24 @@ int hw_vbe_clear_screen(hw_video_t *video, uint32_t color) {
 }
 
 void hw_vbe_flip_buffer(hw_video_t *video) {
-    if (video->frame_buffer && video->double_buffer) {
-        uint8_t *temp = video->frame_buffer;
-        video->frame_buffer = video->double_buffer;
-        video->double_buffer = temp;
+    static int display_start_y = 0;
+    uint32_t vram_size = video->bytes_per_scanline * video->screen_height;
+    
+    display_start_y = (display_start_y == 0) ? video->screen_height : 0;
+
+    reg86_t reg;
+    memset(&reg, 0, sizeof(reg));
+    reg.intno = BIOS_VID_INT;
+    reg.ax = 0x4F07;
+    reg.bx = 0x0000;
+    reg.cx = 0;
+    reg.dx = display_start_y;
+    sys_int86(&reg);
+
+    if (display_start_y == 0) {
+        video->double_buffer = video->frame_buffer + vram_size;
+    } else {
+        video->double_buffer = video->frame_buffer;
     }
 }
 
