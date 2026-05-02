@@ -13,17 +13,6 @@ typedef enum {
     CANVAS
 } e_widget_type;
 
-typedef enum {
-    ALIGN_TOP,
-    ALIGN_BOTTOM,
-    ALIGN_V_CENTER
-} e_v_alignment;
-typedef enum {
-    ALIGN_LEFT,
-    ALIGN_RIGHT,
-    ALIGN_H_CENTER
-} e_h_alignment;
-
 typedef struct s_widget {
     e_widget_type   type;
     
@@ -39,9 +28,6 @@ typedef struct s_widget {
     bool            is_clicked;
     bool            hovered;
     bool            hittable;
-
-    e_v_alignment   v_align;  // vertical alignment
-    e_h_alignment   h_align;  // horizontal alignment
 
     union {
         struct {

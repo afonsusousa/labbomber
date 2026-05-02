@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 
+// Win95 16-bit RGB 5:6:5 Color Palette
+#define W95_TEAL       0x0410 
+#define W95_GRAY       0xC618 
+#define W95_LIGHT_GRAY 0xDEFB 
+#define W95_DARK_GRAY  0x8410 
+#define W95_WHITE      0xFFFF 
+#define W95_BLACK      0x0000 
+
 static uint32_t get_abs_x(t_widget *self) {
     if (!self) return 0;
     uint32_t abs_x = self->x;
@@ -127,34 +135,80 @@ void widget_hide(t_widget *widget) {
     }
 }
 
+static void draw_win95_border(hw_video_t *video, uint32_t x, uint32_t y, uint32_t w, uint32_t h, bool sunken) {
+    uint32_t tl_outer = sunken ? W95_DARK_GRAY : W95_WHITE;
+    uint32_t tl_inner = sunken ? W95_BLACK : W95_LIGHT_GRAY;
+    uint32_t br_outer = sunken ? W95_WHITE : W95_BLACK;
+    uint32_t br_inner = sunken ? W95_LIGHT_GRAY : W95_DARK_GRAY;
+
+    uint16_t x16 = (uint16_t)x;
+    uint16_t y16 = (uint16_t)y;
+    uint16_t w16 = (uint16_t)w;
+    uint16_t h16 = (uint16_t)h;
+
+    // Outer Top & Left
+    hw_vbe_draw_hline(video, x16, y16, w16, tl_outer);
+    hw_vbe_draw_vline(video, x16, y16, h16, tl_outer);
+
+    // Outer Bottom & Right
+    hw_vbe_draw_hline(video, x16, y16 + h16 - 1, w16, br_outer);
+    hw_vbe_draw_vline(video, x16 + w16 - 1, y16, h16, br_outer);
+
+    // Inner Top & Left
+    hw_vbe_draw_hline(video, x16 + 1, y16 + 1, w16 - 2, tl_inner);
+    hw_vbe_draw_vline(video, x16 + 1, y16 + 1, h16 - 2, tl_inner);
+
+    // Inner Bottom & Right
+    hw_vbe_draw_hline(video, x16 + 1, y16 + h16 - 2, w16 - 2, br_inner);
+    hw_vbe_draw_vline(video, x16 + w16 - 2, y16 + 1, h16 - 2, br_inner);
+}
+
 void draw_canvas(t_widget *self, hw_video_t *video) {
     if (!self || !self->active) return;
-    // Example background color
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, 0x111111);
+    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_TEAL);
 }
 
 void draw_button(t_widget *self, hw_video_t *video) {
     if (!self || !self->active) return;
-    uint32_t color = self->hovered ? 0x888888 : 0x444444;
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, color);
+    
+    uint32_t abs_x = get_abs_x(self);
+    uint32_t abs_y = get_abs_y(self);
+    
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
+    
+    // Draw 3D border (sunken if clicked and raised if not)
+    bool is_sunken = self->is_clicked; 
+    draw_win95_border(video, abs_x, abs_y, self->width, self->height, is_sunken);
 }
 
 void draw_text(t_widget *self, hw_video_t *video) {
     if (!self || !self->active) return;
-    // Placeholder since there is no string drawing yet
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, 0xDDDDDD);
+    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_LIGHT_GRAY);
 }
 
 void draw_text_input(t_widget *self, hw_video_t *video) {
     if (!self || !self->active) return;
-    // White if active/clicked, gray if not
-    uint32_t color = self->is_clicked ? 0xFFFFFF : 0xCCCCCC;
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, color);
+    
+    uint32_t abs_x = get_abs_x(self);
+    uint32_t abs_y = get_abs_y(self);
+    
+    uint32_t color = self->is_clicked ? W95_WHITE : W95_GRAY;
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, color);
+    
+    // text inputs are always sunken
+    draw_win95_border(video, abs_x, abs_y, self->width, self->height, true);
 }
 
 void draw_dialog(t_widget *self, hw_video_t *video) {
     if (!self || !self->active) return;
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, 0x222222);
+    
+    uint32_t abs_x = get_abs_x(self);
+    uint32_t abs_y = get_abs_y(self);
+    
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
+    
+    // dialog windows are always raised
+    draw_win95_border(video, abs_x, abs_y, self->width, self->height, false);
 }
 
 void widget_draw(t_widget *widget, hw_video_t *video) {
