@@ -245,7 +245,7 @@ void draw_dialog(t_widget *self, hw_video_t *video) {
 void widget_draw(t_widget *widget, hw_video_t *video) {
     if (widget == NULL || !widget->active) return;
 
-    if (widget->draw != NULL){
+    if (widget->draw != NULL)
         widget->draw(widget, video);
 
     t_widget *child = widget->children;
