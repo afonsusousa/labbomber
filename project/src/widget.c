@@ -1,4 +1,5 @@
 #include "widget.h"
+#include "draw.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,6 +12,14 @@
 #define W95_DARK_GRAY  0x8410 
 #define W95_WHITE      0xFFFF 
 #define W95_BLACK      0x0000 
+
+widget_draw_func default_draw_funcs[] = {
+    [CANVAS]     = draw_canvas,
+    [BUTTON]     = draw_button,
+    [TEXT]       = draw_text,
+    [TEXT_INPUT] = draw_text_input,
+    [DIALOG]     = draw_dialog
+};
 
 static uint32_t get_abs_x(t_widget *self) {
     if (!self) return 0;
@@ -78,6 +87,8 @@ t_widget* widget_create(e_widget_type type, uint32_t x, uint32_t y, uint32_t wid
     widget->height = height;
     widget->active = true;
     widget->is_clicked = false;
+    widget->h_align = ALIGN_START;
+    widget->v_align = ALIGN_START;
     widget->draw = default_draw_funcs[type];
     return widget;
 }
@@ -176,14 +187,25 @@ void draw_button(t_widget *self, hw_video_t *video) {
     
     hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
     
-    // Draw 3D border (sunken if clicked and raised if not)
+    // 3D border (sunken if clicked and raised if not)
     bool is_sunken = self->is_clicked; 
     draw_win95_border(video, abs_x, abs_y, self->width, self->height, is_sunken);
+
+    if (self->data.button.label != NULL) {
+        // scaled font is 11px wide
+        int text_w = strlen(self->data.button.label) * 11;
+        int text_x = abs_x + (self->width - text_w) / 2;
+        int text_y = abs_y + (self->height - 11) / 2;
+        draw_string(video, self->data.button.label, text_x, text_y, W95_GRAY);
+    }
 }
 
 void draw_text(t_widget *self, hw_video_t *video) {
     if (!self || !self->active) return;
     hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_LIGHT_GRAY);
+    if (self->data.text_display.text != NULL) {
+        draw_string(video, self->data.text_display.text, get_abs_x(self) + 4, get_abs_y(self) + 4, W95_LIGHT_GRAY);
+    }
 }
 
 void draw_text_input(t_widget *self, hw_video_t *video) {
@@ -197,6 +219,10 @@ void draw_text_input(t_widget *self, hw_video_t *video) {
     
     // text inputs are always sunken
     draw_win95_border(video, abs_x, abs_y, self->width, self->height, true);
+
+    if (self->data.text_input.buffer != NULL) {
+        draw_string(video, self->data.text_input.buffer, abs_x + 4, abs_y + (self->height - 11) / 2, color);
+    }
 }
 
 void draw_dialog(t_widget *self, hw_video_t *video) {
@@ -209,14 +235,18 @@ void draw_dialog(t_widget *self, hw_video_t *video) {
     
     // dialog windows are always raised
     draw_win95_border(video, abs_x, abs_y, self->width, self->height, false);
+
+    if (self->data.dialog.title != NULL) {
+        hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, 0x000080); // Title bar background
+        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, 0x000080);
+    }
 }
 
 void widget_draw(t_widget *widget, hw_video_t *video) {
     if (widget == NULL || !widget->active) return;
 
-    if (widget->draw != NULL) {
+    if (widget->draw != NULL){
         widget->draw(widget, video);
-    }
 
     t_widget *child = widget->children;
     while (child != NULL) {
@@ -224,3 +254,4 @@ void widget_draw(t_widget *widget, hw_video_t *video) {
         child = child->next;
     }
 }
+

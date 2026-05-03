@@ -125,7 +125,7 @@ int hw_vbe_draw_rect(hw_video_t *video, uint16_t x, uint16_t y, uint16_t width, 
 }
 
 int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y) {
-    uint32_t    transparent, color = 0;
+    uint32_t    transparent, color;
     uint16_t    draw_x, draw_y;
     uint8_t     *ptr; 
 
@@ -136,19 +136,17 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x
     for (uint16_t i = 0; i < img.height; i++) {
         draw_y = y + i;
         
-        if (draw_y >= video->screen_height) break;
-
         for (uint16_t j = 0; j < img.width; j++) {
             draw_x = x + j;
 
+            color = extract_color(ptr, video->bytes_per_pixel);
+
             if (color != transparent) {
-                hw_vbe_draw_pixel(
-                    video,
-                    draw_x,
-                    draw_y,
-                    extract_color(ptr, video->bytes_per_pixel)
-                );
+                if (draw_x < video->screen_width && draw_y < video->screen_height)
+                    hw_vbe_draw_pixel(video, draw_x, draw_y, color);
             }
+
+            ptr += video->bytes_per_pixel;
         }
     }
 
