@@ -26,7 +26,6 @@ typedef enum {
     WIDGET_FLAG_ACTIVE  = 1u << 0,
     WIDGET_FLAG_CLICKED = 1u << 1,
     WIDGET_FLAG_HOVERED = 1u << 2,
-    WIDGET_FLAG_HITTABLE = 1u << 3,
     WIDGET_FLAG_FOCUSED = 1u << 4
 } e_widget_flag;
 
@@ -45,15 +44,11 @@ typedef enum {
 #define WIDGET_IS_HOVERED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_HOVERED)
 #define WIDGET_SET_HOVERED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_HOVERED, (value))
 
-#define WIDGET_IS_HITTABLE(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_HITTABLE)
 #define WIDGET_IS_FOCUSED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_FOCUSED)
 #define WIDGET_SET_FOCUSED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_FOCUSED, (value))
 
 #define WIDGET_CAN_RECEIVE_FOCUS(widget) \
     ((widget) != NULL && ((widget)->type == BUTTON || (widget)->type == TEXT_INPUT))
-
-#define WIDGET_IS_CONTAINER(widget) \
-    ((widget) != NULL && ((widget)->type == DIALOG || (widget)->type == CANVAS))
 
 typedef struct s_widget {
     e_widget_type   type;
@@ -97,7 +92,9 @@ typedef struct s_widget {
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);
-    void (*on_click)(struct s_widget *self, void *state);
+    void (*on_click)(struct s_widget *self, void *state);     // On mouse release
+    void (*on_press)(struct s_widget *self, void *state);     // On mouse down
+    void (*on_drag)(struct s_widget *self, void *state);      // On mouse move while down
     void (*on_hover)(struct s_widget *self, void *state);
     void (*on_key_press)(struct s_widget *self, uint8_t scancode, void *state);
     void (*on_tick)(struct s_widget *self, void *state);
@@ -114,14 +111,13 @@ int32_t     widget_get_abs_x(t_widget *widget);
 int32_t     widget_get_abs_y(t_widget *widget);
 
 void        widget_draw(t_widget *widget, hw_video_t *video);
-void        widget_layout(t_widget *widget, uint32_t spacing, uint32_t padding, bool is_vertical);
 t_widget*   widget_find_first_focusable(t_widget *root);
 void        draw_canvas(struct s_widget *self, hw_video_t *video);
 void        draw_button(struct s_widget *self, hw_video_t *video);
 void        draw_text(struct s_widget *self, hw_video_t *video);
 void        draw_text_input(struct s_widget *self, hw_video_t *video);
 void        draw_dialog(struct s_widget *self, hw_video_t *video);
-void        draw_close(struct s_widget *self, hw_video_t *video);
+void        draw_game_canvas(struct s_widget *self, hw_video_t *video);
 
 typedef void (*widget_draw_func)(t_widget*, hw_video_t*);
 extern widget_draw_func default_draw_funcs[];

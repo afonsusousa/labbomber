@@ -1,5 +1,6 @@
 #include "widget.h"
 #include "draw.h"
+#include "gui.h" // For t_game_state
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -238,6 +239,21 @@ void draw_dialog(t_widget *self, hw_video_t *video) {
     if (self->data.dialog.title != NULL) {
         hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, 0x000080); // Title bar background
         draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, 0xFFFFFF);
+    }
+}
+
+void draw_game_canvas(t_widget *self, hw_video_t *video) {
+    t_game_state *game = (t_game_state*)self->data.canvas.state;
+    int32_t abs_x = get_abs_x(self);
+    int32_t abs_y = get_abs_y(self);
+
+    uint8_t *src_buf = (uint8_t*)game->pixel_buffer;
+    uint8_t *dest_buf = (uint8_t*)video->double_buffer + (abs_y * video->screen_width + abs_x) * video->bytes_per_pixel;
+
+    for (uint32_t y = 0; y < game->height; ++y) {
+        memcpy(dest_buf, src_buf, game->width * video->bytes_per_pixel);
+        src_buf += game->width * video->bytes_per_pixel;
+        dest_buf += video->screen_width * video->bytes_per_pixel;
     }
 }
 
