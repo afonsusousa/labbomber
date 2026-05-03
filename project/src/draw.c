@@ -48,7 +48,7 @@ int draw_mouse(hw_mouse_t *mouse, hw_video_t *video) {
     return 0;
 }
 
-int draw_string(hw_video_t *video, const char *str, uint16_t x, uint16_t y, uint32_t bg_color) {
+int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32_t bg_color) {
     if (str == NULL) return 1;
 
     for (int i = 0; str[i] != '\0'; i++) {
@@ -65,8 +65,8 @@ int draw_string(hw_video_t *video, const char *str, uint16_t x, uint16_t y, uint
                         uint32_t color = 0;
                         for (unsigned k = 0; k < video->bytes_per_pixel; k++)
                             color |= (ptr[k]) << (k * 8);
-                        uint16_t draw_x = x + (i * LETTER_W) + w;
-                        uint16_t draw_y = y + h;
+                        int32_t draw_x = x + (i * LETTER_W) + w;
+                        int32_t draw_y = y + h;
 
                         if (color != transparent)
                             hw_vbe_draw_pixel(video, draw_x, draw_y, color);

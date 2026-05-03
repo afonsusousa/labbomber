@@ -31,10 +31,10 @@ typedef struct {
 
 int     hw_vbe_init(hw_video_t *video, uint16_t mode);
 int     hw_vbe_clear_screen(hw_video_t *video, uint32_t color);
-int     hw_vbe_draw_pixel(hw_video_t *video, uint16_t x, uint16_t y, uint32_t color);
-int     hw_vbe_draw_hline(hw_video_t *video, uint16_t x, uint16_t y, uint16_t length, uint32_t color);
-int     hw_vbe_draw_vline(hw_video_t *video, uint16_t x, uint16_t y, uint16_t length, uint32_t color);
-int     hw_vbe_draw_rect(hw_video_t *video, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color);
-int     hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y);
+int     hw_vbe_draw_pixel(hw_video_t *video, int32_t x, int32_t y, uint32_t color);
+int     hw_vbe_draw_hline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color);
+int     hw_vbe_draw_vline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color);
+int     hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, uint16_t height, uint32_t color);
+int     hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y);
 void    hw_vbe_flip_buffer(hw_video_t *video);
 int     hw_vbe_exit();

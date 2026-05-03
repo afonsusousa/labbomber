@@ -11,7 +11,6 @@
 #include "widget.h"
 #include "gui.h"
 
-
 int main(int argc, char *argv[]) {
   lcf_set_language("EN-US");
   lcf_trace_calls("/home/lcom/labs/lab4/trace.txt");
@@ -41,68 +40,57 @@ int(proj_main_loop)(int argc, char* argv[]) {
     int ipc_status;
     message msg;
     while (hw_state.is_running) {
-        
         if (driver_receive(ANY, &msg, &ipc_status) != 0) {
             printf("driver_receive failed\n");
             continue;
         }
 
         if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
-            
-            //timer
             if (msg.m_notify.interrupts & hw_state.timer.mask) {
                 hw_timer_int_handler(&hw_state.timer);
-
                 hw_vbe_clear_screen(&hw_state.video, 0x0);
-                if (gui.current_menu != NULL)
-                    widget_draw(gui.current_menu, &hw_state.video);
-
+                if (gui.current_view != NULL)
+                    widget_draw(gui.current_view, &hw_state.video);
                 draw_mouse(&hw_state.mouse, &hw_state.video);
                 hw_vbe_flip_buffer(&hw_state.video);
             }
-            
-            //keyboard
+
             if (msg.m_notify.interrupts & hw_state.keyboard.mask) {
                 hw_keyboard_ih(&hw_state.keyboard);
-                if (hw_state.keyboard.keys_pressed[0x01]) {
-                    // ESC pressed
-                    if (gui.current_menu == gui.start_menu) {
+                if (hw_state.keyboard.keys_pressed[0x01]) { // ESC
+                    if (gui.current_view != NULL && gui.current_view->on_quit != NULL) {
+                        gui.current_view->on_quit(gui.current_view, &gui);
+                    } else if (gui.current_view == gui.start_menu) {
                         hw_state.is_running = false;
-                    } else if (gui.current_menu == gui.single_name_menu || gui.current_menu == gui.multi_name_menu) {
-                        gui.current_menu = gui.start_menu;
-                        hw_state.keyboard.keys_pressed[0x01] = false;
                     }
                 }
             }
-            
-            //mouse
+
             if (msg.m_notify.interrupts & hw_state.mouse.mask) {
                 if (hw_mouse_ih(&hw_state.mouse)) {
-                    uint32_t mx = hw_state.mouse.x;
-                    uint32_t my = hw_state.mouse.y;
-                    
-                    if (gui.hovered_widget != NULL) {
-                        gui.hovered_widget->hovered = false;
+                    int32_t mx = hw_state.mouse.x;
+                    int32_t my = hw_state.mouse.y;
+
+                    t_widget* new_hover = widget_get_at(gui.current_view, mx, my);
+                    if (gui.hovered != new_hover) {
+                        if (gui.hovered != NULL) WIDGET_SET_HOVERED(gui.hovered, false);
+                        gui.hovered = new_hover;
+                        if (gui.hovered != NULL) WIDGET_SET_HOVERED(gui.hovered, true);
                     }
-                    
-                    gui.hovered_widget = widget_get_at(gui.current_menu, mx, my);
-                    if (gui.hovered_widget != NULL) {
-                        gui.hovered_widget->hovered = true;
-                        if (gui.hovered_widget->on_hover != NULL) {
-                            gui.hovered_widget->on_hover(gui.hovered_widget);
-                        }
-                    }
-                    
+
                     if (hw_state.mouse.left_click) {
-                        if (gui.hovered_widget != NULL) {
-                            gui.hovered_widget->is_clicked = true;
-                            if (gui.hovered_widget->on_click != NULL) {
-                                gui.hovered_widget->on_click(gui.hovered_widget);
+                        if (gui.hovered != NULL) {
+                            WIDGET_SET_CLICKED(gui.hovered, true);
+                            if (WIDGET_CAN_RECEIVE_FOCUS(gui.hovered)) {
+                                gui_set_focus(&gui, gui.hovered);
+                            }
+                            if (gui.hovered->on_click != NULL) {
+                                gui.hovered->on_click(gui.hovered, &gui);
                             }
                         }
                     } else {
-                        if (gui.hovered_widget != NULL) {
-                            gui.hovered_widget->is_clicked = false;
+                        if (gui.hovered != NULL) {
+                            WIDGET_SET_CLICKED(gui.hovered, false);
                         }
                     }
                 }

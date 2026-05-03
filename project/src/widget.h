@@ -1,9 +1,12 @@
-#ifndef _WIDGET_H_
-#define _WIDGET_H_
+#ifndef LCOM_PROJECT_WIDGET_H
+#define LCOM_PROJECT_WIDGET_H
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "../lib/vbe/vbe.h"
+
+// Forward declaration
+struct s_widget;
 
 typedef enum {
     ALIGN_START,
@@ -19,10 +22,43 @@ typedef enum {
     CANVAS
 } e_widget_type;
 
+typedef enum {
+    WIDGET_FLAG_ACTIVE  = 1u << 0,
+    WIDGET_FLAG_CLICKED = 1u << 1,
+    WIDGET_FLAG_HOVERED = 1u << 2,
+    WIDGET_FLAG_HITTABLE = 1u << 3,
+    WIDGET_FLAG_FOCUSED = 1u << 4
+} e_widget_flag;
+
+#define WIDGET_HAS_FLAG(widget, flag) ((widget)->flags & (flag))
+#define WIDGET_SET_FLAG(widget, flag) ((widget)->flags |= (flag))
+#define WIDGET_UNSET_FLAG(widget, flag) ((widget)->flags &= ~(flag))
+#define WIDGET_ASSIGN_FLAG(widget, flag, value) \
+    ((widget)->flags = ((widget)->flags & ~(flag)) | ((value) ? (flag) : 0))
+
+#define WIDGET_IS_ACTIVE(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_ACTIVE)
+#define WIDGET_SET_ACTIVE(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_ACTIVE, (value))
+
+#define WIDGET_IS_CLICKED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_CLICKED)
+#define WIDGET_SET_CLICKED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_CLICKED, (value))
+
+#define WIDGET_IS_HOVERED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_HOVERED)
+#define WIDGET_SET_HOVERED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_HOVERED, (value))
+
+#define WIDGET_IS_HITTABLE(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_HITTABLE)
+#define WIDGET_IS_FOCUSED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_FOCUSED)
+#define WIDGET_SET_FOCUSED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_FOCUSED, (value))
+
+#define WIDGET_CAN_RECEIVE_FOCUS(widget) \
+    ((widget) != NULL && ((widget)->type == BUTTON || (widget)->type == TEXT_INPUT))
+
+#define WIDGET_IS_CONTAINER(widget) \
+    ((widget) != NULL && ((widget)->type == DIALOG || (widget)->type == CANVAS))
+
 typedef struct s_widget {
     e_widget_type   type;
-    
-    uint32_t        x, y;
+
+    int32_t         x, y;
     uint32_t        height, width;
 
     e_alignment     h_align;
@@ -33,28 +69,26 @@ typedef struct s_widget {
     struct s_widget *next;
     struct s_widget *prev;
 
-    bool            active;
-    bool            is_clicked;
-    bool            hovered;
-    bool            hittable;
+    uint32_t        flags;
 
     union {
         struct {
-            char *label;
+            char        *label;
         } button;
         
         struct {
-            char *text;
+            char        *text;
         } text_display;
         
         struct {
-            char *buffer;
-            uint32_t max_length;
-            uint32_t cursor_pos;
+            char        *buffer;
+            uint32_t    max_length;
+            uint32_t    cursor_pos;
         } text_input;
 
         struct {
-            char *title;
+            char				*title;
+            struct s_widget    *close_button;
         } dialog;
         
         struct {
@@ -63,28 +97,33 @@ typedef struct s_widget {
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);
-    void (*on_click)(struct s_widget *self);
-    void (*on_hover)(struct s_widget *self);
-    void (*on_key_press)(struct s_widget *self, uint8_t scancode);
-    void (*on_tick)(struct s_widget *self, void *data);
+    void (*on_click)(struct s_widget *self, void *state);
+    void (*on_hover)(struct s_widget *self, void *state);
+    void (*on_key_press)(struct s_widget *self, uint8_t scancode, void *state);
+    void (*on_tick)(struct s_widget *self, void *state);
+    void (*on_quit)(struct s_widget *self, void *state);
 
 } t_widget;
 
-t_widget*   widget_create(e_widget_type type, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+t_widget*   widget_create(e_widget_type type, int32_t x, int32_t y, uint32_t width, uint32_t height);
 void        widget_add_child(t_widget *parent, t_widget *child);
 void        widget_destroy(t_widget *widget);
-void        widget_hide(t_widget *widget);
-t_widget*   widget_get_at(t_widget *root, uint32_t x, uint32_t y);
+t_widget*   widget_set_position(t_widget *widget, int32_t x, int32_t y);
+t_widget*   widget_get_at(t_widget *root, int32_t x, int32_t y);
+int32_t     widget_get_abs_x(t_widget *widget);
+int32_t     widget_get_abs_y(t_widget *widget);
+
 void        widget_draw(t_widget *widget, hw_video_t *video);
 void        widget_layout(t_widget *widget, uint32_t spacing, uint32_t padding, bool is_vertical);
-
-void        draw_canvas(t_widget *self, hw_video_t *video);
-void        draw_button(t_widget *self, hw_video_t *video);
-void        draw_text(t_widget *self, hw_video_t *video);
-void        draw_text_input(t_widget *self, hw_video_t *video);
-void        draw_dialog(t_widget *self, hw_video_t *video);
+t_widget*   widget_find_first_focusable(t_widget *root);
+void        draw_canvas(struct s_widget *self, hw_video_t *video);
+void        draw_button(struct s_widget *self, hw_video_t *video);
+void        draw_text(struct s_widget *self, hw_video_t *video);
+void        draw_text_input(struct s_widget *self, hw_video_t *video);
+void        draw_dialog(struct s_widget *self, hw_video_t *video);
+void        draw_close(struct s_widget *self, hw_video_t *video);
 
 typedef void (*widget_draw_func)(t_widget*, hw_video_t*);
 extern widget_draw_func default_draw_funcs[];
 
-#endif /* _WIDGET_H_ */
+#endif /* LCOM_PROJECT_WIDGET_H */

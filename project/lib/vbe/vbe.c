@@ -80,53 +80,57 @@ static inline uint32_t extract_color(const uint8_t *pixel_data, unsigned bytes_p
     return color;
 }
 
-int hw_vbe_draw_pixel(hw_video_t *video, uint16_t x, uint16_t y, uint32_t color) {
-    if (x >= video->screen_width || y >= video->screen_height) return 0;
+int hw_vbe_draw_pixel(hw_video_t *video, int32_t x, int32_t y, uint32_t color) {
+    if (video == NULL || video->double_buffer == NULL) return 1;
+    if (x < 0 || y < 0) return 0;
+    if ((uint32_t)x >= video->screen_width || (uint32_t)y >= video->screen_height) return 0;
 
     uint8_t *pixel_ptr = video->double_buffer 
-                        + (y * video->bytes_per_scanline) 
-                        + (x * video->bytes_per_pixel);
+                        + ((uint32_t)y * video->bytes_per_scanline) 
+                        + ((uint32_t)x * video->bytes_per_pixel);
 
     memcpy(pixel_ptr, &color, video->bytes_per_pixel);
 
     return 0;
 }
 
-int hw_vbe_draw_hline(hw_video_t *video, uint16_t x, uint16_t y, uint16_t length, uint32_t color) {
+int hw_vbe_draw_hline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color) {
     if (video == NULL || video->double_buffer == NULL) return 1;
 
     for (uint16_t offset = 0; offset < length; offset++) {
-        if (x + offset >= video->screen_width) break;
-        hw_vbe_draw_pixel(video, x + offset, y, color);
+        int32_t draw_x = x + (int32_t)offset;
+        if (draw_x < 0 || (uint32_t)draw_x >= video->screen_width) continue;
+        hw_vbe_draw_pixel(video, draw_x, y, color);
     }
 
     return 0;
 }
 
-int hw_vbe_draw_vline(hw_video_t *video, uint16_t x, uint16_t y, uint16_t length, uint32_t color) {
+int hw_vbe_draw_vline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color) {
     if (video == NULL || video->double_buffer == NULL) return 1;
 
     for (uint16_t offset = 0; offset < length; offset++) {
-        if (y + offset >= video->screen_height) break;
-        hw_vbe_draw_pixel(video, x, y + offset, color);
+        int32_t draw_y = y + (int32_t)offset;
+        if (draw_y < 0 || (uint32_t)draw_y >= video->screen_height) continue;
+        hw_vbe_draw_pixel(video, x, draw_y, color);
     }
 
     return 0;
 }
 
-int hw_vbe_draw_rect(hw_video_t *video, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color) {
+int hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, uint16_t height, uint32_t color) {
     if (video == NULL || video->double_buffer == NULL) return 1;
     if (width == 0 || height == 0) return 0;
 
     for (uint16_t i = 0; i < height; i++)
-        hw_vbe_draw_hline(video, x, y + i, width, color);
+        hw_vbe_draw_hline(video, x, y + (int32_t)i, width, color);
 
     return 0;
 }
 
-int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x, uint16_t y) {
+int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y) {
     uint32_t    transparent, color;
-    uint16_t    draw_x, draw_y;
+    int32_t     draw_x, draw_y;
     uint8_t     *ptr; 
 
     if ((ptr = map) == NULL) return 1;
@@ -134,15 +138,15 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, uint16_t x
     transparent = xpm_transparency_color(img.type);
 
     for (uint16_t i = 0; i < img.height; i++) {
-        draw_y = y + i;
+            draw_y = y + (int32_t)i;
         
         for (uint16_t j = 0; j < img.width; j++) {
-            draw_x = x + j;
+            draw_x = x + (int32_t)j;
 
             color = extract_color(ptr, video->bytes_per_pixel);
 
             if (color != transparent) {
-                if (draw_x < video->screen_width && draw_y < video->screen_height)
+                if (draw_x >= 0 && draw_y >= 0 && (uint32_t)draw_x < video->screen_width && (uint32_t)draw_y < video->screen_height)
                     hw_vbe_draw_pixel(video, draw_x, draw_y, color);
             }
 
