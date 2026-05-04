@@ -1,6 +1,6 @@
 #include "widget.h"
 #include "draw.h"
-#include "gui.h" // For t_game_state
+#include "gui/gui.h" // For t_game_state
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -266,6 +266,19 @@ void widget_draw(t_widget *widget, hw_video_t *video) {
     t_widget *child = widget->children;
     while (child != NULL) {
         widget_draw(child, video);
+        child = child->next;
+    }
+}
+
+void widget_tick(t_widget *widget) {
+    if (widget == NULL) return;
+
+    if (widget->on_tick != NULL)
+        widget->on_tick(widget);
+
+    t_widget *child = widget->children;
+    while (child != NULL) {
+        widget_tick(child);
         child = child->next;
     }
 }

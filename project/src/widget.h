@@ -92,13 +92,13 @@ typedef struct s_widget {
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);
-    void (*on_click)(struct s_widget *self, void *state);     // On mouse release
-    void (*on_press)(struct s_widget *self, void *state);     // On mouse down
-    void (*on_drag)(struct s_widget *self, void *state);      // On mouse move while down
-    void (*on_hover)(struct s_widget *self, void *state);
-    void (*on_key_press)(struct s_widget *self, uint8_t scancode, void *state);
-    void (*on_tick)(struct s_widget *self, void *state);
-    void (*on_quit)(struct s_widget *self, void *state);
+    void (*on_click)(struct s_widget *self);     // On mouse release
+    void (*on_press)(struct s_widget *self);     // On mouse down
+    void (*on_drag)(struct s_widget *self);      // On mouse move while down
+    void (*on_hover)(struct s_widget *self);
+    void (*on_key_press)(struct s_widget *self, uint8_t scancode);
+    void (*on_tick)(struct s_widget *self);
+    void (*on_quit)(struct s_widget *self);
 
 } t_widget;
 
@@ -111,6 +111,7 @@ int32_t     widget_get_abs_x(t_widget *widget);
 int32_t     widget_get_abs_y(t_widget *widget);
 
 void        widget_draw(t_widget *widget, hw_video_t *video);
+void        widget_tick(t_widget *widget);
 t_widget*   widget_find_first_focusable(t_widget *root);
 void        draw_canvas(struct s_widget *self, hw_video_t *video);
 void        draw_button(struct s_widget *self, hw_video_t *video);
