@@ -8,7 +8,7 @@
 #include "../lib/utils/utils.h"
 #include "game.h"
 #include "draw.h"
-#include "widget.h"
+#include "widgets/widget.h"
 #include "gui/gui.h"
 
 int main(int argc, char *argv[]) {
@@ -79,6 +79,12 @@ int(proj_main_loop)(int argc, char* argv[]) {
 			//KEYBOARD
             if (msg.m_notify.interrupts & hw_state.keyboard.mask) {
                 hw_keyboard_ih(&hw_state.keyboard);
+                if (!hw_state.keyboard.is_two_bytes && (hw_state.keyboard.scancode & 0x80) == 0) {
+                    if (gui.input.focused != NULL && gui.input.focused->on_key_press != NULL) {
+                        gui.input.focused->on_key_press(gui.input.focused, hw_state.keyboard.scancode, &gui);
+                    }
+                }
+                
                 bool esc_is_pressed = hw_state.keyboard.keys_pressed[0x01];
                 if (esc_is_pressed && !esc_was_pressed) {
                     t_widget *top_view = gui_get_top_view(&gui);

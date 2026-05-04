@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "../widget.h"
+#include "../widgets/widget.h"
 
 // State for the main game view
 // everything about the game will live here

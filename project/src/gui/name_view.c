@@ -1,7 +1,7 @@
 #include "views.h"
 #include "string.h"
 #include "stdlib.h"
-#include "../widget.h"
+#include "../widgets/widget.h"
 
 static void on_btn_start_game_click(t_widget *self, void *state) {
     (void)self;

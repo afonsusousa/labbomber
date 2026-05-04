@@ -1,5 +1,5 @@
 #include "views.h"
-#include "../widget.h"
+#include "../widgets/widget.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 #include "views.h"
-#include "../widget.h"
+#include "../widgets/widget.h"
 #include <stdio.h>
 
 static void on_btn_singleplayer_click(t_widget *self, void *state) {

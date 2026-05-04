@@ -6,6 +6,14 @@
 #include "../lib/vbe/vbe.h"
 
 // Forward declaration
+// Win95 16-bit RGB 5:6:5 Color Palette
+#define W95_TEAL       0x0410 
+#define W95_GRAY       0xC618 
+#define W95_LIGHT_GRAY 0xDEFB 
+#define W95_DARK_GRAY  0x8410 
+#define W95_WHITE      0xFFFF 
+#define W95_BLACK      0x0000 
+
 struct s_widget;
 
 typedef enum {
@@ -80,6 +88,8 @@ typedef struct s_widget {
             char        *buffer;
             uint32_t    max_length;
             uint32_t    cursor_pos;
+            bool        cursor_visible;
+            uint32_t    blink_timer;
         } text_input;
 
         struct {
@@ -113,6 +123,8 @@ t_widget*   widget_set_position(t_widget *widget, int32_t x, int32_t y);
 t_widget*   widget_get_at(t_widget *root, int32_t x, int32_t y);
 int32_t     widget_get_abs_x(t_widget *widget);
 int32_t     widget_get_abs_y(t_widget *widget);
+
+void        draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, bool sunken);
 
 void        widget_draw(t_widget *widget, hw_video_t *video);
 void        widget_tick(t_widget *widget, void *state);
