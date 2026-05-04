@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../widget.h"
-#include "views.h"
 
 // State for the main game view
 // everything about the game will live here
@@ -13,6 +12,8 @@ typedef struct {
     uint32_t width;
     uint32_t height;
 } t_game_state;
+
+#define MAX_VIEWS 10
 
 typedef struct s_gui {
     struct {
@@ -31,22 +32,11 @@ typedef struct s_gui {
     } drag;
 
     struct {
-        t_widget *start_menu;
-        t_widget *single_name_menu;
-        t_widget *multi_name_menu;
-        t_widget *game_view;
-        t_widget *current_view;
+        t_widget *view_stack[MAX_VIEWS];
+        bool      is_overlay[MAX_VIEWS];
+        int32_t   view_count;
     } views;
 
-    struct {
-        t_widget *pause_overlay;
-        t_widget *pause_dialog;
-        t_widget *confirm_overlay;
-        t_widget *confirm_dialog;
-        t_widget *confirm_text;
-        t_widget *confirm_yes;
-        t_widget *confirm_no;
-    } dialogs;
 } t_gui;
 
 extern t_gui g_gui;
@@ -55,10 +45,18 @@ void      gui_init(uint32_t screen_width, uint32_t screen_height);
 void      gui_destroy(void);
 void      gui_set_focus(t_widget *widget);
 void      gui_set_active(t_widget *widget, bool active);
-void      gui_set_view(t_widget *view);
 void      widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical);
 
-void      on_dialog_press(t_widget *self);
-void      on_dialog_drag(t_widget *self);
+// Generic event handlers
+void      on_dialog_press(t_widget *self, void *state);
+void      on_dialog_drag(t_widget *self, void *state);
+
+// Stack API
+void      gui_push_view(t_widget *view);
+void      gui_push_overlay(t_widget *overlay);
+void      gui_pop_view(void);
+t_widget* gui_get_top_view(void);
+
+#include "views.h"
 
 #endif /* LCOM_PROJECT_GUI_H */

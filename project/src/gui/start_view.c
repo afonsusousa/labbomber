@@ -2,27 +2,31 @@
 #include "../widget.h"
 #include <stdio.h>
 
-// Forward declaration for layout function in gui.c
-void widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical);
-
-static void on_btn_singleplayer_click(t_widget *self) {
+static void on_btn_singleplayer_click(t_widget *self, void *state) {
     (void)self;
-    gui_set_view(g_gui.views.single_name_menu);
+    (void)state;
+
+    t_widget *name_menu = gui_init_name_menu(g_gui.views.view_stack[0]->width, g_gui.views.view_stack[0]->height, false);
+    gui_push_view(name_menu);
 }
 
-static void on_btn_multiplayer_click(t_widget *self) {
+static void on_btn_multiplayer_click(t_widget *self, void *state) {
     (void)self;
-    gui_set_view(g_gui.views.multi_name_menu);
+    (void)state;
+
+    t_widget *name_menu = gui_init_name_menu(g_gui.views.view_stack[0]->width, g_gui.views.view_stack[0]->height, true);
+    gui_push_view(name_menu);
 }
 
-static void on_btn_scoreboard_click(t_widget *self) {
+static void on_btn_scoreboard_click(t_widget *self, void *state) {
     (void)self;
+    (void)state;
     printf("Scoreboard Button Clicked!\n");
 }
 
-void gui_init_start_menu(uint32_t screen_width, uint32_t screen_height) {
+t_widget* gui_init_start_menu(uint32_t screen_width, uint32_t screen_height) {
     t_widget *menu = widget_create(CANVAS, 0, 0, screen_width, screen_height);
-    if (!menu) return;
+    if (!menu) return NULL;
 
     t_widget *btn_single = widget_create(BUTTON, 0, 0, 300, 50);
     btn_single->data.button.label = "Singleplayer";
@@ -41,6 +45,5 @@ void gui_init_start_menu(uint32_t screen_width, uint32_t screen_height) {
 
     widget_layout(menu, 30, 100, true);
 
-    menu->on_quit = NULL; // Special case for start menu
-    g_gui.views.start_menu = menu;
+    return menu;
 }

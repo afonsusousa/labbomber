@@ -121,6 +121,11 @@ t_widget* widget_set_position(t_widget *widget, int32_t x, int32_t y) {
 void widget_destroy(t_widget *widget) {
     if (widget == NULL) return;
 
+    // Trigger lifecycle hook before destroying children
+    if (widget->on_destroy != NULL) {
+        widget->on_destroy(widget);
+    }
+
     t_widget *child = widget->children;
     while (child != NULL) {
         t_widget *next_child = child->next;
@@ -140,7 +145,7 @@ void widget_destroy(t_widget *widget) {
 }
 
 t_widget* widget_find_first_focusable(t_widget *root) {
-    if (root == NULL)
+    if (root == NULL || !WIDGET_IS_ACTIVE(root))
         return NULL;
 
     if (WIDGET_CAN_RECEIVE_FOCUS(root))
@@ -271,10 +276,10 @@ void widget_draw(t_widget *widget, hw_video_t *video) {
 }
 
 void widget_tick(t_widget *widget) {
-    if (widget == NULL) return;
+    if (widget == NULL || !WIDGET_IS_ACTIVE(widget)) return;
 
     if (widget->on_tick != NULL)
-        widget->on_tick(widget);
+        widget->on_tick(widget, NULL);
 
     t_widget *child = widget->children;
     while (child != NULL) {

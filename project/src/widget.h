@@ -82,8 +82,8 @@ typedef struct s_widget {
         } text_input;
 
         struct {
-            char				*title;
-            struct s_widget    *close_button;
+            char        *title;
+            struct s_widget *close_button;
         } dialog;
         
         struct {
@@ -92,13 +92,16 @@ typedef struct s_widget {
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);
-    void (*on_click)(struct s_widget *self);     // On mouse release
-    void (*on_press)(struct s_widget *self);     // On mouse down
-    void (*on_drag)(struct s_widget *self);      // On mouse move while down
-    void (*on_hover)(struct s_widget *self);
-    void (*on_key_press)(struct s_widget *self, uint8_t scancode);
-    void (*on_tick)(struct s_widget *self);
-    void (*on_quit)(struct s_widget *self);
+    void (*on_click)(struct s_widget *self, void *state);
+    void (*on_press)(struct s_widget *self, void *state);
+    void (*on_drag)(struct s_widget *self, void *state);
+    void (*on_hover)(struct s_widget *self, void *state);
+    void (*on_key_press)(struct s_widget *self, uint8_t scancode, void *state);
+    void (*on_tick)(struct s_widget *self, void *state);
+    void (*on_quit)(struct s_widget *self, void *state);
+
+    // Lifecycle hook for cleanup
+    void (*on_destroy)(struct s_widget *self);
 
 } t_widget;
 

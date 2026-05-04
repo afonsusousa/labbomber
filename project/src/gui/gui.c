@@ -36,11 +36,22 @@ void gui_set_active(t_widget *widget, bool active) {
 
     if (!active) {
         // Robust cleanup: if any global input state belongs to this widget or its children, clear it.
-        if (is_descendant(widget, g_gui.input.hovered)) g_gui.input.hovered = NULL;
-        if (is_descendant(widget, g_gui.input.clicked_widget)) g_gui.input.clicked_widget = NULL;
-        if (is_descendant(widget, g_gui.drag.dragged_widget)) g_gui.drag.dragged_widget = NULL;
+        // We also ensure visual flags are cleared so they don't reappear as hovered/clicked next time they are shown.
+        if (is_descendant(widget, g_gui.input.hovered)) {
+            WIDGET_SET_HOVERED(g_gui.input.hovered, false);
+            g_gui.input.hovered = NULL;
+        }
+        if (is_descendant(widget, g_gui.input.clicked_widget)) {
+            WIDGET_SET_CLICKED(g_gui.input.clicked_widget, false);
+            g_gui.input.clicked_widget = NULL;
+        }
+        if (is_descendant(widget, g_gui.drag.dragged_widget)) {
+            g_gui.drag.dragged_widget = NULL;
+        }
 
-        if (is_descendant(widget, g_gui.input.previous_focus)) g_gui.input.previous_focus = NULL;
+        if (is_descendant(widget, g_gui.input.previous_focus)) {
+            g_gui.input.previous_focus = NULL;
+        }
 
         if (is_descendant(widget, g_gui.input.focused)) {
             t_widget *prev = g_gui.input.previous_focus;
@@ -59,14 +70,50 @@ void gui_set_active(t_widget *widget, bool active) {
     }
 }
 
-void gui_set_view(t_widget *view) {
-    g_gui.views.current_view = view;
-    if (g_gui.views.current_view) {
-        gui_set_focus(widget_find_first_focusable(g_gui.views.current_view));
+void gui_push_view(t_widget *view) {
+    if (g_gui.views.view_count >= MAX_VIEWS) return;
+
+    gui_set_focus(NULL);
+    g_gui.views.view_stack[g_gui.views.view_count] = view;
+    g_gui.views.is_overlay[g_gui.views.view_count] = false;
+    g_gui.views.view_count++;
+
+    gui_set_focus(widget_find_first_focusable(view));
+}
+
+void gui_push_overlay(t_widget *overlay) {
+    if (g_gui.views.view_count >= MAX_VIEWS) return;
+
+    gui_set_focus(NULL);
+    g_gui.views.view_stack[g_gui.views.view_count] = overlay;
+    g_gui.views.is_overlay[g_gui.views.view_count] = true;
+    g_gui.views.view_count++;
+
+    gui_set_focus(widget_find_first_focusable(overlay));
+}
+
+void gui_pop_view(void) {
+    if (g_gui.views.view_count <= 0) return;
+
+    t_widget *popped = g_gui.views.view_stack[g_gui.views.view_count - 1];
+    gui_set_active(popped, false);
+
+    g_gui.views.view_count--;
+
+    if (g_gui.views.view_count > 0) {
+        t_widget *new_top = g_gui.views.view_stack[g_gui.views.view_count - 1];
+        gui_set_focus(widget_find_first_focusable(new_top));
     }
 }
 
-void on_dialog_press(t_widget *self) {
+t_widget* gui_get_top_view(void) {
+    if (g_gui.views.view_count == 0) return NULL;
+    return g_gui.views.view_stack[g_gui.views.view_count - 1];
+}
+
+
+void on_dialog_press(t_widget *self, void *state) {
+    (void)state;
     int32_t abs_y = widget_get_abs_y(self);
     if (g_gui.input.mouse_y >= abs_y && g_gui.input.mouse_y < abs_y + 24) {
         g_gui.drag.dragged_widget = self;
@@ -75,7 +122,8 @@ void on_dialog_press(t_widget *self) {
     }
 }
 
-void on_dialog_drag(t_widget *self) {
+void on_dialog_drag(t_widget *self, void *state) {
+    (void)state;
     int32_t new_x = g_gui.input.mouse_x - g_gui.drag.drag_offset_x;
     int32_t new_y = g_gui.input.mouse_y - g_gui.drag.drag_offset_y;
     widget_set_position(self, new_x, new_y);
@@ -84,31 +132,16 @@ void on_dialog_drag(t_widget *self) {
 void gui_init(uint32_t screen_width, uint32_t screen_height) {
     memset(&g_gui, 0, sizeof(g_gui));
 
-    gui_init_start_menu(screen_width, screen_height);
-    gui_init_name_menu(screen_width, screen_height, false);
-    gui_init_name_menu(screen_width, screen_height, true);
-    gui_init_game_view(screen_width, screen_height);
+    // Construct the views but dont push them yet
+    t_widget *start = gui_init_start_menu(screen_width, screen_height);
 
-    gui_set_view(g_gui.views.start_menu);
+    gui_push_view(start);
 }
 
 void gui_destroy(void) {
-    widget_destroy(g_gui.views.start_menu);
-    widget_destroy(g_gui.views.single_name_menu);
-    widget_destroy(g_gui.views.multi_name_menu);
-
-    if (g_gui.views.game_view) {
-        if (g_gui.views.game_view->children && g_gui.views.game_view->children->next) {
-            t_widget *game_canvas = g_gui.views.game_view->children->next;
-            if (game_canvas->data.canvas.state) {
-                t_game_state *game_state = (t_game_state*)game_canvas->data.canvas.state;
-                free(game_state->pixel_buffer);
-                free(game_state);
-            }
-        }
-        widget_destroy(g_gui.views.game_view);
+    for (int i = 0; i < g_gui.views.view_count; i++) {
+        widget_destroy(g_gui.views.view_stack[i]);
     }
-
     memset(&g_gui, 0, sizeof(g_gui));
 }
 
