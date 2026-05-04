@@ -39,13 +39,13 @@ static void on_dialog_close_click(t_widget *self, void *state) {
 
 t_widget* gui_init_name_menu(t_gui *gui, uint32_t screen_width, uint32_t screen_height, bool is_multiplayer) {
     (void)gui;
-    t_widget *menu = widget_create(CANVAS, 0, 0, screen_width, screen_height);
-    if (!menu) return NULL;
+    t_widget *overlay = widget_create_overlay(screen_width, screen_height, on_view_quit);
+    if (!overlay) return NULL;
 
-    WIDGET_SET_ACTIVE(menu, true);
+    WIDGET_SET_ACTIVE(overlay, true);
 
     const char *title = is_multiplayer ? "Enter Player Names" : "Enter Player Name";
-    t_widget *dlg_prompt = widget_add_dialog(menu, title, 400, 300, screen_width, screen_height, on_dialog_close_click);
+    t_widget *dlg_prompt = widget_add_dialog(overlay, title, 400, 300, screen_width, screen_height, on_dialog_close_click);
 
     widget_add_text_input(dlg_prompt, 0, 0, 300, 40, "Player 1", on_text_input_click);
 
@@ -57,6 +57,5 @@ t_widget* gui_init_name_menu(t_gui *gui, uint32_t screen_width, uint32_t screen_
 
     widget_layout(dlg_prompt, 20, 40, true);
 
-    menu->on_quit = on_view_quit;
-    return menu;
+    return overlay;
 }

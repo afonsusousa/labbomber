@@ -5,8 +5,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((uint32_t)(a) < (uint32_t)(b) ? (uint32_t)(a) : (uint32_t)(b))
+#define MAX(a, b) ((uint32_t)(a) > (uint32_t)(b) ? (uint32_t)(a) : (uint32_t)(b))
 
 static char get_char_from_scancode(uint8_t scancode) {
     if (scancode >= 0x02 && scancode <= 0x0A) return "123456789"[scancode - 0x02];
@@ -74,44 +74,85 @@ static void delete_selection(struct s_widget *self, uint32_t len) {
     self->data.text_input.selection_start = -1;
 }
 
+static uint32_t word_start_offset(const char *buffer, uint32_t cursor_pos) {
+    if (cursor_pos == 0) return 0;
+    uint32_t pos = cursor_pos;
+
+    while (pos > 0 && buffer[pos - 1] == ' ')
+        pos--;
+    while (pos > 0 && buffer[pos - 1] != ' ')
+        pos--;
+        
+    return pos;
+}
+
+static uint32_t word_end_offset(const char *buffer, uint32_t cursor_pos) {
+    uint32_t len = (uint32_t)strlen(buffer);
+    if (cursor_pos >= len) return len;
+    uint32_t pos = cursor_pos;
+
+    while (pos < len && buffer[pos] != ' ')
+        pos++;
+    while (pos < len && buffer[pos] == ' ')
+        pos++;
+        
+    return pos;
+}
+
 static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     if (!WIDGET_IS_FOCUSED(self)) return;
     
+    t_gui *gui = (t_gui*)state;
+    bool is_shift = gui->input.shift_down;
+    bool is_ctrl  = gui->input.ctrl_down;
+
     if (scancode == 0x1C) { // Enter
-        gui_set_focus((t_gui*)state, NULL);
+        gui_set_focus(gui, NULL);
         return;
     }
 
-    uint32_t len = strlen(self->data.text_input.buffer);
+    uint32_t *cursor = &self->data.text_input.cursor_pos;
+    int32_t  *anchor = &self->data.text_input.selection_start;
+    char     *buf    = self->data.text_input.buffer;
+    uint32_t len     = strlen(buf);
 
     if (scancode == 0x4B) { // Left arrow
-        if (has_selection(self)) {
-            self->data.text_input.cursor_pos = MIN(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
-        } else if (self->data.text_input.cursor_pos > 0) {
-            self->data.text_input.cursor_pos--;
-        }
-        self->data.text_input.selection_start = -1;
+        if (is_shift && !has_selection(self)) *anchor = *cursor;
+
+        if (is_ctrl)
+            *cursor = word_start_offset(buf, *cursor);
+        else if (has_selection(self) && !is_shift)
+            *cursor = MIN(*anchor, *cursor);
+        else if (*cursor > 0)
+            (*cursor)--;
+        
+        if (!is_shift) *anchor = -1;
         reset_blink(self);
         
     } else if (scancode == 0x4D) { // Right arrow
-        if (has_selection(self)) {
-            self->data.text_input.cursor_pos = MAX(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
-        } else if (self->data.text_input.cursor_pos < len) {
-            self->data.text_input.cursor_pos++;
-        }
-        self->data.text_input.selection_start = -1;
+        if (is_shift && !has_selection(self)) *anchor = *cursor;
+
+        if (is_ctrl)
+            *cursor = word_end_offset(buf, *cursor);
+        else if (has_selection(self) && !is_shift)
+            *cursor = MAX(*anchor, *cursor);
+        else if (*cursor < len)
+            (*cursor)++;
+        
+        if (!is_shift) *anchor = -1;
         reset_blink(self);
         
     } else if (scancode == 0x0E) { // Backspace
         if (has_selection(self)) {
             delete_selection(self, len);
-        } else if (self->data.text_input.cursor_pos > 0) {
-            memmove(&self->data.text_input.buffer[self->data.text_input.cursor_pos - 1], 
-                    &self->data.text_input.buffer[self->data.text_input.cursor_pos], 
-                    len - self->data.text_input.cursor_pos + 1);
-            self->data.text_input.cursor_pos--;
+        } else if (*cursor > 0) {
+            uint32_t target = is_ctrl ? word_start_offset(buf, *cursor) : (*cursor) - 1;
+            
+            memmove(&buf[target], &buf[*cursor], len - *cursor + 1);
+            *cursor = target;
         }
-        self->data.text_input.selection_start = -1;
+        
+        *anchor = -1;
         reset_blink(self);
         
     } else { // Typing a character
@@ -119,16 +160,14 @@ static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, voi
         if (c != 0) {
             if (has_selection(self)) {
                 delete_selection(self, len);
-                len = strlen(self->data.text_input.buffer);
+                len = strlen(buf); // Refresh length since we just deleted text
             } else {
-                self->data.text_input.selection_start = -1;
+                *anchor = -1;
             }
-            
             if (len < self->data.text_input.max_length) {
-                memmove(&self->data.text_input.buffer[self->data.text_input.cursor_pos + 1], 
-                        &self->data.text_input.buffer[self->data.text_input.cursor_pos], 
-                        len - self->data.text_input.cursor_pos + 1);
-                self->data.text_input.buffer[self->data.text_input.cursor_pos++] = c;
+                memmove(&buf[*cursor + 1], &buf[*cursor], len - *cursor + 1);
+                buf[*cursor] = c;
+                (*cursor)++;
                 reset_blink(self);
             }
         }
@@ -172,27 +211,37 @@ void draw_text_input(t_widget *self, hw_video_t *video) {
     hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);
     draw_win95_border(video, x, y, self->width, self->height, true);
 
-    if (self->data.text_input.buffer != NULL) {
-        x += 4;                       // Shift to internal text X
-        y += (self->height - 11) / 2; // Shift to internal text Y
+    char *buf = self->data.text_input.buffer;
+
+    if (buf != NULL) {
+        uint32_t cursor  = self->data.text_input.cursor_pos;
+        int32_t  anchor  = self->data.text_input.selection_start;
+        bool     visible = self->data.text_input.cursor_visible;
+        
+        x += 4;
+        y += (self->height - 11) / 2; 
         
         bool has_sel = WIDGET_IS_FOCUSED(self) && has_selection(self);
         uint32_t min_s = 0, max_s = 0;
         
+        //Selection Highlight Background
         if (has_sel) {
-            min_s = MIN(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
-            max_s = MIN(MAX(self->data.text_input.selection_start, self->data.text_input.cursor_pos), strlen(self->data.text_input.buffer));
+            min_s = MIN(anchor, cursor);
+            max_s = MIN(MAX(anchor, cursor), strlen(buf));
             hw_vbe_draw_rect(video, x + (min_s * 11), y, (max_s - min_s) * 11, 11, W95_TEAL);
         }
         
-        for (int i = 0; self->data.text_input.buffer[i] != '\0'; i++) {
+        //characters
+        for (uint32_t i = 0; buf[i] != '\0'; i++) {
             bool in_sel = has_sel && (i >= min_s) && (i < max_s);
-            char c[2] = { self->data.text_input.buffer[i], '\0' };
+            char c[2] = { buf[i], '\0' };
             draw_string(video, c, x + (i * 11), y, in_sel ? W95_TEAL : base_color);
         }
         
-        if (self->data.text_input.cursor_visible && WIDGET_IS_FOCUSED(self)) {
-            uint32_t cur_x = x + (self->data.text_input.cursor_pos * 11);
+        //Blinking Cursor
+        if (visible && WIDGET_IS_FOCUSED(self)) {
+            uint32_t cur_x = x + (cursor * 11);
+            
             hw_vbe_draw_vline(video, cur_x, y, 11, W95_BLACK);
             hw_vbe_draw_vline(video, cur_x + 1, y, 11, W95_BLACK);
         }

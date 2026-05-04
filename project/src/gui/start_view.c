@@ -6,14 +6,14 @@ static void on_btn_singleplayer_click(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = (t_gui*)state;
     t_widget *name_menu = gui_init_name_menu(gui, gui->views.view_stack[0]->width, gui->views.view_stack[0]->height, false);
-    gui_push_view(gui, name_menu);
+    gui_push_overlay(gui, name_menu);
 }
 
 static void on_btn_multiplayer_click(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = (t_gui*)state;
     t_widget *name_menu = gui_init_name_menu(gui, gui->views.view_stack[0]->width, gui->views.view_stack[0]->height, true);
-    gui_push_view(gui, name_menu);
+    gui_push_overlay(gui, name_menu);
 }
 
 static void on_btn_scoreboard_click(t_widget *self, void *state) {

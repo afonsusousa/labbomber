@@ -23,6 +23,8 @@ typedef struct s_gui {
         t_widget *clicked_widget; // Widget that was pressed down on
         int32_t  mouse_x;
         int32_t  mouse_y;
+        bool     ctrl_down;
+        bool     shift_down;
     } input;
 
     struct {
