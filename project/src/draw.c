@@ -28,6 +28,31 @@ static xpm_row_t const my_mouse_xpm[] = {
 "        .   "
 };
 
+static xpm_row_t const text_cursor_xpm[] = {
+"3 19 2 1",
+"  c None",
+". c #000000",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . ",
+" . "
+};
+
 int draw_mouse(hw_mouse_t *mouse, hw_video_t *video) {
     static bool loaded = false;
     static xpm_image_t img;
@@ -43,6 +68,25 @@ int draw_mouse(hw_mouse_t *mouse, hw_video_t *video) {
     } else {
         // Fallback to old square if xpm fails
         hw_vbe_draw_rect(video, mouse->x, mouse->y, 4, 4, 0xFFFFFF);
+    }
+
+    return 0;
+}
+
+int draw_text_cursor(hw_mouse_t *mouse, hw_video_t *video) {
+    static bool loaded = false;
+    static xpm_image_t img;
+    static uint8_t *map = NULL;
+
+    if (!loaded) {
+        map = xpm_load((xpm_map_t) text_cursor_xpm, XPM_5_6_5, &img);
+        loaded = true;
+    }
+
+    if (map != NULL) {
+        hw_vbe_draw_xpm(video, map, img, mouse->x - (img.width / 2), mouse->y - (img.height / 2));
+    } else {
+        hw_vbe_draw_vline(video, mouse->x, mouse->y - 8, 16, 0x000000);
     }
 
     return 0;

@@ -1,5 +1,6 @@
 #include "widget.h"
 #include "draw.h"
+#include "gui/gui.h" // For t_game_state
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -120,6 +121,11 @@ t_widget* widget_set_position(t_widget *widget, int32_t x, int32_t y) {
 void widget_destroy(t_widget *widget) {
     if (widget == NULL) return;
 
+    // Trigger lifecycle hook before destroying children
+    if (widget->on_destroy != NULL) {
+        widget->on_destroy(widget);
+    }
+
     t_widget *child = widget->children;
     while (child != NULL) {
         t_widget *next_child = child->next;
@@ -139,7 +145,7 @@ void widget_destroy(t_widget *widget) {
 }
 
 t_widget* widget_find_first_focusable(t_widget *root) {
-    if (root == NULL)
+    if (root == NULL || !WIDGET_IS_ACTIVE(root))
         return NULL;
 
     if (WIDGET_CAN_RECEIVE_FOCUS(root))
@@ -241,6 +247,21 @@ void draw_dialog(t_widget *self, hw_video_t *video) {
     }
 }
 
+void draw_game_canvas(t_widget *self, hw_video_t *video) {
+    t_game_state *game = (t_game_state*)self->data.canvas.state;
+    int32_t abs_x = get_abs_x(self);
+    int32_t abs_y = get_abs_y(self);
+
+    uint8_t *src_buf = (uint8_t*)game->pixel_buffer;
+    uint8_t *dest_buf = (uint8_t*)video->double_buffer + (abs_y * video->screen_width + abs_x) * video->bytes_per_pixel;
+
+    for (uint32_t y = 0; y < game->height; ++y) {
+        memcpy(dest_buf, src_buf, game->width * video->bytes_per_pixel);
+        src_buf += game->width * video->bytes_per_pixel;
+        dest_buf += video->screen_width * video->bytes_per_pixel;
+    }
+}
+
 void widget_draw(t_widget *widget, hw_video_t *video) {
     if (widget == NULL || !WIDGET_IS_ACTIVE(widget)) return;
 
@@ -252,4 +273,85 @@ void widget_draw(t_widget *widget, hw_video_t *video) {
         widget_draw(child, video);
         child = child->next;
     }
+}
+
+void widget_tick(t_widget *widget, void *state) {
+    if (widget == NULL || !WIDGET_IS_ACTIVE(widget)) return;
+
+    if (widget->on_tick != NULL)
+        widget->on_tick(widget, state);
+
+    t_widget *child = widget->children;
+    while (child != NULL) {
+        widget_tick(child, state);
+        child = child->next;
+    }
+}
+
+
+// --- BUILDER HELPERS ---
+
+t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*)) {
+    t_widget *btn = widget_create(BUTTON, x, y, w, h);
+    btn->data.button.label = (char*)label;
+    btn->on_click = on_click;
+    widget_add_child(parent, btn);
+    return btn;
+}
+
+t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*)) {
+    t_widget *input = widget_create(TEXT_INPUT, x, y, w, h);
+    input->data.text_input.buffer = (char*)malloc(256);
+    memset(input->data.text_input.buffer, 0, 256);
+    if (default_text) {
+        strcpy(input->data.text_input.buffer, default_text);
+    }
+    input->data.text_input.max_length = 255;
+    input->on_click = on_click;
+    input->on_destroy = (void (*)(struct s_widget*)) free;
+    widget_add_child(parent, input);
+    return input;
+}
+
+t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text) {
+    t_widget *txt = widget_create(TEXT, x, y, w, h);
+    txt->data.text_display.text = (char*)text;
+    widget_add_child(parent, txt);
+    return txt;
+}
+
+// --- OVERLAY / DIALOG HELPERS ---
+
+t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*)) {
+    t_widget *overlay = widget_create(CANVAS, 0, 0, screen_w, screen_h);
+    overlay->draw = NULL; // Transparent overlay
+    overlay->on_quit = on_quit;
+    return overlay;
+}
+
+t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*)) {
+    t_widget *dialog = widget_create(DIALOG, 0, 0, w, h);
+    dialog->data.dialog.title = (char*)title;
+
+    // Default dialog dragging behavior
+    dialog->on_press = on_dialog_press;
+    dialog->on_drag = on_dialog_drag;
+
+    // Center it
+    uint32_t dlg_x = (screen_w > w) ? (screen_w - w) / 2 : 0;
+    uint32_t dlg_y = (screen_h > h) ? (screen_h - h) / 2 : 0;
+    widget_set_position(dialog, dlg_x, dlg_y);
+
+    widget_add_child(parent, dialog);
+
+    if (on_close != NULL) {
+        t_widget *btn_close = widget_create(BUTTON, w - 22, 6, 16, 14);
+        btn_close->data.button.label = "x";
+        btn_close->on_click = on_close;
+        btn_close->flags |= WIDGET_FLAG_NO_LAYOUT; // Add flag to skip layout
+        dialog->data.dialog.close_button = btn_close;
+        widget_add_child(dialog, btn_close);
+    }
+
+    return dialog;
 }
