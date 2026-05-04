@@ -221,7 +221,7 @@ void draw_text_input(t_widget *self, hw_video_t *video) {
         x += 4;
         y += (self->height - 11) / 2; 
         
-        bool has_sel = WIDGET_IS_FOCUSED(self) && has_selection(self);
+        bool has_sel = (WIDGET_IS_FOCUSED(self) || WIDGET_IS_CLICKED(self)) && has_selection(self);
         uint32_t min_s = 0, max_s = 0;
         
         //Selection Highlight Background
