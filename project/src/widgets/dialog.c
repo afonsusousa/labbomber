@@ -1,6 +1,6 @@
 #include "widget.h"
+#include "gui/gui.h"
 #include "../draw.h"
-#include "../gui/gui.h"
 
 static void on_dialog_press(t_widget *self, void *state) {
     t_gui *gui = (t_gui*)state;
@@ -30,7 +30,7 @@ void draw_dialog(t_widget *self, hw_video_t *video) {
 
     if (self->data.dialog.title != NULL) {
         hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, 0x000080); // Title bar background
-        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, 0xFFFFFF);
+        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, 0x000080);
     }
 }
 
@@ -61,20 +61,3 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
     return dialog;
 }
 
-t_widget* widget_create_confirm_dialog(t_gui *gui, uint32_t screen_width, uint32_t screen_height, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
-    (void)gui;
-    t_widget *overlay = widget_create_overlay(screen_width, screen_height, trigger_pop_gui);
-    t_widget *confirm_dialog = widget_add_dialog(overlay, title, 360, 190, screen_width, screen_height, on_no);
-    confirm_dialog->on_quit = trigger_pop_gui;
-
-    widget_add_text(confirm_dialog, 0, 40, 320, 24, message);
-
-    t_widget *btn_yes = widget_add_button(confirm_dialog, 0, 86, 120, 36, "Yes", on_yes);
-    t_widget *btn_no = widget_add_button(confirm_dialog, 0, 86, 120, 36, "No", on_no);
-
-    int32_t btn_row_x = ((int32_t)confirm_dialog->width - (int32_t)(btn_yes->width + btn_no->width + 20)) / 2;
-    widget_set_position(btn_yes, btn_row_x, 120);
-    widget_set_position(btn_no, btn_row_x + (int32_t)btn_yes->width + 20, 120);
-
-    return overlay;
-}

@@ -1,4 +1,4 @@
-#include "gui.h"
+#include "show.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,9 +105,11 @@ t_widget* gui_get_top_view(t_gui *gui) {
 
 void gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {
     memset(gui, 0, sizeof(*gui));
+    gui->width = screen_width;
+    gui->height = screen_height;
 
-    t_widget *start = gui_init_start_menu(gui, screen_width, screen_height);
-    gui_push_view(gui, start);
+    gui_show_start_menu(gui);
+    gui->is_running = true;
 }
 
 void gui_destroy(t_gui *gui) {

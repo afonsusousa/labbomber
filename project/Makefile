@@ -13,7 +13,7 @@ PROG = proj
 .PATH: ${.CURDIR}/lib/vbe
 
 # List EVERY .c file in your project here (no folder paths, just the names)
-SRCS = main.c game.c keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c draw.c widget.c gui.c game_view.c name_view.c start_view.c button.c text.c text_input.c dialog.c canvas.c triggers.c
+SRCS = main.c game.c keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c draw.c widget.c gui.c show.c button.c text.c text_input.c dialog.c canvas.c
 
 # Compilation flags. 
 # We include all the lib folders so your #include "timer.h" statements work seamlessly.

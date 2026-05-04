@@ -66,8 +66,6 @@ static void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pres
             gui->input.focused->on_quit(gui->input.focused, gui);
         } else if (top_view != NULL && top_view->on_quit != NULL) {
             top_view->on_quit(top_view, gui);
-        } else if (gui->views.view_count <= 1) {
-            hw_state->is_running = false;
         }
     }
     *esc_was_pressed = esc_is_pressed;
@@ -90,8 +88,10 @@ static void handle_mouse(hardware_t *hw_state, t_gui *gui) {
     if (*dragged) { // something is being dragged
         
         if (is_pressed) {
-            if ((*dragged)->on_drag) (*dragged)->on_drag(*dragged, gui);
-            else if ((*dragged)->on_press) (*dragged)->on_press(*dragged, gui);
+            if ((*dragged)->on_drag)
+                (*dragged)->on_drag(*dragged, gui);
+            else if ((*dragged)->on_press)
+                (*dragged)->on_press(*dragged, gui);
         } else {
             *dragged = NULL;
         }
@@ -165,7 +165,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     message msg;
     bool esc_was_pressed = false;
 
-    while (hw_state.is_running) {
+    while (gui.is_running) {
         if (driver_receive(ANY, &msg, &ipc_status) != 0) {
             printf("driver_receive failed\n");
             continue;

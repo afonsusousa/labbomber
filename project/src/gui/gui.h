@@ -16,6 +16,10 @@ typedef struct {
 #define MAX_VIEWS 10
 
 typedef struct s_gui {
+    
+    uint32_t width;
+    uint32_t height;
+    bool    is_running;
     struct {
         t_widget *focused;
         t_widget *previous_focus; // Added to track previous focus
@@ -52,11 +56,5 @@ void      gui_push_view(t_gui *gui, t_widget *view);
 void      gui_push_overlay(t_gui *gui, t_widget *overlay);
 void      gui_pop_view(t_gui *gui);
 t_widget* gui_get_top_view(t_gui *gui);
-
-// Generic Events
-void        trigger_pop_gui(t_widget *self, void *state);
-void        trigger_focus_self(t_widget *self, void *state);
-
-#include "views.h"
 
 #endif /* LCOM_PROJECT_GUI_H */
