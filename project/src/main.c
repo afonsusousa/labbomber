@@ -31,7 +31,8 @@ int(proj_main_loop)(int argc, char* argv[]) {
     hardware_t hw_state;
     init_hardware_state(&hw_state);
 
-    gui_init(hw_state.video.screen_width, hw_state.video.screen_height);
+    t_gui gui; // g_gui is now a local variable
+    gui_init(&gui, hw_state.video.screen_width, hw_state.video.screen_height);
 
     if (timer_set_frequency(0, 144 /*fps*/) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
@@ -55,23 +56,18 @@ int(proj_main_loop)(int argc, char* argv[]) {
                 hw_timer_int_handler(&hw_state.timer);
                 hw_vbe_clear_screen(&hw_state.video, 0x0);
 
-                if (g_gui.views.view_count > 0) {
-                    // Find the highest opaque view so we don't draw
-                    // the entire stack if we don't need to.
-                    int start_idx = g_gui.views.view_count - 1;
-                    while (start_idx > 0 && g_gui.views.is_overlay[start_idx]) {
+                if (gui.views.view_count > 0) {
+                    int start_idx = gui.views.view_count - 1;
+                    while (start_idx > 0 && gui.views.is_overlay[start_idx]) {
                         start_idx--;
                     }
-
-                    // Only draw the opaque view and any transparent overlays on top of it
-                    for (int i = start_idx; i < g_gui.views.view_count; i++) {
-                        widget_tick(g_gui.views.view_stack[i]);
-                        widget_draw(g_gui.views.view_stack[i], &hw_state.video);
+                    for (int i = start_idx; i < gui.views.view_count; i++) {
+                        widget_tick(gui.views.view_stack[i], &gui);
+                        widget_draw(gui.views.view_stack[i], &hw_state.video);
                     }
                 }
 
-                // Draw the cursor based on hover state
-                if (g_gui.input.hovered != NULL && g_gui.input.hovered->type == TEXT_INPUT) {
+                if (gui.input.hovered != NULL && gui.input.hovered->type == TEXT_INPUT) {
                     draw_text_cursor(&hw_state.mouse, &hw_state.video);
                 } else {
                     draw_mouse(&hw_state.mouse, &hw_state.video);
@@ -84,13 +80,13 @@ int(proj_main_loop)(int argc, char* argv[]) {
             if (msg.m_notify.interrupts & hw_state.keyboard.mask) {
                 hw_keyboard_ih(&hw_state.keyboard);
                 bool esc_is_pressed = hw_state.keyboard.keys_pressed[0x01];
-                if (esc_is_pressed && !esc_was_pressed) { // ESC just pressed
-                    t_widget *top_view = gui_get_top_view();
-                    if (g_gui.input.focused != NULL && g_gui.input.focused->on_quit != NULL) {
-                        g_gui.input.focused->on_quit(g_gui.input.focused, &g_gui);
+                if (esc_is_pressed && !esc_was_pressed) {
+                    t_widget *top_view = gui_get_top_view(&gui);
+                    if (gui.input.focused != NULL && gui.input.focused->on_quit != NULL) {
+                        gui.input.focused->on_quit(gui.input.focused, &gui);
                     } else if (top_view != NULL && top_view->on_quit != NULL) {
-                        top_view->on_quit(top_view, &g_gui);
-                    } else if (g_gui.views.view_count <= 1) { // Only the base view is left
+                        top_view->on_quit(top_view, &gui);
+                    } else if (gui.views.view_count <= 1) {
                         hw_state.is_running = false;
                     }
                 }
@@ -100,63 +96,54 @@ int(proj_main_loop)(int argc, char* argv[]) {
 			//MOUSE
             if (msg.m_notify.interrupts & hw_state.mouse.mask) {
                 if (hw_mouse_ih(&hw_state.mouse)) {
-                    g_gui.input.mouse_x = hw_state.mouse.x;
-                    g_gui.input.mouse_y = hw_state.mouse.y;
-                    t_widget *top_view = gui_get_top_view();
+                    gui.input.mouse_x = hw_state.mouse.x;
+                    gui.input.mouse_y = hw_state.mouse.y;
+                    t_widget *top_view = gui_get_top_view(&gui);
 
-					// Dragged widgets capture the mouse
-                    if (g_gui.drag.dragged_widget != NULL) {
+					if (gui.drag.dragged_widget != NULL) {
                         if (hw_state.mouse.left_click) {
-                            if (g_gui.drag.dragged_widget->on_drag) {
-                                g_gui.drag.dragged_widget->on_drag(g_gui.drag.dragged_widget, &g_gui);
+                            if (gui.drag.dragged_widget->on_drag) {
+                                gui.drag.dragged_widget->on_drag(gui.drag.dragged_widget, &gui);
                             }
                         } else {
-							g_gui.drag.dragged_widget = NULL;
+							gui.drag.dragged_widget = NULL;
 						}
-                	//if nothing is being dragged, then interpret the actual click
                     } else if (hw_state.mouse.left_click) {
-                        if (g_gui.input.clicked_widget == NULL) {
-                            // --- Mouse Down ---
-                            g_gui.input.clicked_widget = widget_get_at(top_view, g_gui.input.mouse_x, g_gui.input.mouse_y);
-                            if (g_gui.input.clicked_widget != NULL) {
-                                WIDGET_SET_CLICKED(g_gui.input.clicked_widget, true);
-                                if (g_gui.input.clicked_widget->on_press) {
-                                    g_gui.input.clicked_widget->on_press(g_gui.input.clicked_widget, &g_gui);
+                        if (gui.input.clicked_widget == NULL) {
+                            gui.input.clicked_widget = widget_get_at(top_view, gui.input.mouse_x, gui.input.mouse_y);
+                            if (gui.input.clicked_widget != NULL) {
+                                WIDGET_SET_CLICKED(gui.input.clicked_widget, true);
+                                if (gui.input.clicked_widget->on_press) {
+                                    gui.input.clicked_widget->on_press(gui.input.clicked_widget, &gui);
                                 }
                             }
-                        } else if (g_gui.input.clicked_widget->on_drag) {
-                                g_gui.input.clicked_widget->on_drag(g_gui.input.clicked_widget, &g_gui);
+                        } else if (gui.input.clicked_widget->on_drag) {
+                                gui.input.clicked_widget->on_drag(gui.input.clicked_widget, &gui);
                         }
-					// no left click means left click release ;)
                     } else {
-                        if (g_gui.input.clicked_widget != NULL) {
-                            t_widget* clicked = g_gui.input.clicked_widget;
-                            t_widget* current_hover = widget_get_at(top_view, g_gui.input.mouse_x, g_gui.input.mouse_y);
+                        if (gui.input.clicked_widget != NULL) {
+                            t_widget* clicked = gui.input.clicked_widget;
+                            t_widget* current_hover = widget_get_at(top_view, gui.input.mouse_x, gui.input.mouse_y);
 
                             if (clicked == current_hover) {
                                 if (WIDGET_CAN_RECEIVE_FOCUS(clicked))
-                                    gui_set_focus(clicked);
+                                    gui_set_focus(&gui, clicked);
                                 if (clicked->on_click)
-                                    clicked->on_click(clicked, &g_gui);
+                                    clicked->on_click(clicked, &gui);
                             }
-
-                            // Always un-click the visual state of the widget itself
                             WIDGET_SET_CLICKED(clicked, false);
-
-                            // If the global state still tracks this widget as clicked, clear it
-                            if (g_gui.input.clicked_widget == clicked) {
-                                g_gui.input.clicked_widget = NULL;
+                            if (gui.input.clicked_widget == clicked) {
+                                gui.input.clicked_widget = NULL;
                             }
                         }
                     }
 
-					//hover can only happen if nothing is being dragged
-                    if (g_gui.drag.dragged_widget == NULL) {
-                        t_widget* new_hover = widget_get_at(top_view, g_gui.input.mouse_x, g_gui.input.mouse_y);
-                        if (g_gui.input.hovered != new_hover) {
-                            if (g_gui.input.hovered != NULL) WIDGET_SET_HOVERED(g_gui.input.hovered, false);
-                            g_gui.input.hovered = new_hover;
-                            if (g_gui.input.hovered != NULL) WIDGET_SET_HOVERED(g_gui.input.hovered, true);
+                    if (gui.drag.dragged_widget == NULL) {
+                        t_widget* new_hover = widget_get_at(top_view, gui.input.mouse_x, gui.input.mouse_y);
+                        if (gui.input.hovered != new_hover) {
+                            if (gui.input.hovered != NULL) WIDGET_SET_HOVERED(gui.input.hovered, false);
+                            gui.input.hovered = new_hover;
+                            if (gui.input.hovered != NULL) WIDGET_SET_HOVERED(gui.input.hovered, true);
                         }
                     }
                 }
@@ -164,7 +151,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
         }
     }
 
-    gui_destroy();
+    gui_destroy(&gui);
 
     hw_timer_unsubscribe_int(&hw_state.timer);
     hw_keyboard_unsubscribe_int(&hw_state.keyboard);

@@ -39,12 +39,10 @@ typedef struct s_gui {
 
 } t_gui;
 
-extern t_gui g_gui;
-
-void      gui_init(uint32_t screen_width, uint32_t screen_height);
-void      gui_destroy(void);
-void      gui_set_focus(t_widget *widget);
-void      gui_set_active(t_widget *widget, bool active);
+void      gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height);
+void      gui_destroy(t_gui *gui);
+void      gui_set_focus(t_gui *gui, t_widget *widget);
+void      gui_set_active(t_gui *gui, t_widget *widget, bool active);
 void      widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical);
 
 // Generic event handlers
@@ -52,10 +50,10 @@ void      on_dialog_press(t_widget *self, void *state);
 void      on_dialog_drag(t_widget *self, void *state);
 
 // Stack API
-void      gui_push_view(t_widget *view);
-void      gui_push_overlay(t_widget *overlay);
-void      gui_pop_view(void);
-t_widget* gui_get_top_view(void);
+void      gui_push_view(t_gui *gui, t_widget *view);
+void      gui_push_overlay(t_gui *gui, t_widget *overlay);
+void      gui_pop_view(t_gui *gui);
+t_widget* gui_get_top_view(t_gui *gui);
 
 #include "views.h"
 
