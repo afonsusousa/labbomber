@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 static char get_char_from_scancode(uint8_t scancode) {
     if (scancode >= 0x02 && scancode <= 0x0A) return "123456789"[scancode - 0x02];
     if (scancode == 0x0B) return '0';
@@ -41,49 +44,93 @@ static char get_char_from_scancode(uint8_t scancode) {
     return 0;
 }
 
-static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, void *state) {
-    (void)state;
-    if (!WIDGET_IS_FOCUSED(self)) return;
+static bool has_selection(struct s_widget *self) {
+    return self->data.text_input.selection_start != -1 && 
+           self->data.text_input.selection_start != (int32_t)self->data.text_input.cursor_pos;
+}
 
+static void reset_blink(struct s_widget *self) {
+    self->data.text_input.cursor_visible = true;
+    self->data.text_input.blink_timer = 0;
+}
+
+static uint32_t get_pos_from_mouse(struct s_widget *self, t_gui *gui) {
+    int32_t rel_x = gui->input.mouse_x - (widget_get_abs_x(self) + 4);
+    if (rel_x < 0) return 0;
+    return MIN((rel_x + 5) / 11, strlen(self->data.text_input.buffer));
+}
+
+static void delete_selection(struct s_widget *self, uint32_t len) {
+    if (!has_selection(self)) return;
+    
+    uint32_t min_s = MIN(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
+    uint32_t max_s = MAX(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
+    
+    memmove(&self->data.text_input.buffer[min_s],
+            &self->data.text_input.buffer[max_s],
+            len - max_s + 1);
+            
+    self->data.text_input.cursor_pos = min_s;
+    self->data.text_input.selection_start = -1;
+}
+
+static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, void *state) {
+    if (!WIDGET_IS_FOCUSED(self)) return;
+    
     if (scancode == 0x1C) { // Enter
-        t_gui *gui = (t_gui*)state;
-        gui_set_focus(gui, NULL);
+        gui_set_focus((t_gui*)state, NULL);
         return;
     }
 
     uint32_t len = strlen(self->data.text_input.buffer);
 
     if (scancode == 0x4B) { // Left arrow
-        if (self->data.text_input.cursor_pos > 0) {
+        if (has_selection(self)) {
+            self->data.text_input.cursor_pos = MIN(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
+        } else if (self->data.text_input.cursor_pos > 0) {
             self->data.text_input.cursor_pos--;
-            self->data.text_input.cursor_visible = true; // blink reset
-            self->data.text_input.blink_timer = 0;
         }
+        self->data.text_input.selection_start = -1;
+        reset_blink(self);
+        
     } else if (scancode == 0x4D) { // Right arrow
-        if (self->data.text_input.cursor_pos < len) {
+        if (has_selection(self)) {
+            self->data.text_input.cursor_pos = MAX(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
+        } else if (self->data.text_input.cursor_pos < len) {
             self->data.text_input.cursor_pos++;
-            self->data.text_input.cursor_visible = true; // blink reset
-            self->data.text_input.blink_timer = 0;
         }
+        self->data.text_input.selection_start = -1;
+        reset_blink(self);
+        
     } else if (scancode == 0x0E) { // Backspace
-        if (self->data.text_input.cursor_pos > 0) {
-            memmove(&self->data.text_input.buffer[self->data.text_input.cursor_pos - 1],
-                    &self->data.text_input.buffer[self->data.text_input.cursor_pos],
+        if (has_selection(self)) {
+            delete_selection(self, len);
+        } else if (self->data.text_input.cursor_pos > 0) {
+            memmove(&self->data.text_input.buffer[self->data.text_input.cursor_pos - 1], 
+                    &self->data.text_input.buffer[self->data.text_input.cursor_pos], 
                     len - self->data.text_input.cursor_pos + 1);
             self->data.text_input.cursor_pos--;
-            self->data.text_input.cursor_visible = true; // blink reset
-            self->data.text_input.blink_timer = 0;
         }
-    } else {
+        self->data.text_input.selection_start = -1;
+        reset_blink(self);
+        
+    } else { // Typing a character
         char c = get_char_from_scancode(scancode);
-        if (c != 0 && len < self->data.text_input.max_length) {
-            memmove(&self->data.text_input.buffer[self->data.text_input.cursor_pos + 1],
-                    &self->data.text_input.buffer[self->data.text_input.cursor_pos],
-                    len - self->data.text_input.cursor_pos + 1);
-            self->data.text_input.buffer[self->data.text_input.cursor_pos] = c;
-            self->data.text_input.cursor_pos++;
-            self->data.text_input.cursor_visible = true; // blink reset
-            self->data.text_input.blink_timer = 0;
+        if (c != 0) {
+            if (has_selection(self)) {
+                delete_selection(self, len);
+                len = strlen(self->data.text_input.buffer);
+            } else {
+                self->data.text_input.selection_start = -1;
+            }
+            
+            if (len < self->data.text_input.max_length) {
+                memmove(&self->data.text_input.buffer[self->data.text_input.cursor_pos + 1], 
+                        &self->data.text_input.buffer[self->data.text_input.cursor_pos], 
+                        len - self->data.text_input.cursor_pos + 1);
+                self->data.text_input.buffer[self->data.text_input.cursor_pos++] = c;
+                reset_blink(self);
+            }
         }
     }
 }
@@ -91,9 +138,7 @@ static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, voi
 static void on_text_input_tick(struct s_widget *self, void *state) {
     (void)state;
     if (WIDGET_IS_FOCUSED(self)) {
-        self->data.text_input.blink_timer++;
-        // Toggle every half second (approx 72 ticks at 144Hz)
-        if (self->data.text_input.blink_timer >= 72) {
+        if (++self->data.text_input.blink_timer >= 72) {
             self->data.text_input.cursor_visible = !self->data.text_input.cursor_visible;
             self->data.text_input.blink_timer = 0;
         }
@@ -104,49 +149,78 @@ static void on_text_input_tick(struct s_widget *self, void *state) {
 }
 
 static void on_text_input_quit(struct s_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
-    gui_set_focus(gui, NULL);
+    gui_set_focus((t_gui*)state, NULL);
+    self->data.text_input.selection_start = -1;
+}
+
+static void on_text_input_press(struct s_widget *self, void *state) {
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, (t_gui*)state);
+    self->data.text_input.selection_start = self->data.text_input.cursor_pos;
+    reset_blink(self);
+}
+
+static void on_text_input_drag(struct s_widget *self, void *state) {
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, (t_gui*)state);
+    reset_blink(self);
 }
 
 void draw_text_input(t_widget *self, hw_video_t *video) {
-    uint32_t abs_x = widget_get_abs_x(self);
-    uint32_t abs_y = widget_get_abs_y(self);
+    uint32_t x = widget_get_abs_x(self);
+    uint32_t y = widget_get_abs_y(self);
+    uint32_t base_color = WIDGET_IS_CLICKED(self) ? W95_LIGHT_GRAY : W95_GRAY;
     
-    uint32_t color = WIDGET_IS_CLICKED(self) ? W95_WHITE : W95_GRAY;
-    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, color);
-    
-    // text inputs are always sunken
-    draw_win95_border(video, abs_x, abs_y, self->width, self->height, true);
+    hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);
+    draw_win95_border(video, x, y, self->width, self->height, true);
 
     if (self->data.text_input.buffer != NULL) {
-        draw_string(video, self->data.text_input.buffer, abs_x + 4, abs_y + (self->height - 11) / 2, color);
+        x += 4;                       // Shift to internal text X
+        y += (self->height - 11) / 2; // Shift to internal text Y
+        
+        bool has_sel = WIDGET_IS_FOCUSED(self) && has_selection(self);
+        uint32_t min_s = 0, max_s = 0;
+        
+        if (has_sel) {
+            min_s = MIN(self->data.text_input.selection_start, self->data.text_input.cursor_pos);
+            max_s = MIN(MAX(self->data.text_input.selection_start, self->data.text_input.cursor_pos), strlen(self->data.text_input.buffer));
+            hw_vbe_draw_rect(video, x + (min_s * 11), y, (max_s - min_s) * 11, 11, W95_TEAL);
+        }
+        
+        for (int i = 0; self->data.text_input.buffer[i] != '\0'; i++) {
+            bool in_sel = has_sel && (i >= min_s) && (i < max_s);
+            char c[2] = { self->data.text_input.buffer[i], '\0' };
+            draw_string(video, c, x + (i * 11), y, in_sel ? W95_TEAL : base_color);
+        }
         
         if (self->data.text_input.cursor_visible && WIDGET_IS_FOCUSED(self)) {
-            // cursor is placed after the text length
-            int text_w = self->data.text_input.cursor_pos * 11;
-            hw_vbe_draw_vline(video, abs_x + 4 + text_w, abs_y + (self->height - 11) / 2, 11, W95_BLACK);
-            hw_vbe_draw_vline(video, abs_x + 5 + text_w, abs_y + (self->height - 11) / 2, 11, W95_BLACK);
+            uint32_t cur_x = x + (self->data.text_input.cursor_pos * 11);
+            hw_vbe_draw_vline(video, cur_x, y, 11, W95_BLACK);
+            hw_vbe_draw_vline(video, cur_x + 1, y, 11, W95_BLACK);
         }
     }
 }
 
 t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*)) {
-    t_widget *input = widget_create(TEXT_INPUT, x, y, w, h);
-    input->data.text_input.buffer = (char*)malloc(256);
-    memset(input->data.text_input.buffer, 0, 256);
+    t_widget *self = widget_create(TEXT_INPUT, x, y, w, h);
+    
+    self->data.text_input.buffer = (char*)calloc(256, 1);
     if (default_text) {
-        strncpy(input->data.text_input.buffer, default_text, 16);
+        strncpy(self->data.text_input.buffer, default_text, 16);
     }
-    input->data.text_input.max_length = 16;
-    input->data.text_input.cursor_pos = strlen(input->data.text_input.buffer);
-    input->data.text_input.cursor_visible = false;
-    input->data.text_input.blink_timer = 0;
+    
+    self->data.text_input.max_length = 16;
+    self->data.text_input.cursor_pos = strlen(self->data.text_input.buffer);
+    self->data.text_input.selection_start = -1;
+    self->data.text_input.cursor_visible = false;
+    self->data.text_input.blink_timer = 0;
 
-    input->on_click = on_click;
-    input->on_tick = on_text_input_tick;
-    input->on_key_press = on_text_input_key_press;
-    input->on_quit = on_text_input_quit;
-    input->on_destroy = (void (*)(struct s_widget*)) free;
-    widget_add_child(parent, input);
-    return input;
+    self->on_click = on_click;
+    self->on_press = on_text_input_press;
+    self->on_drag = on_text_input_drag;
+    self->on_tick = on_text_input_tick;
+    self->on_key_press = on_text_input_key_press;
+    self->on_quit = on_text_input_quit;
+    self->on_destroy = (void (*)(struct s_widget*)) free;
+    
+    widget_add_child(parent, self);
+    return self;
 }
