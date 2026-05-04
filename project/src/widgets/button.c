@@ -3,8 +3,8 @@
 #include <string.h>
 
 void draw_button(t_widget *self, hw_video_t *video) {
-    uint32_t abs_x = widget_get_abs_x(self);
-    uint32_t abs_y = widget_get_abs_y(self);
+    uint32_t abs_x = get_abs_x(self);
+    uint32_t abs_y = get_abs_y(self);
     
     hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
     

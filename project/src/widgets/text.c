@@ -2,9 +2,9 @@
 #include "../draw.h"
 
 void draw_text(t_widget *self, hw_video_t *video) {
-    hw_vbe_draw_rect(video, widget_get_abs_x(self), widget_get_abs_y(self), self->width, self->height, W95_LIGHT_GRAY);
+    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_LIGHT_GRAY);
     if (self->data.text_display.text != NULL) {
-        draw_string(video, self->data.text_display.text, widget_get_abs_x(self) + 4, widget_get_abs_y(self) + 4, W95_LIGHT_GRAY);
+        draw_string(video, self->data.text_display.text, get_abs_x(self) + 4, get_abs_y(self) + 4, W95_LIGHT_GRAY);
     }
 }
 

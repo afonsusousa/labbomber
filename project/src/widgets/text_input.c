@@ -55,7 +55,7 @@ static void reset_blink(struct s_widget *self) {
 }
 
 static uint32_t get_pos_from_mouse(struct s_widget *self, t_gui *gui) {
-    int32_t rel_x = gui->input.mouse_x - (widget_get_abs_x(self) + 4);
+    int32_t rel_x = gui->input.mouse_x - (get_abs_x(self) + 4);
     if (rel_x < 0) return 0;
     return MIN((rel_x + 5) / 11, strlen(self->data.text_input.buffer));
 }
@@ -204,8 +204,8 @@ static void on_text_input_drag(struct s_widget *self, void *state) {
 }
 
 void draw_text_input(t_widget *self, hw_video_t *video) {
-    uint32_t x = widget_get_abs_x(self);
-    uint32_t y = widget_get_abs_y(self);
+    uint32_t x = get_abs_x(self);
+    uint32_t y = get_abs_y(self);
     uint32_t base_color = WIDGET_IS_CLICKED(self) ? W95_LIGHT_GRAY : W95_GRAY;
     
     hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);

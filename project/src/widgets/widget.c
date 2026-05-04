@@ -14,24 +14,16 @@ widget_draw_func default_draw_funcs[] = {
     [DIALOG]     = draw_dialog
 };
 
-static int32_t get_abs_x(t_widget *self) {
+int32_t get_abs_x(t_widget *self) {
     if (!self) return 0;
     if (self->parent == NULL) return self->x;
     return get_abs_x(self->parent) + self->x;
 }
 
-static int32_t get_abs_y(t_widget *self) {
+int32_t get_abs_y(t_widget *self) {
     if (!self) return 0;
     if (self->parent == NULL) return self->y;
     return get_abs_y(self->parent) + self->y;
-}
-
-int32_t widget_get_abs_x(t_widget *widget) {
-    return get_abs_x(widget);
-}
-
-int32_t widget_get_abs_y(t_widget *widget) {
-    return get_abs_y(widget);
 }
 
 t_widget* widget_get_at(t_widget *root, int32_t x, int32_t y) {
@@ -136,7 +128,7 @@ void widget_destroy(t_widget *widget) {
     free(widget);
 }
 
-t_widget* widget_find_first_focusable(t_widget *root) {
+t_widget* widget_first_focusable(t_widget *root) {
     if (root == NULL || !WIDGET_IS_ACTIVE(root))
         return NULL;
 
@@ -145,7 +137,7 @@ t_widget* widget_find_first_focusable(t_widget *root) {
 
     t_widget *child = root->children;
     while (child != NULL) {
-        t_widget *match = widget_find_first_focusable(child);
+        t_widget *match = widget_first_focusable(child);
         if (match != NULL)
             return match;
         child = child->next;

@@ -71,7 +71,7 @@ void gui_push_view(t_gui *gui, t_widget *view) {
     gui->views.is_overlay[gui->views.view_count] = false;
     gui->views.view_count++;
 
-    gui_set_focus(gui, widget_find_first_focusable(view));
+    gui_set_focus(gui, widget_first_focusable(view));
 }
 
 void gui_push_overlay(t_gui *gui, t_widget *overlay) {
@@ -82,7 +82,7 @@ void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     gui->views.is_overlay[gui->views.view_count] = true;
     gui->views.view_count++;
 
-    gui_set_focus(gui, widget_find_first_focusable(overlay));
+    gui_set_focus(gui, widget_first_focusable(overlay));
 }
 
 void gui_pop_view(t_gui *gui) {
@@ -94,30 +94,13 @@ void gui_pop_view(t_gui *gui) {
 
     if (gui->views.view_count > 0) {
         t_widget *new_top = gui->views.view_stack[gui->views.view_count - 1];
-        gui_set_focus(gui, widget_find_first_focusable(new_top));
+        gui_set_focus(gui, widget_first_focusable(new_top));
     }
 }
 
 t_widget* gui_get_top_view(t_gui *gui) {
     if (gui->views.view_count == 0) return NULL;
     return gui->views.view_stack[gui->views.view_count - 1];
-}
-
-void on_dialog_press(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
-    int32_t abs_y = widget_get_abs_y(self);
-    if (gui->input.mouse_y >= abs_y && gui->input.mouse_y < abs_y + 24) {
-        gui->drag.dragged_widget = self;
-        gui->drag.drag_offset_x = gui->input.mouse_x - widget_get_abs_x(self);
-        gui->drag.drag_offset_y = gui->input.mouse_y - abs_y;
-    }
-}
-
-void on_dialog_drag(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
-    int32_t new_x = gui->input.mouse_x - gui->drag.drag_offset_x;
-    int32_t new_y = gui->input.mouse_y - gui->drag.drag_offset_y;
-    widget_set_position(self, new_x, new_y);
 }
 
 void gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {

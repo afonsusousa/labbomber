@@ -2,9 +2,26 @@
 #include "../draw.h"
 #include "../gui/gui.h"
 
+static void on_dialog_press(t_widget *self, void *state) {
+    t_gui *gui = (t_gui*)state;
+    int32_t abs_y = get_abs_y(self);
+    if (gui->input.mouse_y >= abs_y && gui->input.mouse_y < abs_y + 24) {
+        gui->drag.dragged_widget = self;
+        gui->drag.drag_offset_x = gui->input.mouse_x - get_abs_x(self);
+        gui->drag.drag_offset_y = gui->input.mouse_y - abs_y;
+    }
+}
+
+static void on_dialog_drag(t_widget *self, void *state) {
+    t_gui *gui = (t_gui*)state;
+    int32_t new_x = gui->input.mouse_x - gui->drag.drag_offset_x;
+    int32_t new_y = gui->input.mouse_y - gui->drag.drag_offset_y;
+    widget_set_position(self, new_x, new_y);
+}
+
 void draw_dialog(t_widget *self, hw_video_t *video) {
-    uint32_t abs_x = widget_get_abs_x(self);
-    uint32_t abs_y = widget_get_abs_y(self);
+    uint32_t abs_x = get_abs_x(self);
+    uint32_t abs_y = get_abs_y(self);
     
     hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
     
@@ -42,4 +59,22 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
     }
 
     return dialog;
+}
+
+t_widget* widget_create_confirm_dialog(t_gui *gui, uint32_t screen_width, uint32_t screen_height, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
+    (void)gui;
+    t_widget *overlay = widget_create_overlay(screen_width, screen_height, trigger_pop_gui);
+    t_widget *confirm_dialog = widget_add_dialog(overlay, title, 360, 190, screen_width, screen_height, on_no);
+    confirm_dialog->on_quit = trigger_pop_gui;
+
+    widget_add_text(confirm_dialog, 0, 40, 320, 24, message);
+
+    t_widget *btn_yes = widget_add_button(confirm_dialog, 0, 86, 120, 36, "Yes", on_yes);
+    t_widget *btn_no = widget_add_button(confirm_dialog, 0, 86, 120, 36, "No", on_no);
+
+    int32_t btn_row_x = ((int32_t)confirm_dialog->width - (int32_t)(btn_yes->width + btn_no->width + 20)) / 2;
+    widget_set_position(btn_yes, btn_row_x, 120);
+    widget_set_position(btn_no, btn_row_x + (int32_t)btn_yes->width + 20, 120);
+
+    return overlay;
 }

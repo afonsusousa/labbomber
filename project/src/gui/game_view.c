@@ -10,8 +10,8 @@ static void on_pause_main_menu_confirm_click(t_widget *self, void *state);
 static void on_game_canvas_press(t_widget *self, void *state) {
     t_gui *gui = (t_gui*)state;
     t_game_state *game = (t_game_state*)self->data.canvas.state;
-    int32_t click_x = gui->input.mouse_x - widget_get_abs_x(self);
-    int32_t click_y = gui->input.mouse_y - widget_get_abs_y(self);
+    int32_t click_x = gui->input.mouse_x - get_abs_x(self);
+    int32_t click_y = gui->input.mouse_y - get_abs_y(self);
 
     for (int y = 0; y < 4; ++y) {
         for (int x = 0; x < 4; ++x) {
@@ -22,10 +22,6 @@ static void on_game_canvas_press(t_widget *self, void *state) {
             }
         }
     }
-}
-
-static void on_game_canvas_drag(t_widget *self, void *state) {
-    on_game_canvas_press(self, state);
 }
 
 static void free_game_state(t_widget *self) {
@@ -52,25 +48,6 @@ static void on_game_view_quit(t_widget *self, void *state) {
 }
 
 
-static void on_pause_dialog_quit(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = (t_gui*)state;
-    gui_pop_view(gui);
-}
-
-
-static void on_pause_resume_click(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = (t_gui*)state;
-    gui_pop_view(gui);
-}
-
-static void on_confirm_cancel_click(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = (t_gui*)state;
-    gui_pop_view(gui);
-}
-
 static void on_pause_main_menu_confirm_click(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = (t_gui*)state;
@@ -82,7 +59,7 @@ static void on_pause_main_menu_confirm_click(t_widget *self, void *state) {
 static void on_pause_reset_click(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = (t_gui*)state;
-    t_widget *confirm = gui_init_confirm_menu(gui, gui->views.view_stack[0]->width, gui->views.view_stack[0]->height, "Confirm Reset", "Are you sure?", on_pause_reset_confirm_click, on_confirm_cancel_click);
+    t_widget *confirm = widget_create_confirm_dialog(gui, gui->views.view_stack[0]->width, gui->views.view_stack[0]->height, "Confirm Reset", "Are you sure?", on_pause_reset_confirm_click, trigger_pop_gui);
     gui_push_overlay(gui, confirm);
 }
 
@@ -111,7 +88,7 @@ static void on_pause_reset_confirm_click(t_widget *self, void *state) {
 static void on_pause_main_menu_click(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = (t_gui*)state;
-    t_widget *confirm = gui_init_confirm_menu(gui, gui->views.view_stack[0]->width, gui->views.view_stack[0]->height, "Confirm Main Menu", "Return to main menu?", on_pause_main_menu_confirm_click, on_confirm_cancel_click);
+    t_widget *confirm = widget_create_confirm_dialog(gui, gui->views.view_stack[0]->width, gui->views.view_stack[0]->height, "Confirm Main Menu", "Return to main menu?", on_pause_main_menu_confirm_click, trigger_pop_gui);
     gui_push_overlay(gui, confirm);
 }
 
@@ -127,7 +104,7 @@ t_widget* gui_init_game_view(t_gui *gui, uint32_t screen_width, uint32_t screen_
     t_widget *game_canvas = widget_create(CANVAS, 0, 40, screen_width, canvas_h);
     game_canvas->draw = draw_game_canvas;
     game_canvas->on_press = on_game_canvas_press;
-    game_canvas->on_drag = on_game_canvas_drag;
+    game_canvas->on_drag = on_game_canvas_press;
 
     t_game_state *game_state = (t_game_state*)malloc(sizeof(t_game_state));
     game_state->width = screen_width;
@@ -145,11 +122,11 @@ t_widget* gui_init_game_view(t_gui *gui, uint32_t screen_width, uint32_t screen_
 
 t_widget* gui_init_pause_menu(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {
     (void)gui;
-    t_widget *overlay = widget_create_overlay(screen_width, screen_height, on_pause_dialog_quit);
-    t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, screen_width, screen_height, on_pause_resume_click);
-    pause_dialog->on_quit = on_pause_dialog_quit;
+    t_widget *overlay = widget_create_overlay(screen_width, screen_height, trigger_pop_gui);
+    t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, screen_width, screen_height, trigger_pop_gui);
+    pause_dialog->on_quit = trigger_pop_gui;
 
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", on_pause_resume_click);
+    widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", trigger_pop_gui);
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Reset", on_pause_reset_click);
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Main Menu", on_pause_main_menu_click);
 
@@ -158,20 +135,3 @@ t_widget* gui_init_pause_menu(t_gui *gui, uint32_t screen_width, uint32_t screen
     return overlay;
 }
 
-t_widget* gui_init_confirm_menu(t_gui *gui, uint32_t screen_width, uint32_t screen_height, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
-    (void)gui;
-    t_widget *overlay = widget_create_overlay(screen_width, screen_height, on_confirm_cancel_click);
-    t_widget *confirm_dialog = widget_add_dialog(overlay, title, 360, 190, screen_width, screen_height, on_no);
-    confirm_dialog->on_quit = on_confirm_cancel_click;
-
-    widget_add_text(confirm_dialog, 0, 40, 320, 24, message);
-
-    t_widget *btn_yes = widget_add_button(confirm_dialog, 0, 86, 120, 36, "Yes", on_yes);
-    t_widget *btn_no = widget_add_button(confirm_dialog, 0, 86, 120, 36, "No", on_no);
-
-    int32_t btn_row_x = ((int32_t)confirm_dialog->width - (int32_t)(btn_yes->width + btn_no->width + 20)) / 2;
-    widget_set_position(btn_yes, btn_row_x, 120);
-    widget_set_position(btn_no, btn_row_x + (int32_t)btn_yes->width + 20, 120);
-
-    return overlay;
-}

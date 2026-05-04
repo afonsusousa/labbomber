@@ -122,14 +122,14 @@ void        widget_add_child(t_widget *parent, t_widget *child);
 void        widget_destroy(t_widget *widget);
 t_widget*   widget_set_position(t_widget *widget, int32_t x, int32_t y);
 t_widget*   widget_get_at(t_widget *root, int32_t x, int32_t y);
-int32_t     widget_get_abs_x(t_widget *widget);
-int32_t     widget_get_abs_y(t_widget *widget);
+int32_t     get_abs_x(t_widget *widget);
+int32_t     get_abs_y(t_widget *widget);
 
 void        draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, bool sunken);
 
 void        widget_draw(t_widget *widget, hw_video_t *video);
 void        widget_tick(t_widget *widget, void *state);
-t_widget*   widget_find_first_focusable(t_widget *root);
+t_widget*   widget_first_focusable(t_widget *root);
 void        draw_canvas(struct s_widget *self, hw_video_t *video);
 void        draw_button(struct s_widget *self, hw_video_t *video);
 void        draw_text(struct s_widget *self, hw_video_t *video);
