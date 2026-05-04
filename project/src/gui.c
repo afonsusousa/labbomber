@@ -37,7 +37,9 @@ void on_btn_scoreboard_click(t_widget *self, void *state) {
 }
 
 void on_btn_start_game_click(t_widget *self, void *state) {
-    printf("Start Game Button Clicked!\n");
+    t_gui *gui = (t_gui*)state;
+
+    gui->current_view = NULL;
 }
 
 void on_text_input_click(t_widget *self, void *state) {

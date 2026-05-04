@@ -39,6 +39,9 @@ int(proj_main_loop)(int argc, char* argv[]) {
 
     int ipc_status;
     message msg;
+
+    static bool esc_was_pressed = false;
+
     while (hw_state.is_running) {
         if (driver_receive(ANY, &msg, &ipc_status) != 0) {
             printf("driver_receive failed\n");
@@ -49,21 +52,31 @@ int(proj_main_loop)(int argc, char* argv[]) {
             if (msg.m_notify.interrupts & hw_state.timer.mask) {
                 hw_timer_int_handler(&hw_state.timer);
                 hw_vbe_clear_screen(&hw_state.video, 0x0);
-                if (gui.current_view != NULL)
+                if (gui.current_view != NULL) {
                     widget_draw(gui.current_view, &hw_state.video);
+                } else {
+                    draw_board(&hw_state.video);
+                }
                 draw_mouse(&hw_state.mouse, &hw_state.video);
                 hw_vbe_flip_buffer(&hw_state.video);
             }
 
             if (msg.m_notify.interrupts & hw_state.keyboard.mask) {
                 hw_keyboard_ih(&hw_state.keyboard);
-                if (hw_state.keyboard.keys_pressed[0x01]) { // ESC
-                    if (gui.current_view != NULL && gui.current_view->on_quit != NULL) {
-                        gui.current_view->on_quit(gui.current_view, &gui);
+
+                bool esc_now = hw_state.keyboard.keys_pressed[0x01];
+
+                if (esc_now && !esc_was_pressed) {
+                    if (gui.current_view == NULL) {
+                        gui_set_view(&gui, gui.start_menu);
                     } else if (gui.current_view == gui.start_menu) {
                         hw_state.is_running = false;
+                    } else if (gui.current_view->on_quit != NULL) {
+                        gui.current_view->on_quit(gui.current_view, &gui);
                     }
                 }
+
+                esc_was_pressed = esc_now;
             }
 
             if (msg.m_notify.interrupts & hw_state.mouse.mask) {

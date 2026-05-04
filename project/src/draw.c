@@ -1,6 +1,10 @@
 #include "draw.h"
 #include "letters.h"
+#include "../lib/rtc/rtc.h"
+#include "board_generator.h"
 #include <lcom/xpm.h>
+
+#include <stdio.h>
 
 static xpm_row_t const my_mouse_xpm[] = {
 "12 19 3 1",
@@ -79,4 +83,37 @@ int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32
         }
     }
     return 0;
+}
+
+void draw_board(hw_video_t *video) {
+    static char board[11 * 17];
+    static bool generated = false;
+
+    if (!generated) {
+        hw_rtc_t rtc;
+        hw_rtc_init(&rtc);
+        hw_rtc_get_time(&rtc);
+
+        generateBoard(board, rtc.day, rtc.month, rtc.year);
+        generated = true;
+    }
+
+    int tile = 32;
+
+    for (int y = 0; y < 11; y++) {
+        for (int x = 0; x < 17; x++) {
+
+            int val = board[y*17 + x];
+
+            int px = x * tile;
+            int py = y * tile;
+
+            if (val == 1)
+                hw_vbe_draw_rect(video, px, py, tile, tile, 0xAAAAAA);
+            else if (val == 2)
+                hw_vbe_draw_rect(video, px, py, tile, tile, 0x884400);
+            else
+                hw_vbe_draw_rect(video, px, py, tile, tile, 0x000000);
+        }
+    }
 }
