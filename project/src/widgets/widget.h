@@ -96,7 +96,7 @@ typedef struct s_widget {
         } text_input;
 
         struct {
-            char        *title;
+            char            *title;
             struct s_widget *close_button;
         } dialog;
         

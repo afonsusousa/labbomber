@@ -35,51 +35,6 @@ void gui_set_focus(t_gui *gui, t_widget *widget) {
     }
 }
 
-static bool is_descendant(t_widget *ancestor, t_widget *widget) {
-    while (widget != NULL) {
-        if (widget == ancestor) return true;
-        widget = widget->parent;
-    }
-    return false;
-}
-
-void gui_set_active(t_gui *gui, t_widget *widget, bool active) {
-    if (widget == NULL) return;
-
-    WIDGET_SET_ACTIVE(widget, active);
-
-    if (!active) {
-        if (is_descendant(widget, gui->input.hovered)) {
-            WIDGET_SET_HOVERED(gui->input.hovered, false);
-            gui->input.hovered = NULL;
-        }
-        if (is_descendant(widget, gui->input.clicked_widget)) {
-            WIDGET_SET_CLICKED(gui->input.clicked_widget, false);
-            gui->input.clicked_widget = NULL;
-        }
-        if (is_descendant(widget, gui->drag.dragged_widget)) {
-            gui->drag.dragged_widget = NULL;
-        }
-
-        if (is_descendant(widget, gui->input.previous_focus)) {
-            gui->input.previous_focus = NULL;
-        }
-
-        if (is_descendant(widget, gui->input.focused)) {
-            t_widget *prev = gui->input.previous_focus;
-
-            if (gui->input.focused) {
-                WIDGET_SET_FOCUSED(gui->input.focused, false);
-                gui->input.focused = NULL;
-            }
-
-            if (prev != NULL && WIDGET_IS_ACTIVE(prev)) {
-                gui_set_focus(gui, prev);
-            }
-        }
-    }
-}
-
 void gui_push_view(t_gui *gui, t_widget *view) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
