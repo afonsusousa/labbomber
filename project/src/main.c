@@ -9,9 +9,28 @@
 #include "game.h"
 #include "draw.h"
 #include "widgets/widget.h"
-#include "gui/gui.h"
+#include "state.h"
 
-static void handle_timer(hardware_t *hw_state, t_gui *gui) {
+void init_hardware_state(hardware_t *hw_state) {
+    if (!hw_state) return;
+
+    memset(hw_state, 0, sizeof(hardware_t));
+
+    hw_timer_init(&hw_state->timer);
+    hw_rtc_init(&hw_state->time_info);
+    hw_keyboard_init(&hw_state->keyboard);
+    hw_mouse_init(&hw_state->mouse);
+    hw_vbe_init(&hw_state->video, 0x110);
+    
+    hw_state->is_running = true;
+    
+    hw_state->mouse.max_x = hw_state->video.screen_width;
+    hw_state->mouse.max_y = hw_state->video.screen_height;
+    hw_state->mouse.x = (hw_state->video.screen_width / 3) * 2;
+    hw_state->mouse.y = (hw_state->video.screen_height / 3) * 2;
+}
+
+static void handle_timer(hardware_t *hw_state, t_state *gui) {
     hw_timer_int_handler(&hw_state->timer);
     hw_vbe_clear_screen(&hw_state->video, 0x0);
 
@@ -36,7 +55,7 @@ static void handle_timer(hardware_t *hw_state, t_gui *gui) {
 }
 
 //will need to check if this is enough for CTRL SHIFT and other 2byte keys
-static void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
+static void handle_keyboard(hardware_t *hw_state, t_state *gui, bool *esc_was_pressed) {
     hw_keyboard_ih(&hw_state->keyboard);
     
     gui->input.shift_down = hw_state->keyboard.keys_pressed[0x2A] || hw_state->keyboard.keys_pressed[0x36];
@@ -71,7 +90,7 @@ static void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pres
     *esc_was_pressed = esc_is_pressed;
 }
 
-static void handle_mouse(hardware_t *hw_state, t_gui *gui) {
+static void handle_mouse(hardware_t *hw_state, t_state *gui) {
     if (!hw_mouse_ih(&hw_state->mouse)) return;
 
     gui->input.mouse_x = hw_state->mouse.x;
@@ -152,7 +171,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     hardware_t hw_state;
     init_hardware_state(&hw_state);
 
-    t_gui gui;
+    t_state gui;
     gui_init(&gui, hw_state.video.screen_width, hw_state.video.screen_height);
 
     if (timer_set_frequency(0, 144) != 0) return 1;

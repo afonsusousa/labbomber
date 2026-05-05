@@ -103,7 +103,7 @@ typedef struct s_widget {
         
         struct {
             void *state;
-        } canvas;
+        } game;
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);

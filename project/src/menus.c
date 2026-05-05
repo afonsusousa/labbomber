@@ -17,12 +17,12 @@ t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_
 
 void pop_the_view(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
     gui_pop_view(gui);
 }
 
 void focus_self(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
     gui_set_focus(gui, self);
 }
 
@@ -44,7 +44,7 @@ static bool is_blank_string(const char *s) {
     // Shared Dialog Displays
     // -------------------------------------------------------------------------
 
-void gui_show_info_dialog(t_gui *gui, const char *title, const char *message) {
+void gui_show_info_dialog(t_state *gui, const char *title, const char *message) {
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "info_overlay");
     if (overlay == NULL) return;
 
@@ -61,7 +61,7 @@ void gui_show_info_dialog(t_gui *gui, const char *title, const char *message) {
     gui_push_overlay(gui, overlay);
 }
 
-void gui_show_confirm_dialog(t_gui *gui, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
+void gui_show_confirm_dialog(t_state *gui, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "confirm_overlay");
     if (overlay == NULL) return;
 
@@ -89,32 +89,32 @@ void gui_show_confirm_dialog(t_gui *gui, const char *title, const char *message,
     // -------------------------------------------------------------------------
 
 static void on_quit_confirm(t_widget *self, void *state) {
-    t_gui *gui = (t_gui *)state;
+    t_state *gui = (t_state *)state;
     (void)self;
     gui->is_running = false;
 }
 
 static void on_quit(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
+    t_state *gui = (t_state *)state;
     gui_show_confirm_dialog(gui, "QUIT", "DO YOU REALLY WANT TO QUIT", on_quit_confirm, pop_the_view);
 }
 
 static void on_btn_singleplayer_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
+    t_state *gui = (t_state *)state;
     gui_show_name_menu(gui, false);
 }
 
 static void on_btn_multiplayer_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
+    t_state *gui = (t_state *)state;
     gui_show_name_menu(gui, true);
 }
 
 static void on_btn_scoreboard_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
+    t_state *gui = (t_state *)state;
     gui_show_scoreboard(gui);
 }
 
@@ -122,7 +122,7 @@ static void on_btn_scoreboard_click(t_widget *self, void *state) {
     // Start Menu Displays
     // -------------------------------------------------------------------------
 
-void gui_show_start_menu(t_gui *gui) {
+void gui_show_start_menu(t_state *gui) {
     t_widget *menu = widget_create(CANVAS, 0, 0, gui->width, gui->height, "start_menu_view");
     if (menu == NULL) return;
 
@@ -145,7 +145,7 @@ void gui_show_start_menu(t_gui *gui) {
 
 static void on_btn_start_game_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
 
     t_widget *top_view = gui_get_top_view(gui);
     t_widget *player1_input = widget_find_by_name(top_view, "player1_input");
@@ -183,7 +183,7 @@ static void on_btn_start_game_click(t_widget *self, void *state) {
     // Name Menu Displays
     // -------------------------------------------------------------------------
 
-void gui_show_name_menu(t_gui *gui, bool is_multiplayer) {
+void gui_show_name_menu(t_state *gui, bool is_multiplayer) {
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "name_overlay");
     if (overlay == NULL) return;
 
@@ -205,81 +205,6 @@ void gui_show_name_menu(t_gui *gui, bool is_multiplayer) {
 }
 
 // =============================================================================
-// Game View
-// =============================================================================
-
-    // -------------------------------------------------------------------------
-    // Game View Callbacks
-    // -------------------------------------------------------------------------
-
-static void on_game_canvas_press(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
-    t_game_state *game = (t_game_state*)self->data.canvas.state;
-    int32_t click_x = gui->input.mouse_x - get_abs_x(self);
-    int32_t click_y = gui->input.mouse_y - get_abs_y(self);
-
-    for (int y = 0; y < 4; ++y) {
-        for (int x = 0; x < 4; ++x) {
-            int32_t px = click_x + x;
-            int32_t py = click_y + y;
-            if (px >= 0 && px < (int32_t)game->width && py >= 0 && py < (int32_t)game->height) {
-                game->pixel_buffer[py * game->width + px] = 0xFFFF;
-            }
-        }
-    }
-}
-
-static void free_game_state(t_widget *self) {
-    t_game_state *game_state = (t_game_state*)self->data.canvas.state;
-    if (game_state) {
-        free(game_state->pixel_buffer);
-        free(game_state);
-    }
-}
-
-static void on_game_view_quit(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = (t_gui*)state;
-
-    if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
-        gui->input.focused->on_quit(gui->input.focused, state);
-        return;
-    }
-
-    gui_show_pause_menu(gui);
-}
-
-    // -------------------------------------------------------------------------
-    // Game View Displays
-    // -------------------------------------------------------------------------
-
-void gui_show_game_view(t_gui *gui) {
-    t_widget *view = widget_create(CANVAS, 0, 0, gui->width, gui->height, "game_view");
-    if (view == NULL) return;
-
-    t_widget *status_bar = widget_create(CANVAS, 0, 0, gui->width, 40, "game_status_bar");
-    widget_add_child(view, status_bar);
-
-    uint32_t canvas_h = gui->height - 40;
-    t_widget *game_canvas = widget_create(CANVAS, 0, 40, gui->width, canvas_h, "game_canvas");
-    game_canvas->draw = draw_game_canvas;
-    game_canvas->on_press = on_game_canvas_press;
-    game_canvas->on_drag = on_game_canvas_press;
-
-    t_game_state *game_state = (t_game_state*)malloc(sizeof(t_game_state));
-    game_state->width = gui->width;
-    game_state->height = canvas_h;
-    game_state->pixel_buffer = (uint16_t*)malloc(sizeof(uint16_t) * gui->width * canvas_h);
-    memset(game_state->pixel_buffer, 0, sizeof(uint16_t) * gui->width * canvas_h);
-    game_canvas->data.canvas.state = game_state;
-    game_canvas->on_destroy = free_game_state;
-
-    widget_add_child(view, game_canvas);
-    view->on_quit = on_game_view_quit;
-    gui_push_view(gui, view);
-}
-
-// =============================================================================
 // Pause Menu
 // =============================================================================
 
@@ -289,13 +214,13 @@ void gui_show_game_view(t_gui *gui) {
 
 static void on_pause_main_menu_confirm_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
     gui_pop_until_widget_found(gui, "start_menu_view");
 }
 
 static void on_pause_reset_confirm_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
 
     t_widget *game_canvas = gui_pop_until_widget_found(gui, "game_canvas");
     if (game_canvas != NULL) {
@@ -308,13 +233,13 @@ static void on_pause_reset_confirm_click(t_widget *self, void *state) {
 
 static void on_pause_reset_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
     gui_show_confirm_dialog(gui, "Confirm Reset", "Are you sure?", on_pause_reset_confirm_click, pop_the_view);
 }
 
 static void on_pause_main_menu_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
     gui_show_confirm_dialog(gui, "Confirm Main Menu", "Return to main menu?", on_pause_main_menu_confirm_click, pop_the_view);
 }
 
@@ -322,7 +247,7 @@ static void on_pause_main_menu_click(t_widget *self, void *state) {
     // Pause Menu Displays
     // -------------------------------------------------------------------------
 
-void gui_show_pause_menu(t_gui *gui) {
+void gui_show_pause_menu(t_state *gui) {
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "pause_overlay");
     if (overlay == NULL) return;
 
@@ -338,7 +263,7 @@ void gui_show_pause_menu(t_gui *gui) {
 }
 static void on_scoreboard_close(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_state *gui = (t_state*)state;
     gui_pop_view(gui);
 }
 
@@ -354,7 +279,7 @@ static void on_scoreboard_close(t_widget *self, void *state) {
     // Scoreboard Display
     // -------------------------------------------------------------------------
 
-void gui_show_scoreboard(t_gui *gui) {
+void gui_show_scoreboard(t_state *gui) {
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_scoreboard_close, "scoreboard_overlay");
     if (overlay == NULL) return;
 

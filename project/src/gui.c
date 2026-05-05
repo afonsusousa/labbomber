@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
+t_widget* gui_pop_until_widget_found(t_state *gui, const char *widget_name) {
     if (gui == NULL || widget_name == NULL) return NULL;
 
     while (gui->views.view_count > 0) {
@@ -20,7 +20,7 @@ t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
     return NULL;
 }
 
-void gui_set_focus(t_gui *gui, t_widget *widget) {
+void gui_set_focus(t_state *gui, t_widget *widget) {
     if (gui->input.focused != widget) {
         if (gui->input.focused != NULL) {
             WIDGET_SET_FOCUSED(gui->input.focused, false);
@@ -35,7 +35,7 @@ void gui_set_focus(t_gui *gui, t_widget *widget) {
     }
 }
 
-void gui_push_view(t_gui *gui, t_widget *view) {
+void gui_push_view(t_state *gui, t_widget *view) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
     gui_set_focus(gui, NULL);
@@ -46,7 +46,7 @@ void gui_push_view(t_gui *gui, t_widget *view) {
     gui_set_focus(gui, widget_first_focusable(view));
 }
 
-void gui_push_overlay(t_gui *gui, t_widget *overlay) {
+void gui_push_overlay(t_state *gui, t_widget *overlay) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
     gui_set_focus(gui, NULL);
@@ -57,7 +57,7 @@ void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     gui_set_focus(gui, widget_first_focusable(overlay));
 }
 
-void gui_pop_view(t_gui *gui) {
+void gui_pop_view(t_state *gui) {
     if (gui->views.view_count <= 0) return;
 
     gui->views.view_count--;
@@ -70,12 +70,12 @@ void gui_pop_view(t_gui *gui) {
     }
 }
 
-t_widget* gui_get_top_view(t_gui *gui) {
+t_widget* gui_get_top_view(t_state *gui) {
     if (gui->views.view_count == 0) return NULL;
     return gui->views.view_stack[gui->views.view_count - 1];
 }
 
-void gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {
+void gui_init(t_state *gui, uint32_t screen_width, uint32_t screen_height) {
     memset(gui, 0, sizeof(*gui));
     gui->width = screen_width;
     gui->height = screen_height;
@@ -84,7 +84,7 @@ void gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {
     gui->is_running = true;
 }
 
-void gui_destroy(t_gui *gui) {
+void gui_destroy(t_state *gui) {
     while (gui->views.view_count > 0) {
         gui_pop_view(gui);
     }

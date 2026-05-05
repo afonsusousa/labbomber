@@ -1,6 +1,6 @@
 #include "widget.h"
 #include "../draw.h"
-#include "../gui/gui.h" // For t_game_state
+#include "state.h" // For t_game_state
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
