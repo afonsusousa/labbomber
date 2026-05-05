@@ -84,6 +84,7 @@ int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32
 }
 
 // NICE -  ISTO VAI PARA A GAME.C na parte de DRAW, o board em si vai para o t_game_state na game.h
+// + o generateBoard vai para a init_game()
 #include "vbe.h"
 #include "rtc.h"
 #include "board_generator.h"
