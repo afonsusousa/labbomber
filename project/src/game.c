@@ -8,9 +8,19 @@
 static void free_text_label_on_destroy(t_widget *self);
 static void update_status_date(t_widget *status_bar, t_gui *gui);
 
-// aqui desenha-se conforme o state, as posicoes, o mapa etc
-// usar hw_vbe_draw_xpm
-//      opcional  (futuro): inicializar as xpms das sprites como se faz com as letras
+
+
+// =============================================================================
+// Game View
+// =============================================================================
+
+    // -------------------------------------------------------------------------
+    // Game View Callbacks
+    // -------------------------------------------------------------------------
+
+    // aqui desenha-se conforme o state, as posicoes, o mapa etc
+    // usar hw_vbe_draw_xpm
+    //      opcional  (futuro): inicializar as xpms das sprites como se faz com as letras
 void draw_game_canvas(t_widget *self, hw_video_t *video) {
     if (self == NULL) {
         return;
@@ -39,14 +49,6 @@ void draw_game_canvas(t_widget *self, hw_video_t *video) {
     }
     //--------------------------------------------------------------------------
 }
-
-// =============================================================================
-// Game View
-// =============================================================================
-
-    // -------------------------------------------------------------------------
-    // Game View Callbacks
-    // -------------------------------------------------------------------------
 
 static void on_game_canvas_press(t_widget *self, void *state) {
     // aqui lida-se com o rato dentro do jogo
@@ -82,6 +84,7 @@ static void free_game_state(t_widget *self) {
     }
 }
 
+// UPDATES DO JOGO AQUI - SPRITES, TIMERS, TUDO
 static void game_canvas_on_tick(t_widget *self, void *state) {
     (void)self;
     (void)state;
