@@ -1,7 +1,9 @@
-#include "show.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include "widget.h"
+#include "state.h"
 
 t_widget* gui_pop_until_widget_found(t_state *gui, const char *widget_name) {
     if (gui == NULL || widget_name == NULL) return NULL;
@@ -73,15 +75,6 @@ void gui_pop_view(t_state *gui) {
 t_widget* gui_get_top_view(t_state *gui) {
     if (gui->views.view_count == 0) return NULL;
     return gui->views.view_stack[gui->views.view_count - 1];
-}
-
-void gui_init(t_state *gui, uint32_t screen_width, uint32_t screen_height) {
-    memset(gui, 0, sizeof(*gui));
-    gui->width = screen_width;
-    gui->height = screen_height;
-
-    gui_show_start_menu(gui);
-    gui->is_running = true;
 }
 
 void gui_destroy(t_state *gui) {

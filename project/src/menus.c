@@ -1,4 +1,5 @@
-#include "show.h"
+#include "menus.h"
+#include "game.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,17 @@ t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_
     t_widget *overlay = widget_create(OVERLAY, 0, 0, screen_w, screen_h, name);
     overlay->on_quit = on_quit;
     return overlay;
+}
+
+// ENTRY POINT
+
+void gui_init(t_state *gui, uint32_t screen_width, uint32_t screen_height) {
+    memset(gui, 0, sizeof(*gui));
+    gui->width = screen_width;
+    gui->height = screen_height;
+
+    gui_show_start_menu(gui);
+    gui->is_running = true;
 }
 
 // =============================================================================
@@ -176,7 +188,7 @@ static void on_btn_start_game_click(t_widget *self, void *state) {
     }
 
     gui_pop_view(gui);
-    gui_show_game_view(gui);
+    init_game(gui);
 }
 
     // -------------------------------------------------------------------------
@@ -221,14 +233,7 @@ static void on_pause_main_menu_confirm_click(t_widget *self, void *state) {
 static void on_pause_reset_confirm_click(t_widget *self, void *state) {
     (void)self;
     t_state *gui = (t_state*)state;
-
-    t_widget *game_canvas = gui_pop_until_widget_found(gui, "game_canvas");
-    if (game_canvas != NULL) {
-        t_game_state *game = (t_game_state*)game_canvas->data.canvas.state;
-        if (game != NULL && game->pixel_buffer != NULL) {
-            memset(game->pixel_buffer, 0, sizeof(uint16_t) * game->width * game->height);
-        }
-    }
+    gui_reset_game(gui);
 }
 
 static void on_pause_reset_click(t_widget *self, void *state) {

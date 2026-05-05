@@ -6,9 +6,10 @@
 #include "../lib/mouse/mouse.h"
 #include "../lib/keyboard/i8042.h"
 #include "../lib/utils/utils.h"
+#include "hardware.h"
 #include "game.h"
 #include "draw.h"
-#include "widgets/widget.h"
+#include "widget.h"
 #include "state.h"
 
 void init_hardware_state(hardware_t *hw_state) {

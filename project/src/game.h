@@ -1,21 +1,17 @@
-#pragma once
+#ifndef LCOM_PROJECT_GAME_H
+#define LCOM_PROJECT_GAME_H
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "../lib/timer/timer.h"
-#include "../lib/rtc/rtc.h"
-#include "../lib/keyboard/keyboard.h"
-#include "../lib/mouse/mouse.h"
-#include "../lib/vbe/vbe.h"
 
-typedef struct {
-    hw_timer_t          timer;
-    hw_rtc_t           time_info;
-    hw_mouse_t         mouse;
-    hw_keyboard_t      keyboard;
-    hw_video_t         video;
+#include "state.h"
+typedef struct s_game_state {
+    uint16_t *pixel_buffer;
+    uint32_t width;
+    uint32_t height;
+} t_game_state;
 
-    bool            is_running; //move from here
-} hardware_t;
+void init_game(t_state *gui);
+void gui_reset_game(t_state *gui);
 
-void init_hardware_state(hardware_t *hw_state);
+#endif /* LCOM_PROJECT_GAME_H */

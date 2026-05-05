@@ -1,6 +1,5 @@
 #include "widget.h"
-#include "../draw.h"
-#include "state.h" // For t_game_state
+#include "draw.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,6 +7,7 @@
 
 widget_draw_func default_draw_funcs[] = {
     [CANVAS]     = draw_canvas,
+    [GAME]       = draw_game_canvas,
     [BUTTON]     = draw_button,
     [TEXT]       = draw_text,
     [TEXT_INPUT] = draw_text_input,

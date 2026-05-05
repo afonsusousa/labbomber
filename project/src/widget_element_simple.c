@@ -1,5 +1,6 @@
 #include "widget.h"
-#include "../draw.h"
+#include "state.h"
+#include "draw.h"
 #include <string.h>
 
 /*
@@ -111,7 +112,6 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
     dialog->on_press = on_dialog_press;
     dialog->on_drag = on_dialog_drag;
 
-    // Center it
     uint32_t dlg_x = (screen_w > w) ? (screen_w - w) / 2 : 0;
     uint32_t dlg_y = (screen_h > h) ? (screen_h - h) / 2 : 0;
     widget_set_position(dialog, dlg_x, dlg_y);

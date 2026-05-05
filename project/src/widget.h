@@ -14,8 +14,6 @@
 #define W95_WHITE      0xFFFF 
 #define W95_BLACK      0x0000 
 
-struct s_widget;
-
 typedef enum {
     ALIGN_START,
     ALIGN_CENTER,
@@ -28,8 +26,11 @@ typedef enum {
     TEXT,
     TEXT_INPUT,
     CANVAS,
+    GAME,
     OVERLAY
 } e_widget_type;
+
+struct s_game_state;
 
 typedef enum {
     WIDGET_FLAG_ACTIVE  = 1u << 0,
@@ -79,6 +80,11 @@ typedef struct s_widget {
     uint32_t        flags;
 
     union {
+
+        struct {
+            struct s_game_state *state;
+        } game;
+
         struct {
             char        *label;
         } button;
@@ -100,10 +106,6 @@ typedef struct s_widget {
             char            *title;
             struct s_widget *close_button;
         } dialog;
-        
-        struct {
-            void *state;
-        } game;
     } data;
 
     void (*draw)(struct s_widget *self, hw_video_t *video);

@@ -1,13 +1,26 @@
 #include "game.h"
 #include "widget.h"
 #include "state.h"
+#include "menus.h"
+#include <stdlib.h>
 #include <string.h>
 
 // aqui desenha-se conforme o state, as posicoes, o mapa etc
 // usar hw_vbe_draw_xpm
 //      opcional  (futuro): inicializar as xpms das sprites como se faz com as letras
-static void draw_game_canvas(t_widget *self, hw_video_t *video) {
-    t_game_state *state = (t_game_state *)(self->data.game_canvas.state)
+void draw_game_canvas(t_widget *self, hw_video_t *video) {
+    (void)video;
+
+    if (self == NULL) {
+        return;
+    }
+
+    t_game_state *state = (t_game_state *)(self->data.game.state);
+    if (state == NULL || state->pixel_buffer == NULL) {
+        return;
+    }
+
+    // Rendering will be moved here
 }
 
 // =============================================================================
@@ -19,9 +32,9 @@ static void draw_game_canvas(t_widget *self, hw_video_t *video) {
     // -------------------------------------------------------------------------
 
 static void on_game_canvas_press(t_widget *self, void *state) {
-    // aqui lida-se com o rato
+    // aqui lida-se com o rato dentro do jogo
     t_state *gui = (t_state*)state;
-    t_game_state *game = (t_game_state*)self->data.canvas.state;
+    t_game_state *game = (t_game_state*)self->data.game.state;
     int32_t click_x = gui->input.mouse_x - get_abs_x(self);
     int32_t click_y = gui->input.mouse_y - get_abs_y(self);
 
@@ -37,7 +50,32 @@ static void on_game_canvas_press(t_widget *self, void *state) {
 }
 
 static void free_game_state(t_widget *self) {
-    //vazio pq já n há pixel buffer
+    if (self == NULL) {
+        return;
+    }
+
+    t_game_state *game = (t_game_state*)self->data.game.state;
+    if (game != NULL) {
+        free(game->pixel_buffer);
+        free(game);
+        self->data.game.state = NULL;
+    }
+}
+
+void gui_reset_game(t_state *gui) {
+    if (gui == NULL) {
+        return;
+    }
+
+    t_widget *game_canvas = gui_pop_until_widget_found(gui, "game_canvas");
+    if (game_canvas == NULL) {
+        return;
+    }
+
+    t_game_state *game = (t_game_state*)game_canvas->data.game.state;
+    if (game != NULL && game->pixel_buffer != NULL) {
+        memset(game->pixel_buffer, 0, sizeof(uint16_t) * game->width * game->height);
+    }
 }
 
 // manter exatamente igual
@@ -57,7 +95,7 @@ static void on_game_view_quit(t_widget *self, void *state) {
     // Game View Displays
     // -------------------------------------------------------------------------
 
-void gui_show_game_view(t_state *gui) {
+void init_game(t_state *gui) {
     t_widget *view = widget_create(CANVAS, 0, 0, gui->width, gui->height, "game_view");
     if (view == NULL) return;
 
@@ -65,14 +103,27 @@ void gui_show_game_view(t_state *gui) {
     widget_add_child(view, status_bar);
 
     uint32_t canvas_h = gui->height - 40;
-    t_widget *game_canvas = widget_create(CANVAS, 0, 40, gui->width, canvas_h, "game_canvas");
+    t_widget *game_canvas = widget_create(GAME, 0, 40, gui->width, canvas_h, "game_canvas");
     game_canvas->draw = draw_game_canvas;
     game_canvas->on_press = on_game_canvas_press;
     game_canvas->on_drag = on_game_canvas_press;
 
-    game_state->pixel_buffer = (uint16_t*)malloc(sizeof(uint16_t) * gui->width * canvas_h);
-    memset(game_state->pixel_buffer, 0, sizeof(uint16_t) * gui->width * canvas_h);
-    game_canvas->data.canvas.state = game_state;
+    t_game_state *game_state = (t_game_state*)calloc(1, sizeof(t_game_state));
+    if (game_state == NULL) {
+        widget_destroy(view);
+        return;
+    }
+
+    game_state->width = gui->width;
+    game_state->height = canvas_h;
+    game_state->pixel_buffer = (uint16_t*)calloc((size_t)gui->width * canvas_h, sizeof(uint16_t));
+    if (game_state->pixel_buffer == NULL) {
+        free(game_state);
+        widget_destroy(view);
+        return;
+    }
+
+    game_canvas->data.game.state = game_state;
     game_canvas->on_destroy = free_game_state;
 
     widget_add_child(view, game_canvas);
