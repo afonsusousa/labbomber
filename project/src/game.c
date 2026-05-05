@@ -1,7 +1,6 @@
 #include "game.h"
 #include "widget.h"
 #include "gui.h"
-#include "gui.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,8 +8,6 @@
 // usar hw_vbe_draw_xpm
 //      opcional  (futuro): inicializar as xpms das sprites como se faz com as letras
 void draw_game_canvas(t_widget *self, hw_video_t *video) {
-    (void)video;
-
     if (self == NULL) {
         return;
     }
@@ -20,7 +17,23 @@ void draw_game_canvas(t_widget *self, hw_video_t *video) {
         return;
     }
 
-    // Rendering will be moved here
+    // Lixo, só ta aqui para a logica atual (que nao tem nada a ver com o jogo)
+    //--------------------------------------------------------------------------
+    int32_t abs_x = get_abs_x(self);
+    int32_t abs_y = get_abs_y(self);
+
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_DARK_GRAY);
+    draw_win95_border(video, abs_x, abs_y, self->width - 4, self->height - 4, false);
+
+    for (uint32_t y = 0; y < state->height; ++y) {
+        for (uint32_t x = 0; x < state->width; ++x) {
+            uint16_t color = state->pixel_buffer[y * state->width + x];
+            if (color != 0) {
+                hw_vbe_draw_pixel(video, abs_x + (int32_t)x, abs_y + (int32_t)y, color);
+            }
+        }
+    }
+    //--------------------------------------------------------------------------
 }
 
 // =============================================================================
@@ -38,6 +51,8 @@ static void on_game_canvas_press(t_widget *self, void *state) {
     int32_t click_x = gui->input.mouse_x - get_abs_x(self);
     int32_t click_y = gui->input.mouse_y - get_abs_y(self);
 
+    // Lixo, só ta aqui para a logica atual (que nao tem nada a ver com o jogo)
+    //--------------------------------------------------------------------------
     for (int y = 0; y < 4; ++y) {
         for (int x = 0; x < 4; ++x) {
             int32_t px = click_x + x;
@@ -47,6 +62,7 @@ static void on_game_canvas_press(t_widget *self, void *state) {
             }
         }
     }
+    //--------------------------------------------------------------------------
 }
 
 static void free_game_state(t_widget *self) {
@@ -72,10 +88,14 @@ void gui_reset_game(t_state *gui) {
         return;
     }
 
+    
+    // Lixo, só ta aqui para a logica atual (que nao tem nada a ver com o jogo)
+    //--------------------------------------------------------------------------
     t_game_state *game = (t_game_state*)game_canvas->data.game.state;
     if (game != NULL && game->pixel_buffer != NULL) {
         memset(game->pixel_buffer, 0, sizeof(uint16_t) * game->width * game->height);
     }
+    //--------------------------------------------------------------------------
 }
 
 // manter exatamente igual
@@ -88,6 +108,7 @@ static void on_game_view_quit(t_widget *self, void *state) {
         return;
     }
 
+    //o menu de pause ta declarado noutro ficheiro, mas para já não há necessidade de o mover
     gui_show_pause_menu(gui);
 }
 
@@ -95,6 +116,8 @@ static void on_game_view_quit(t_widget *self, void *state) {
     // Game View Displays
     // -------------------------------------------------------------------------
 
+// AQUI: o Launcher do jogo - o botao start chama isto
+// Falta receber argumentos tipo o nome dos players, etc - para iniciar o game state
 void init_game(t_state *gui) {
     t_widget *view = widget_create(CANVAS, 0, 0, gui->width, gui->height, "game_view");
     if (view == NULL) return;
@@ -108,6 +131,7 @@ void init_game(t_state *gui) {
     game_canvas->on_press = on_game_canvas_press;
     game_canvas->on_drag = on_game_canvas_press;
 
+    //o game state vai levar o board, os players, start time, etc
     t_game_state *game_state = (t_game_state*)calloc(1, sizeof(t_game_state));
     if (game_state == NULL) {
         widget_destroy(view);

@@ -5,6 +5,8 @@
 #include <stdbool.h>
 
 #include "gui.h"
+
+//mudar tudo para acomodar o jogo
 typedef struct s_game_state {
     uint16_t *pixel_buffer;
     uint32_t width;

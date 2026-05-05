@@ -266,6 +266,7 @@ void gui_show_pause_menu(t_state *gui) {
     widget_layout(pause_dialog, 16, 48, true);
     gui_push_overlay(gui, overlay);
 }
+
 static void on_scoreboard_close(t_widget *self, void *state) {
     (void)self;
     t_state *gui = (t_state*)state;
