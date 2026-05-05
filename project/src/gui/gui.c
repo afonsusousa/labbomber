@@ -3,6 +3,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
+    if (gui == NULL || widget_name == NULL) return NULL;
+
+    while (gui->views.view_count > 0) {
+        t_widget *top_view = gui->views.view_stack[gui->views.view_count - 1];
+        t_widget *found = widget_find_by_name(top_view, widget_name);
+
+        if (found != NULL) {
+            return found;
+        }
+
+        gui_pop_view(gui);
+    }
+
+    return NULL;
+}
+
 void gui_set_focus(t_gui *gui, t_widget *widget) {
     if (gui->input.focused != widget) {
         if (gui->input.focused != NULL) {

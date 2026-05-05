@@ -21,8 +21,8 @@ void draw_button(t_widget *self, hw_video_t *video) {
     }
 }
 
-t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*)) {
-    t_widget *btn = widget_create(BUTTON, x, y, w, h);
+t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*), const char *name) {
+    t_widget *btn = widget_create(BUTTON, x, y, w, h, name);
     btn->data.button.label = (char*)label;
     btn->on_click = on_click;
     widget_add_child(parent, btn);

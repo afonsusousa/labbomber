@@ -248,8 +248,8 @@ void draw_text_input(t_widget *self, hw_video_t *video) {
     }
 }
 
-t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*)) {
-    t_widget *self = widget_create(TEXT_INPUT, x, y, w, h);
+t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*), const char *name) {
+    t_widget *self = widget_create(TEXT_INPUT, x, y, w, h, name);
     
     self->data.text_input.buffer = (char*)calloc(256, 1);
     if (default_text) {

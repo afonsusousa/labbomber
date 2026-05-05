@@ -56,5 +56,6 @@ void      gui_push_view(t_gui *gui, t_widget *view);
 void      gui_push_overlay(t_gui *gui, t_widget *overlay);
 void      gui_pop_view(t_gui *gui);
 t_widget* gui_get_top_view(t_gui *gui);
+t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name);
 
 #endif /* LCOM_PROJECT_GUI_H */

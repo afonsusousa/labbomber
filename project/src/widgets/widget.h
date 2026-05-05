@@ -68,6 +68,8 @@ typedef struct s_widget {
     e_alignment     h_align;
     e_alignment     v_align;
 
+    char            *name;
+
     struct s_widget *parent;
     struct s_widget *children;
     struct s_widget *next;
@@ -117,11 +119,12 @@ typedef struct s_widget {
 
 } t_widget;
 
-t_widget*   widget_create(e_widget_type type, int32_t x, int32_t y, uint32_t width, uint32_t height);
+t_widget*   widget_create(e_widget_type type, int32_t x, int32_t y, uint32_t width, uint32_t height, const char *name);
 void        widget_add_child(t_widget *parent, t_widget *child);
 void        widget_destroy(t_widget *widget);
 t_widget*   widget_set_position(t_widget *widget, int32_t x, int32_t y);
 t_widget*   widget_get_at(t_widget *root, int32_t x, int32_t y);
+t_widget*   widget_find_by_name(t_widget *root, const char *name);
 int32_t     get_abs_x(t_widget *widget);
 int32_t     get_abs_y(t_widget *widget);
 
@@ -138,13 +141,13 @@ void        draw_dialog(struct s_widget *self, hw_video_t *video);
 void        draw_game_canvas(struct s_widget *self, hw_video_t *video);
 
 // --- BUILDER HELPERS ---
-t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*));
-t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*));
-t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text);
+t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*), const char *name);
+t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*), const char *name);
+t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text, const char *name);
 
 // --- OVERLAY / DIALOG HELPERS ---
-t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*));
-t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*));
+t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name);
+t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*), const char *name);
 
 
 typedef void (*widget_draw_func)(t_widget*, hw_video_t*);

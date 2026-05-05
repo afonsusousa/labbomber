@@ -52,7 +52,7 @@ t_widget* widget_get_at(t_widget *root, int32_t x, int32_t y) {
     return is_inside ? root : NULL;
 }
 
-t_widget* widget_create(e_widget_type type, int32_t x, int32_t y, uint32_t width, uint32_t height) {
+t_widget* widget_create(e_widget_type type, int32_t x, int32_t y, uint32_t width, uint32_t height, const char *name) {
     t_widget *widget = (t_widget*)malloc(sizeof(t_widget));
     if (widget == NULL) {
         return NULL;
@@ -66,6 +66,13 @@ t_widget* widget_create(e_widget_type type, int32_t x, int32_t y, uint32_t width
     widget->width = width;
     widget->height = height;
     widget->flags = 0;
+    widget->name = NULL;
+    if (name != NULL) {
+        widget->name = (char*)malloc(strlen(name) + 1);
+        if (widget->name != NULL) {
+            strcpy(widget->name, name);
+        }
+    }
     WIDGET_SET_ACTIVE(widget, true);
     widget->h_align = ALIGN_START;
     widget->v_align = ALIGN_START;
@@ -102,6 +109,25 @@ t_widget* widget_set_position(t_widget *widget, int32_t x, int32_t y) {
     return widget;
 }
 
+t_widget* widget_find_by_name(t_widget *root, const char *name) {
+    if (root == NULL || name == NULL)
+        return NULL;
+
+    if (root->name != NULL && strcmp(root->name, name) == 0) {
+        return root;
+    }
+
+    t_widget *child = root->children;
+    while (child != NULL) {
+        t_widget *match = widget_find_by_name(child, name);
+        if (match != NULL)
+            return match;
+        child = child->next;
+    }
+
+    return NULL;
+}
+
 void widget_destroy(t_widget *widget) {
     if (widget == NULL) return;
 
@@ -125,6 +151,11 @@ void widget_destroy(t_widget *widget) {
         if (widget->next != NULL)
             widget->next->prev = widget->prev;
     }
+
+    if (widget->name != NULL) {
+        free(widget->name);
+    }
+
     free(widget);
 }
 

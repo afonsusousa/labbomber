@@ -8,8 +8,8 @@ void draw_text(t_widget *self, hw_video_t *video) {
     }
 }
 
-t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text) {
-    t_widget *txt = widget_create(TEXT, x, y, w, h);
+t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text, const char *name) {
+    t_widget *txt = widget_create(TEXT, x, y, w, h, name);
     txt->data.text_display.text = (char*)text;
     widget_add_child(parent, txt);
     return txt;

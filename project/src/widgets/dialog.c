@@ -34,8 +34,8 @@ void draw_dialog(t_widget *self, hw_video_t *video) {
     }
 }
 
-t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*)) {
-    t_widget *dialog = widget_create(DIALOG, 0, 0, w, h);
+t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*), const char *name) {
+    t_widget *dialog = widget_create(DIALOG, 0, 0, w, h, name);
     dialog->data.dialog.title = (char*)title;
 
     // Default dialog dragging behavior
@@ -50,7 +50,7 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
     widget_add_child(parent, dialog);
 
     if (on_close != NULL) {
-        t_widget *btn_close = widget_create(BUTTON, w - 22, 6, 16, 14);
+        t_widget *btn_close = widget_create(BUTTON, w - 22, 6, 16, 14, "dialog_close_button");
         btn_close->data.button.label = "x";
         btn_close->on_click = on_close;
         btn_close->flags |= WIDGET_FLAG_NO_LAYOUT; // Add flag to skip layout
