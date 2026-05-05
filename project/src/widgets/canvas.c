@@ -22,9 +22,3 @@ void draw_game_canvas(t_widget *self, hw_video_t *video) {
     }
 }
 
-t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name) {
-    t_widget *overlay = widget_create(CANVAS, 0, 0, screen_w, screen_h, name);
-    overlay->draw = NULL; // Transparent overlay
-    overlay->on_quit = on_quit;
-    return overlay;
-}
