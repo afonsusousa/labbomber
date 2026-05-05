@@ -1,6 +1,6 @@
 #include "widget.h"
 #include "draw.h"
-#include "state.h"
+#include "gui.h"
 
 #include <string.h>
 #include <stdlib.h>

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "widget.h"
-#include "state.h"
+#include "gui.h"
 
 t_widget* gui_pop_until_widget_found(t_state *gui, const char *widget_name) {
     if (gui == NULL || widget_name == NULL) return NULL;

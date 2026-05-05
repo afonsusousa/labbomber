@@ -1,5 +1,5 @@
 #include "widget.h"
-#include "state.h"
+#include "gui.h"
 #include "draw.h"
 #include <string.h>
 

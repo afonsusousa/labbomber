@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "state.h"
+#include "gui.h"
 typedef struct s_game_state {
     uint16_t *pixel_buffer;
     uint32_t width;

@@ -1,4 +1,4 @@
-#include "menus.h"
+#include "gui.h"
 #include "game.h"
 #include <stdio.h>
 #include <stdlib.h>

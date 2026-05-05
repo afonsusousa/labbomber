@@ -1,7 +1,7 @@
 #include "game.h"
 #include "widget.h"
-#include "state.h"
-#include "menus.h"
+#include "gui.h"
+#include "gui.h"
 #include <stdlib.h>
 #include <string.h>
 

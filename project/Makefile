@@ -15,9 +15,9 @@ SRCS = \
 	main.c \
 	game.c \
 	draw.c \
-	gui.c \
-	menus.c \
-	widget_common.c \
+	gui_utils.c \
+	gui_menus.c \
+	widget_utils.c \
 	widget_element_simple.c \
 	widget_element_text_input.c \
 	keyboard.c \
@@ -31,6 +31,7 @@ SRCS = \
 # Compilation flags. 
 # We include all the lib folders so your #include "timer.h" statements work seamlessly.
 CFLAGS += -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__ 
+CFLAGS += -I${.CURDIR}/include
 CFLAGS += -I${.CURDIR}/src
 CFLAGS += -I${.CURDIR}/lib/keyboard
 CFLAGS += -I${.CURDIR}/lib/mouse

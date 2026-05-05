@@ -10,7 +10,7 @@
 #include "game.h"
 #include "draw.h"
 #include "widget.h"
-#include "state.h"
+#include "gui.h"
 
 void init_hardware_state(hardware_t *hw_state) {
     if (!hw_state) return;
