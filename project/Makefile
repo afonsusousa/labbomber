@@ -26,7 +26,8 @@ SRCS = \
 	timer.c \
 	bitwise.c \
 	utils.c \
-	vbe.c
+	vbe.c \
+	board_generator.c
 
 # Compilation flags. 
 # We include all the lib folders so your #include "timer.h" statements work seamlessly.
