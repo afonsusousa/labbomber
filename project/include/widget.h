@@ -37,7 +37,8 @@ typedef enum {
     WIDGET_FLAG_CLICKED = 1u << 1,
     WIDGET_FLAG_HOVERED = 1u << 2,
     WIDGET_FLAG_FOCUSED = 1u << 4,
-    WIDGET_FLAG_NO_LAYOUT = 1u << 5
+    WIDGET_FLAG_NO_LAYOUT = 1u << 5,
+    WIDGET_FLAG_NO_FOCUS = 1u << 6,
 } e_widget_flag;
 
 #define WIDGET_HAS_FLAG(widget, flag) ((widget)->flags & (flag))
@@ -59,7 +60,7 @@ typedef enum {
 #define WIDGET_SET_FOCUSED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_FOCUSED, (value))
 
 #define WIDGET_CAN_RECEIVE_FOCUS(widget) \
-    ((widget) != NULL && ((widget)->type == BUTTON || (widget)->type == TEXT_INPUT))
+    ((widget) != NULL && !(WIDGET_HAS_FLAG((widget), WIDGET_FLAG_NO_FOCUS)) && ((widget)->type == BUTTON || (widget)->type == TEXT_INPUT))
 
 typedef struct s_widget {
     e_widget_type   type;
@@ -78,7 +79,7 @@ typedef struct s_widget {
     struct s_widget *prev;
 
     uint32_t        flags;
-
+    uint8_t         focus_cue; // 0 false; 1 true; 3 ongoing;
     union {
 
         struct {
@@ -87,6 +88,8 @@ typedef struct s_widget {
 
         struct {
             char        *label;
+            int32_t     action_delay_timer;
+            void        (*on_click_action)(struct s_widget*, void*);
         } button;
         
         struct {
@@ -100,6 +103,7 @@ typedef struct s_widget {
             int32_t     selection_start; // -1 if no selection
             bool        cursor_visible;
             uint32_t    blink_timer;
+            uint32_t    focus_timer;
         } text_input;
 
         struct {
@@ -136,6 +140,8 @@ void        draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t 
 void        widget_draw(t_widget *widget, hw_video_t *video);
 void        widget_tick(t_widget *widget, void *state);
 t_widget*   widget_first_focusable(t_widget *root);
+t_widget*   widget_get_next_focusable_sibling(t_widget *widget);
+t_widget*   widget_get_prev_focusable_sibling(t_widget *widget);
 void        draw_canvas(struct s_widget *self, hw_video_t *video);
 void        draw_button(struct s_widget *self, hw_video_t *video);
 void        draw_text(struct s_widget *self, hw_video_t *video);

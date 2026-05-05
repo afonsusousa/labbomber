@@ -4,6 +4,45 @@
 #include <stdbool.h>
 #include "widget.h"
 #include "gui.h"
+
+static bool widget_is_descendant_of(t_widget *widget, t_widget *ancestor) {
+    while (widget != NULL) {
+        if (widget == ancestor) {
+            return true;
+        }
+        widget = widget->parent;
+    }
+
+    return false;
+}
+
+static void gui_clear_widget_refs(t_gui *gui, t_widget *root) {
+    if (gui == NULL || root == NULL) return;
+
+    if (widget_is_descendant_of(gui->input.focused, root)) {
+        WIDGET_SET_FOCUSED(gui->input.focused, false);
+        gui->input.focused = NULL;
+    }
+
+    if (widget_is_descendant_of(gui->input.previous_focus, root)) {
+        gui->input.previous_focus = NULL;
+    }
+
+    if (widget_is_descendant_of(gui->input.clicked_widget, root)) {
+        WIDGET_SET_CLICKED(gui->input.clicked_widget, false);
+        gui->input.clicked_widget = NULL;
+    }
+
+    if (widget_is_descendant_of(gui->input.hovered, root)) {
+        WIDGET_SET_HOVERED(gui->input.hovered, false);
+        gui->input.hovered = NULL;
+    }
+
+    if (widget_is_descendant_of(gui->drag.dragged_widget, root)) {
+        gui->drag.dragged_widget = NULL;
+    }
+}
+
 t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
     if (gui == NULL || widget_name == NULL) return NULL;
 
@@ -39,6 +78,7 @@ void gui_set_focus(t_gui *gui, t_widget *widget) {
 void gui_push_view(t_gui *gui, t_widget *view) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
+    gui->show_focus_cues = false;
     gui_set_focus(gui, NULL);
     gui->views.view_stack[gui->views.view_count] = view;
     gui->views.is_overlay[gui->views.view_count] = false;
@@ -50,6 +90,7 @@ void gui_push_view(t_gui *gui, t_widget *view) {
 void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
+    gui->show_focus_cues = false;
     gui_set_focus(gui, NULL);
     gui->views.view_stack[gui->views.view_count] = overlay;
     gui->views.is_overlay[gui->views.view_count] = true;
@@ -63,6 +104,8 @@ void gui_pop_view(t_gui *gui) {
 
     gui->views.view_count--;
     t_widget *popped = gui->views.view_stack[gui->views.view_count];
+
+    gui_clear_widget_refs(gui, popped);
     widget_destroy(popped);
 
     if (gui->views.view_count > 0) {

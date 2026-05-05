@@ -38,6 +38,7 @@ typedef struct s_state {
     } views;
 
     hw_rtc_t *rtc;
+    bool show_focus_cues;
 
 } t_gui;
 

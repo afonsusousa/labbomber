@@ -257,3 +257,50 @@ void widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool
         child = child->next;
     }
 }
+
+t_widget* widget_get_next_focusable_sibling(t_widget *widget) {
+    if (widget == NULL || widget->parent == NULL) return NULL;
+
+    t_widget *current = widget->next;
+    while (current != NULL) {
+        if (WIDGET_CAN_RECEIVE_FOCUS(current)) {
+            return current;
+        }
+        current = current->next;
+    }
+
+    // Wrap to first focusable sibling
+    current = widget->parent->children;
+    while (current != NULL && current != widget) {
+        if (WIDGET_CAN_RECEIVE_FOCUS(current)) {
+            return current;
+        }
+        current = current->next;
+    }
+
+    return NULL;
+}
+
+t_widget* widget_get_prev_focusable_sibling(t_widget *widget) {
+    if (widget == NULL || widget->parent == NULL) return NULL;
+
+    t_widget *current = widget->prev;
+    while (current != NULL) {
+        if (WIDGET_CAN_RECEIVE_FOCUS(current)) {
+            return current;
+        }
+        current = current->prev;
+    }
+
+    // Wrap to last focusable sibling
+    current = widget->parent->children;
+    t_widget *last_focusable = NULL;
+    while (current != NULL) {
+        if (current != widget && WIDGET_CAN_RECEIVE_FOCUS(current)) {
+            last_focusable = current;
+        }
+        current = current->next;
+    }
+
+    return last_focusable;
+}

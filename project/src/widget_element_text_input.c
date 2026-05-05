@@ -107,7 +107,13 @@ static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, voi
     bool is_ctrl  = gui->input.ctrl_down;
 
     if (scancode == 0x1C) { // Enter
-        gui_set_focus(gui, NULL);
+        t_widget *next_focus = widget_get_next_focusable_sibling(self);
+        self->focus_cue = 0; 
+        if (next_focus != NULL) {
+            gui_set_focus(gui, next_focus);
+            next_focus->focus_cue = 1; // Trigger the flash animation on the new box!
+        } else 
+            gui_set_focus(gui, NULL);
         return;
     }
 
@@ -206,8 +212,22 @@ static void on_text_input_drag(struct s_widget *self, void *state) {
 void draw_text_input(t_widget *self, hw_video_t *video) {
     uint32_t x = get_abs_x(self);
     uint32_t y = get_abs_y(self);
-    uint32_t base_color = WIDGET_IS_CLICKED(self) ? W95_LIGHT_GRAY : W95_GRAY;
-    
+
+    if (self->focus_cue == 1) {
+        self->focus_cue = 2;
+        self->data.text_input.focus_timer = 20;
+    }
+
+    if (self->data.text_input.focus_timer > 0) {
+        self->data.text_input.focus_timer--;
+    }
+
+    if (!WIDGET_IS_FOCUSED(self)) {
+        self->focus_cue = 0;
+        self->data.text_input.focus_timer = 0;
+    }
+
+    uint32_t base_color = WIDGET_IS_CLICKED(self) || (self->data.text_input.focus_timer > 0) ? W95_LIGHT_GRAY : W95_GRAY;
     hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);
     draw_win95_border(video, x, y, self->width, self->height, true);
 
@@ -261,6 +281,7 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
     self->data.text_input.selection_start = -1;
     self->data.text_input.cursor_visible = false;
     self->data.text_input.blink_timer = 0;
+    self->data.text_input.focus_timer = 0;
 
     self->on_click = on_click;
     self->on_press = on_text_input_press;

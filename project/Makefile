@@ -27,6 +27,7 @@ SRCS = \
 	bitwise.c \
 	utils.c \
 	vbe.c \
+	debug.c \
 	board_generator.c
 
 # Compilation flags. 

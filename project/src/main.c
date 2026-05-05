@@ -31,6 +31,8 @@ void init_hardware_state(hardware_t *hw_state) {
     hw_state->mouse.y = (hw_state->video.screen_height / 3) * 2;
 }
 
+void draw_debug_overlay(hw_video_t *video, const t_gui *gui);
+
 static void handle_timer(hardware_t *hw_state, t_gui *gui) {
     hw_timer_int_handler(&hw_state->timer);
     hw_vbe_clear_screen(&hw_state->video, 0x0);
@@ -52,6 +54,7 @@ static void handle_timer(hardware_t *hw_state, t_gui *gui) {
         draw_mouse(&hw_state->mouse, &hw_state->video);
     }
 
+    draw_debug_overlay(&hw_state->video, gui);
     hw_vbe_flip_buffer(&hw_state->video);
 }
 
@@ -68,14 +71,47 @@ static void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pres
         return; 
     }
     bool is_make = (sc & 0x80) == 0;
+    // Mask out the break bit (0x80) so we can check if the key is valid 
+    // even when it's being released.
+    bool is_valid_press = hw_state->keyboard.is_two_bytes || 
+                          hw_state->keyboard.keys_pressed[sc & 0x7F] || 
+                          (!is_make);
+    if (is_valid_press) {
+        
+        // TAB / MAKE ONLY
+        if (is_make && sc == 0x0F) {
+            if (gui->input.focused != NULL) {
+                if (gui->input.focused->focus_cue == 0) {
+                    gui->input.focused->focus_cue = 1;
+                    return; // Consume the key immediately
+                }
 
-    if (is_make) {
-        bool is_valid_press = hw_state->keyboard.is_two_bytes || hw_state->keyboard.keys_pressed[sc];
+                t_widget *next_focus = NULL;
+                if (gui->input.shift_down) {
+                    next_focus = widget_get_prev_focusable_sibling(gui->input.focused);
+                } else {
+                    next_focus = widget_get_next_focusable_sibling(gui->input.focused);
+                }
 
-        if (is_valid_press) {
-            if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
-                gui->input.focused->on_key_press(gui->input.focused, sc, gui);
+                if (next_focus != NULL) {
+                    gui->input.focused->focus_cue = (gui->input.focused->focus_cue == 2) ? 2 : 0;
+                    gui_set_focus(gui, next_focus);
+                    next_focus->focus_cue = 1; 
+                }
             }
+            else {
+                t_widget *first = widget_first_focusable(gui_get_top_view(gui));
+                if (first != NULL) {
+                    gui_set_focus(gui, first);
+                    first->focus_cue = 1;
+                }
+            }
+            return; 
+        }
+        
+        //Make or Break
+        if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
+            gui->input.focused->on_key_press(gui->input.focused, sc, gui);
         }
     }
     
@@ -115,32 +151,40 @@ static void handle_mouse(hardware_t *hw_state, t_gui *gui) {
         } else {
             *dragged = NULL;
         }
-        
-    } else if (is_pressed) { //we clicked on something
+    } else if (is_pressed) {
         if (!*clicked) {
             *clicked = target;
             if (*clicked) {
                 WIDGET_SET_CLICKED(*clicked, true);
+                if (WIDGET_CAN_RECEIVE_FOCUS(*clicked)) {
+                    if (gui->input.focused != NULL) 
+                        gui->input.focused->focus_cue = 0; 
+                    gui_set_focus(gui, *clicked);
+                }
                 if ((*clicked)->on_press) (*clicked)->on_press(*clicked, gui);
             }
         } else {
-            // Held Down / Dragging on a standard click
+            if (target == *clicked) {
+                WIDGET_SET_CLICKED(*clicked, true);
+            } else {
+                WIDGET_SET_CLICKED(*clicked, false);
+            }
             if ((*clicked)->on_drag) (*clicked)->on_drag(*clicked, gui);
             else if ((*clicked)->on_press) (*clicked)->on_press(*clicked, gui);
         }
-        
-    } else { //released the left click
+    } else {
         if (*clicked) {
             t_widget *was_clicked = *clicked; 
+            *clicked = NULL;
+            WIDGET_SET_CLICKED(was_clicked, false);
             
             if (was_clicked == target) {
-                if (WIDGET_CAN_RECEIVE_FOCUS(was_clicked)) gui_set_focus(gui, was_clicked);
-                if (was_clicked->on_click) was_clicked->on_click(was_clicked, gui);
+                if (was_clicked->on_click) {
+                    was_clicked->on_click(was_clicked, gui);
+                }
             }
-            WIDGET_SET_CLICKED(was_clicked, false);
-            if (*clicked == was_clicked) *clicked = NULL;
         }
-    }
+    } 
 
     // only update hover if we aren't dragging anything 
     if (!*dragged) {
