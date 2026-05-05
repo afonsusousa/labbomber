@@ -27,7 +27,8 @@ typedef enum {
     BUTTON,
     TEXT,
     TEXT_INPUT,
-    CANVAS
+    CANVAS,
+    OVERLAY
 } e_widget_type;
 
 typedef enum {

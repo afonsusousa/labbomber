@@ -1,165 +1,84 @@
 #include "draw.h"
-#include "letters.h"
+#include "glyphs.h"
 #include <lcom/xpm.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
-static xpm_row_t const my_mouse_xpm[] = {
-"32 32 3 1",
-"  c None",
-". c #000000",
-"X c #FFFFFF",
-".                               ",
-"..                              ",
-".X.                             ",
-".XX.                            ",
-".XXX.                           ",
-".XXXX.                          ",
-".XXXXX.                         ",
-".XXXXXX.                        ",
-".XXXXXXX.                       ",
-".XXXXXXXX.                      ",
-".XXXXX.....                     ",
-".XX.XX.                         ",
-".X. .XX.                        ",
-"..  .XX.                        ",
-".    .XX.                       ",
-"     .XX.                       ",
-"      .XX.                      ",
-"      .XX.                      ",
-"       ..                       ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                "
-};
+// --- Sprite Cache Definitions ---
+#define SPRITE_CACHE_SIZE 256 
+#define SPRITE_MOUSE_POINTER 130
+#define SPRITE_MOUSE_TEXT    131
 
-static xpm_row_t const text_cursor_xpm[] = {
-"32 32 14 1",
-"  c None",
-". c #2A2A2A",
-"X c #414141",
-"o c #5C5C5C",
-"O c #5D5D5D",
-"+ c #D3D3D3",
-"@ c #D7D7D7",
-"# c #D8D8D8",
-"$ c #DCDCDC",
-"% c #E1E1E1",
-"& c #F5F5F5",
-"* c #F6F6F6",
-"= c #FEFEFE",
-"- c #FFFFFF",
-/* pixels */
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"            *$+++++#=           ",
-"            %O.....X=           ",
-"            ====.+==            ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"               =.+              ",
-"            ====.+==            ",
-"            %O.....X=           ",
-"            *$++++++=           ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                ",
-"                                "
-};
+static xpm_image_t sprite_cache[SPRITE_CACHE_SIZE]; 
+bool sprites_initialized = false;
+
+// --- Initialization ---
+
+void init_sprite_cache() {
+    for (int i = 32; i < 127; i++) {
+        const xpm_row_t* xpm = get_letter_xpm(i);
+        if (xpm != NULL) {
+            xpm_load((xpm_map_t)xpm, XPM_5_6_5, &sprite_cache[i]);
+        } else {
+            sprite_cache[i].bytes = NULL; 
+        }
+    }
+
+    xpm_load((xpm_map_t)my_mouse_xpm, XPM_5_6_5, &sprite_cache[SPRITE_MOUSE_POINTER]);
+    xpm_load((xpm_map_t)text_cursor_xpm, XPM_5_6_5, &sprite_cache[SPRITE_MOUSE_TEXT]);
+
+    sprites_initialized = true;
+}
 
 int draw_mouse(hw_mouse_t *mouse, hw_video_t *video) {
-    static bool loaded = false;
-    static xpm_image_t img;
-    static uint8_t *map = NULL;
-
-    if (!loaded) {
-        map = xpm_load((xpm_map_t) my_mouse_xpm, XPM_5_6_5, &img);
-        loaded = true;
-    }
-
-    if (map != NULL) {
-        hw_vbe_draw_xpm(video, map, img, mouse->x, mouse->y);
-    } else {
-        // Fallback to old square if xpm fails
+    if (!sprites_initialized || sprite_cache[SPRITE_MOUSE_POINTER].bytes == NULL) {
         hw_vbe_draw_rect(video, mouse->x, mouse->y, 4, 4, 0xFFFFFF);
+        return 1;
     }
 
+    xpm_image_t img = sprite_cache[SPRITE_MOUSE_POINTER];
+    hw_vbe_draw_xpm(video, img.bytes, img, mouse->x, mouse->y);
     return 0;
 }
 
 int draw_text_cursor(hw_mouse_t *mouse, hw_video_t *video) {
-    static bool loaded = false;
-    static xpm_image_t img;
-    static uint8_t *map = NULL;
-
-    if (!loaded) {
-        map = xpm_load((xpm_map_t) text_cursor_xpm, XPM_5_6_5, &img);
-        loaded = true;
-    }
-
-    if (map != NULL) {
-        hw_vbe_draw_xpm(video, map, img, mouse->x - (img.width / 2), mouse->y - (img.height / 2));
-    } else {
+    if (!sprites_initialized || sprite_cache[SPRITE_MOUSE_TEXT].bytes == NULL) {
         hw_vbe_draw_vline(video, mouse->x, mouse->y - 8, 16, 0x000000);
+        return 1;
     }
 
+    xpm_image_t img = sprite_cache[SPRITE_MOUSE_TEXT];
+    hw_vbe_draw_xpm(video, img.bytes, img, mouse->x - (img.width / 2), mouse->y - (img.height / 2));
     return 0;
 }
 
 int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32_t bg_color) {
-    if (str == NULL) return 1;
+    if (str == NULL || !sprites_initialized) return 1;
 
+    uint32_t str_len = 0;
+    uint16_t letter_h = 0;
+    
     for (int i = 0; str[i] != '\0'; i++) {
-        const xpm_row_t* xpm = get_letter_xpm(str[i]);
-        if (xpm != NULL) {
-            xpm_image_t img;
-            uint8_t *map = xpm_load((xpm_map_t)xpm, XPM_5_6_5, &img);
-            if (map != NULL) {
-                uint32_t transparent = xpm_transparency_color(img.type);
-                uint8_t *ptr = map;
-
-                for (uint16_t h = 0; h < img.height; h++) {
-                    for (uint16_t w = 0; w < img.width; w++) {
-                        uint32_t color = 0;
-                        for (unsigned k = 0; k < video->bytes_per_pixel; k++)
-                            color |= (ptr[k]) << (k * 8);
-                        int32_t draw_x = x + (i * LETTER_W) + w;
-                        int32_t draw_y = y + h;
-
-                        if (color != transparent)
-                            hw_vbe_draw_pixel(video, draw_x, draw_y, color);
-                        else
-                            hw_vbe_draw_pixel(video, draw_x, draw_y, bg_color);
-                        ptr += video->bytes_per_pixel;
-                    }
-                }
-            }
+        unsigned char c = (unsigned char)str[i];
+        if (c >= 32 && c <= 126 && sprite_cache[c].bytes != NULL) {
+            str_len++;
+            if (sprite_cache[c].height > letter_h) letter_h = sprite_cache[c].height;
         }
     }
+
+    if (str_len > 0) {
+        hw_vbe_draw_rect(video, x, y, str_len * LETTER_W, letter_h, bg_color);
+    }
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        unsigned char char_idx = (unsigned char)str[i];
+        
+        if (char_idx < 32 || char_idx > 126 || sprite_cache[char_idx].bytes == NULL)
+            continue; 
+
+        xpm_image_t img = sprite_cache[char_idx];
+        hw_vbe_draw_xpm(video, img.bytes, img, x + (i * LETTER_W), y);
+    }
+
     return 0;
 }

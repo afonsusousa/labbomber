@@ -160,6 +160,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     if (hw_keyboard_subscribe_int(&hw_state.keyboard) != 0) return 1;
     if (hw_mouse_subscribe_int(&hw_state.mouse) != 0) return 1;
     if (mouse_write_cmd(MOUSE_ENABLE_DATA) != 0) return 1;
+    init_sprite_cache();
 
     int ipc_status;
     message msg;

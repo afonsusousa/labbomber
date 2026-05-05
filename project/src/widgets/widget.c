@@ -11,7 +11,8 @@ widget_draw_func default_draw_funcs[] = {
     [BUTTON]     = draw_button,
     [TEXT]       = draw_text,
     [TEXT_INPUT] = draw_text_input,
-    [DIALOG]     = draw_dialog
+    [DIALOG]     = draw_dialog,
+    [OVERLAY]    = NULL
 };
 
 int32_t get_abs_x(t_widget *self) {
