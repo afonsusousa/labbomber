@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "widget.h"
+#include "rtc.h"
 
 #define MAX_VIEWS 10
 
@@ -36,31 +37,34 @@ typedef struct s_state {
         int32_t   view_count;
     } views;
 
+    hw_rtc_t *rtc;
 
-} t_state;
+} t_gui;
 
-void      gui_init(t_state *gui, uint32_t screen_width, uint32_t screen_height);
-void      gui_destroy(t_state *gui);
-void      gui_set_focus(t_state *gui, t_widget *widget);
-void      gui_set_active(t_state *gui, t_widget *widget, bool active);
+void      gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height);
+void      gui_destroy(t_gui *gui);
+void      gui_set_focus(t_gui *gui, t_widget *widget);
+void      gui_set_active(t_gui *gui, t_widget *widget, bool active);
 void      widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical);
 
+int       gui_get_curr_time(t_gui *gui, hw_rtc_t *out);
+
 // Stack API
-void      gui_push_view(t_state *gui, t_widget *view);
-void      gui_push_overlay(t_state *gui, t_widget *overlay);
-void      gui_pop_view(t_state *gui);
-t_widget* gui_get_top_view(t_state *gui);
-t_widget* gui_pop_until_widget_found(t_state *gui, const char *widget_name);
+void      gui_push_view(t_gui *gui, t_widget *view);
+void      gui_push_overlay(t_gui *gui, t_widget *overlay);
+void      gui_pop_view(t_gui *gui);
+t_widget* gui_get_top_view(t_gui *gui);
+t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name);
 
 // Menus/Launchers
-void init_game(t_state *gui);
-void gui_show_start_menu(t_state *gui);
-void gui_show_name_menu(t_state *gui, bool is_multiplayer);
-void gui_show_pause_menu(t_state *gui);
-void gui_show_scoreboard(t_state *gui);
-void gui_show_info_dialog(t_state *gui, const char *title, const char *message);
+void init_game(t_gui *gui);
+void gui_show_start_menu(t_gui *gui);
+void gui_show_name_menu(t_gui *gui, bool is_multiplayer);
+void gui_show_pause_menu(t_gui *gui);
+void gui_show_scoreboard(t_gui *gui);
+void gui_show_info_dialog(t_gui *gui, const char *title, const char *message);
 void gui_show_confirm_dialog(
-    t_state *gui,
+    t_gui *gui,
     const char *title,
     const char *message,
     void (*on_yes)(t_widget *, void *),

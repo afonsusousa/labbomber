@@ -4,8 +4,7 @@
 #include <stdbool.h>
 #include "widget.h"
 #include "gui.h"
-
-t_widget* gui_pop_until_widget_found(t_state *gui, const char *widget_name) {
+t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
     if (gui == NULL || widget_name == NULL) return NULL;
 
     while (gui->views.view_count > 0) {
@@ -22,7 +21,7 @@ t_widget* gui_pop_until_widget_found(t_state *gui, const char *widget_name) {
     return NULL;
 }
 
-void gui_set_focus(t_state *gui, t_widget *widget) {
+void gui_set_focus(t_gui *gui, t_widget *widget) {
     if (gui->input.focused != widget) {
         if (gui->input.focused != NULL) {
             WIDGET_SET_FOCUSED(gui->input.focused, false);
@@ -37,7 +36,7 @@ void gui_set_focus(t_state *gui, t_widget *widget) {
     }
 }
 
-void gui_push_view(t_state *gui, t_widget *view) {
+void gui_push_view(t_gui *gui, t_widget *view) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
     gui_set_focus(gui, NULL);
@@ -48,7 +47,7 @@ void gui_push_view(t_state *gui, t_widget *view) {
     gui_set_focus(gui, widget_first_focusable(view));
 }
 
-void gui_push_overlay(t_state *gui, t_widget *overlay) {
+void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
     gui_set_focus(gui, NULL);
@@ -59,7 +58,7 @@ void gui_push_overlay(t_state *gui, t_widget *overlay) {
     gui_set_focus(gui, widget_first_focusable(overlay));
 }
 
-void gui_pop_view(t_state *gui) {
+void gui_pop_view(t_gui *gui) {
     if (gui->views.view_count <= 0) return;
 
     gui->views.view_count--;
@@ -72,42 +71,30 @@ void gui_pop_view(t_state *gui) {
     }
 }
 
-t_widget* gui_get_top_view(t_state *gui) {
+t_widget* gui_get_top_view(t_gui *gui) {
     if (gui->views.view_count == 0) return NULL;
     return gui->views.view_stack[gui->views.view_count - 1];
 }
 
-void gui_destroy(t_state *gui) {
+void gui_destroy(t_gui *gui) {
     while (gui->views.view_count > 0) {
         gui_pop_view(gui);
     }
 }
 
-void widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical) {
-    if (!container || !is_vertical) return;
+int gui_get_curr_time(t_gui *gui, hw_rtc_t *out) {
+    if (out == NULL) return 1;
 
-    uint32_t total_children_h = 0;
-    uint32_t child_count = 0;
-    t_widget *child = container->children;
-    while (child) {
-        if (!WIDGET_HAS_FLAG(child, WIDGET_FLAG_NO_LAYOUT)) {
-            total_children_h += child->height;
-            child_count++;
-        }
-        child = child->next;
+    hw_rtc_t tmp;
+    hw_rtc_t *source = &tmp;
+
+    if (gui != NULL && gui->rtc != NULL) {
+        source = gui->rtc;
     }
-    if (child_count > 1)
-        total_children_h += (child_count - 1) * spacing;
 
-    uint32_t current_y = (container->height > total_children_h) ? (container->height - total_children_h) / 2 : padding;
+    int ret = hw_rtc_get_time(source);
+    if (ret != 0) return ret;
 
-    child = container->children;
-    while (child) {
-        if (!WIDGET_HAS_FLAG(child, WIDGET_FLAG_NO_LAYOUT)) {
-            uint32_t child_x = (container->width > child->width) ? (container->width - child->width) / 2 : 0;
-            widget_set_position(child, child_x, current_y);
-            current_y += child->height + spacing;
-        }
-        child = child->next;
-    }
+    *out = *source;
+    return 0;
 }

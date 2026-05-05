@@ -229,3 +229,31 @@ void widget_tick(t_widget *widget, void *state) {
     }
 }
 
+void widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical) {
+    if (!container || !is_vertical) return;
+
+    uint32_t total_children_h = 0;
+    uint32_t child_count = 0;
+    t_widget *child = container->children;
+    while (child) {
+        if (!WIDGET_HAS_FLAG(child, WIDGET_FLAG_NO_LAYOUT)) {
+            total_children_h += child->height;
+            child_count++;
+        }
+        child = child->next;
+    }
+    if (child_count > 1)
+        total_children_h += (child_count - 1) * spacing;
+
+    uint32_t current_y = (container->height > total_children_h) ? (container->height - total_children_h) / 2 : padding;
+
+    child = container->children;
+    while (child) {
+        if (!WIDGET_HAS_FLAG(child, WIDGET_FLAG_NO_LAYOUT)) {
+            uint32_t child_x = (container->width > child->width) ? (container->width - child->width) / 2 : 0;
+            widget_set_position(child, child_x, current_y);
+            current_y += child->height + spacing;
+        }
+        child = child->next;
+    }
+}

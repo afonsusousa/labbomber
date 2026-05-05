@@ -1,8 +1,12 @@
 #include "game.h"
 #include "widget.h"
 #include "gui.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static void free_text_label_on_destroy(t_widget *self);
+static void update_status_date(t_widget *status_bar, t_gui *gui);
 
 // aqui desenha-se conforme o state, as posicoes, o mapa etc
 // usar hw_vbe_draw_xpm
@@ -22,8 +26,8 @@ void draw_game_canvas(t_widget *self, hw_video_t *video) {
     int32_t abs_x = get_abs_x(self);
     int32_t abs_y = get_abs_y(self);
 
-    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_DARK_GRAY);
-    draw_win95_border(video, abs_x, abs_y, self->width - 4, self->height - 4, false);
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, 0x0);
+    draw_win95_border(video, abs_x, abs_y, self->width, self->height, false);
 
     for (uint32_t y = 0; y < state->height; ++y) {
         for (uint32_t x = 0; x < state->width; ++x) {
@@ -46,7 +50,7 @@ void draw_game_canvas(t_widget *self, hw_video_t *video) {
 
 static void on_game_canvas_press(t_widget *self, void *state) {
     // aqui lida-se com o rato dentro do jogo
-    t_state *gui = (t_state*)state;
+    t_gui *gui = (t_gui*)state;
     t_game_state *game = (t_game_state*)self->data.game.state;
     int32_t click_x = gui->input.mouse_x - get_abs_x(self);
     int32_t click_y = gui->input.mouse_y - get_abs_y(self);
@@ -78,7 +82,20 @@ static void free_game_state(t_widget *self) {
     }
 }
 
-void gui_reset_game(t_state *gui) {
+static void game_canvas_on_tick(t_widget *self, void *state) {
+    (void)self;
+    (void)state;
+    // Placeholder for per-frame game updates (animations, timers)
+}
+
+static void status_bar_on_tick(t_widget *self, void *state) {
+    if (self == NULL) return;
+    t_gui *gui = (t_gui*)state;
+    if (gui == NULL) return;
+    update_status_date(self, gui);
+}
+
+void gui_reset_game(t_gui *gui) {
     if (gui == NULL) {
         return;
     }
@@ -101,7 +118,7 @@ void gui_reset_game(t_state *gui) {
 // manter exatamente igual
 static void on_game_view_quit(t_widget *self, void *state) {
     (void)self;
-    t_state *gui = (t_state*)state;
+    t_gui *gui = (t_gui*)state;
 
     if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
         gui->input.focused->on_quit(gui->input.focused, state);
@@ -116,13 +133,18 @@ static void on_game_view_quit(t_widget *self, void *state) {
     // Game View Displays
     // -------------------------------------------------------------------------
 
-// AQUI: o Launcher do jogo - o botao start chama isto
+// AQUI: o Launcher do jogo - o botao start dochama isto
 // Falta receber argumentos tipo o nome dos players, etc - para iniciar o game state
-void init_game(t_state *gui) {
+void init_game(t_gui *gui) {
     t_widget *view = widget_create(CANVAS, 0, 0, gui->width, gui->height, "game_view");
     if (view == NULL) return;
 
+    //mexer depois, para já ta a mostrar a hora
     t_widget *status_bar = widget_create(CANVAS, 0, 0, gui->width, 40, "game_status_bar");
+    if (status_bar != NULL) {
+        update_status_date(status_bar, gui);
+        status_bar->on_tick = status_bar_on_tick;
+    }
     widget_add_child(view, status_bar);
 
     uint32_t canvas_h = gui->height - 40;
@@ -130,6 +152,7 @@ void init_game(t_state *gui) {
     game_canvas->draw = draw_game_canvas;
     game_canvas->on_press = on_game_canvas_press;
     game_canvas->on_drag = on_game_canvas_press;
+    game_canvas->on_tick = game_canvas_on_tick;
 
     //o game state vai levar o board, os players, start time, etc
     t_game_state *game_state = (t_game_state*)calloc(1, sizeof(t_game_state));
@@ -156,3 +179,47 @@ void init_game(t_state *gui) {
 }
 
 
+
+
+// ignorar mais ou menos
+
+static void free_text_label_on_destroy(t_widget *self) {
+    if (self == NULL) return;
+    if (self->data.text_display.text != NULL) {
+        free(self->data.text_display.text);
+        self->data.text_display.text = NULL;
+    }
+}
+
+static void update_status_date(t_widget *status_bar, t_gui *gui) {
+    if (status_bar == NULL || gui == NULL) return;
+
+    hw_rtc_t rtc_info;
+    if (gui_get_curr_time(gui, &rtc_info) != 0) return;
+
+    char date_buf[64];
+    snprintf(date_buf, sizeof(date_buf), "20%02u-%02u-%02u %02u:%02u:%02u",
+             rtc_info.year, rtc_info.month, rtc_info.day,
+             rtc_info.hours, rtc_info.minutes, rtc_info.seconds);
+
+    t_widget *date_w = widget_find_by_name(status_bar, "status_date");
+    if (date_w == NULL) {
+        char *label = strdup(date_buf);
+        if (label == NULL) return;
+        date_w = widget_add_text(status_bar, (int32_t)gui->width - 300, 8, 215, 24, label, "status_date");
+        if (date_w != NULL) {
+            date_w->on_destroy = free_text_label_on_destroy;
+        } else {
+            free(label);
+        }
+        return;
+    }
+
+    const char *cur = date_w->data.text_display.text;
+    if (cur == NULL || strcmp(cur, date_buf) != 0) {
+        char *new_label = strdup(date_buf);
+        if (new_label == NULL) return;
+        if (date_w->data.text_display.text != NULL) free(date_w->data.text_display.text);
+        date_w->data.text_display.text = new_label;
+    }
+}

@@ -31,7 +31,7 @@ void init_hardware_state(hardware_t *hw_state) {
     hw_state->mouse.y = (hw_state->video.screen_height / 3) * 2;
 }
 
-static void handle_timer(hardware_t *hw_state, t_state *gui) {
+static void handle_timer(hardware_t *hw_state, t_gui *gui) {
     hw_timer_int_handler(&hw_state->timer);
     hw_vbe_clear_screen(&hw_state->video, 0x0);
 
@@ -56,7 +56,7 @@ static void handle_timer(hardware_t *hw_state, t_state *gui) {
 }
 
 //will need to check if this is enough for CTRL SHIFT and other 2byte keys
-static void handle_keyboard(hardware_t *hw_state, t_state *gui, bool *esc_was_pressed) {
+static void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
     hw_keyboard_ih(&hw_state->keyboard);
     
     gui->input.shift_down = hw_state->keyboard.keys_pressed[0x2A] || hw_state->keyboard.keys_pressed[0x36];
@@ -91,7 +91,7 @@ static void handle_keyboard(hardware_t *hw_state, t_state *gui, bool *esc_was_pr
     *esc_was_pressed = esc_is_pressed;
 }
 
-static void handle_mouse(hardware_t *hw_state, t_state *gui) {
+static void handle_mouse(hardware_t *hw_state, t_gui *gui) {
     if (!hw_mouse_ih(&hw_state->mouse)) return;
 
     gui->input.mouse_x = hw_state->mouse.x;
@@ -172,7 +172,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     hardware_t hw_state;
     init_hardware_state(&hw_state);
 
-    t_state gui;
+    t_gui gui;
     gui_init(&gui, hw_state.video.screen_width, hw_state.video.screen_height);
 
     if (timer_set_frequency(0, 144) != 0) return 1;

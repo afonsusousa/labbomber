@@ -73,7 +73,7 @@ void draw_canvas(t_widget *self, hw_video_t *video) {
 */
 
 static void on_dialog_press(t_widget *self, void *state) {
-    t_state *gui = (t_state*)state;
+    t_gui *gui = (t_gui*)state;
     int32_t abs_y = get_abs_y(self);
     if (gui->input.mouse_y >= abs_y && gui->input.mouse_y < abs_y + 24) {
         gui->drag.dragged_widget = self;
@@ -83,7 +83,7 @@ static void on_dialog_press(t_widget *self, void *state) {
 }
 
 static void on_dialog_drag(t_widget *self, void *state) {
-    t_state *gui = (t_state*)state;
+    t_gui *gui = (t_gui*)state;
     int32_t new_x = gui->input.mouse_x - gui->drag.dragt_dx;
     int32_t new_y = gui->input.mouse_y - gui->drag.dragt_dy;
     widget_set_position(self, new_x, new_y);

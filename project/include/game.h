@@ -13,7 +13,7 @@ typedef struct s_game_state {
     uint32_t height;
 } t_game_state;
 
-void init_game(t_state *gui);
-void gui_reset_game(t_state *gui);
+void init_game(t_gui *gui);
+void gui_reset_game(t_gui *gui);
 
 #endif /* LCOM_PROJECT_GAME_H */
