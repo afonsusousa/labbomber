@@ -8,8 +8,6 @@
 static void free_text_label_on_destroy(t_widget *self);
 static void update_status_date(t_widget *status_bar, t_gui *gui);
 
-
-
 // =============================================================================
 // Game View
 // =============================================================================

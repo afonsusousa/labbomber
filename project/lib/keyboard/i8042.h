@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_KEYBOARD_I8042_H
+#define LIB_KEYBOARD_I8042_H
 #include "../utils/utils.h" 
 
 #define KBC_IRQ         1
@@ -30,3 +30,5 @@
 #define MOUSE_ACK           0xFA
 #define MOUSE_NACK          0xFE
 #define MOUSE_ERROR         0xFC
+
+#endif /* LIB_KEYBOARD_I8042_H */

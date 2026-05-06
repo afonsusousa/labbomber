@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LCOM_PROJECT_HARDWARE_H
+#define LCOM_PROJECT_HARDWARE_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,3 +21,5 @@ typedef struct {
 } hardware_t;
 
 void init_hardware_state(hardware_t *hw_state);
+
+#endif /* LCOM_PROJECT_HARDWARE_H */

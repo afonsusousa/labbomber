@@ -72,9 +72,8 @@ int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32
 
     for (int i = 0; str[i] != '\0'; i++) {
         unsigned char char_idx = (unsigned char)str[i];
-        
         if (char_idx < 32 || char_idx > 126 || sprite_cache[char_idx].bytes == NULL)
-            continue; 
+            continue;
 
         xpm_image_t img = sprite_cache[char_idx];
         hw_vbe_draw_xpm(video, img.bytes, img, x + (i * LETTER_W), y);

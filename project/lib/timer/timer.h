@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_TIMER_TIMER_H
+#define LIB_TIMER_TIMER_H
 #include <stdbool.h>
 #include <stdint.h>
 #include "i8254.h"
@@ -20,3 +20,4 @@ uint32_t    hw_timer_get_no_interrups(const hw_timer_t *timer);
 void        hw_timer_reset_ticks(hw_timer_t *timer);
 bool        hw_timer_elapsed(const hw_timer_t *timer, uint32_t start_tick, uint32_t ticks_to_wait);
 
+#endif /* LIB_TIMER_TIMER_H */

@@ -1,9 +1,8 @@
-#ifndef _BOARD_GENERATOR_H_
-#define _BOARD_GENERATOR_H_
+#ifndef LCOM_PROJECT_BOARD_GENERATOR_H
+#define LCOM_PROJECT_BOARD_GENERATOR_H
 
-#pragma once
 #include <stdint.h>
 
 void generateBoard(char *board, int day, int month, int year);
 
-#endif /* _BOARD_GENERATOR_H_ */
+#endif /* LCOM_PROJECT_BOARD_GENERATOR_H */

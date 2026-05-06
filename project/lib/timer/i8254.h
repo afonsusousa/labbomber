@@ -1,3 +1,6 @@
+#ifndef LIB_TIMER_I8254_H
+#define LIB_TIMER_I8254_H
+
 #ifndef _LCOM_I8254_H_
 #define _LCOM_I8254_H_
 
@@ -34,3 +37,5 @@
 #define TIMER_RB_SEL(n)  BIT((n) + 1)
 
 #endif
+
+#endif /* LIB_TIMER_I8254_H */

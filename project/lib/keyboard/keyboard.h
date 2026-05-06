@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_KEYBOARD_KEYBOARD_H
+#define LIB_KEYBOARD_KEYBOARD_H
 #include <stdint.h>
 #include <stdbool.h>
 #include "i8042.h"
@@ -17,3 +17,5 @@ void    hw_keyboard_init(hw_keyboard_t *kbd);
 int     hw_keyboard_subscribe_int(hw_keyboard_t *kbd);
 int     hw_keyboard_unsubscribe_int(hw_keyboard_t *kbd);
 void    hw_keyboard_ih(hw_keyboard_t *kbd);
+
+#endif /* LIB_KEYBOARD_KEYBOARD_H */

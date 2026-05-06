@@ -1,5 +1,5 @@
-#ifndef _LETTERS_H_
-#define _LETTERS_H_
+#ifndef LCOM_PROJECT_GLYPHS_H
+#define LCOM_PROJECT_GLYPHS_H
 
 #include <lcom/xpm.h>
 
@@ -187,4 +187,4 @@ static xpm_row_t const text_cursor_xpm[] = {
 "                                "
 };
 
-#endif /* _LETTERS_H_ */
+#endif /* LCOM_PROJECT_GLYPHS_H */

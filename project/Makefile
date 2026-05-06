@@ -28,6 +28,7 @@ SRCS = \
 	utils.c \
 	vbe.c \
 	debug.c \
+	event_handlers.c \
 	board_generator.c
 
 # Compilation flags. 

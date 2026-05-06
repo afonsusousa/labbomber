@@ -1,5 +1,5 @@
-#ifndef _DRAW_H_
-#define _DRAW_H_
+#ifndef LCOM_PROJECT_DRAW_H
+#define LCOM_PROJECT_DRAW_H
 
 #include "../lib/mouse/mouse.h"
 #include "../lib/vbe/vbe.h"
@@ -10,4 +10,4 @@ int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32
 void init_sprite_cache();
 void draw_board(hw_video_t *video);
 
-#endif /* _DRAW_H_ */
+#endif /* LCOM_PROJECT_DRAW_H */

@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_RTC_RTC_H
+#define LIB_RTC_RTC_H
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -21,3 +21,5 @@ void    hw_rtc_init(hw_rtc_t *rtc);
 int     hw_rtc_subscribe_int(hw_rtc_t *rtc);
 int     hw_rtc_unsubscribe_int(hw_rtc_t *rtc);
 int     hw_rtc_get_time(hw_rtc_t *info);
+
+#endif /* LIB_RTC_RTC_H */

@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_VBE_VBE_H
+#define LIB_VBE_VBE_H
 #include <stdint.h>
 #include <stdbool.h>
 #include <machine/int86.h>
@@ -37,4 +37,5 @@ int     hw_vbe_draw_vline(hw_video_t *video, int32_t x, int32_t y, uint16_t leng
 int     hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, uint16_t height, uint32_t color);
 int     hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y);
 void    hw_vbe_flip_buffer(hw_video_t *video);
-int     hw_vbe_exit();
+
+#endif /* LIB_VBE_VBE_H */

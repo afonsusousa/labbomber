@@ -1,5 +1,5 @@
-#ifndef _LCOM_UTILS_H_
-#define _LCOM_UTILS_H_
+#ifndef LIB_UTILS_UTILS_H
+#define LIB_UTILS_UTILS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,4 +14,4 @@ bool        is_single_byte(uint16_t keycode);
 uint16_t    break_from_make(uint16_t keycode);
 int         util_sys_inb(int port, uint8_t *value);
 
-#endif /* _LCOM_UTILS_H_ */
+#endif /* LIB_UTILS_UTILS_H */

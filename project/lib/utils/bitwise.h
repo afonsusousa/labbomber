@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_UTILS_BITWISE_H
+#define LIB_UTILS_BITWISE_H
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -35,3 +35,5 @@ uint8_t msb(uint16_t wide_msk);
  * ends at the sentinel `MSK_END` value, by convention.
  */
 uint8_t mask(int pos, ...);
+
+#endif /* LIB_UTILS_BITWISE_H */

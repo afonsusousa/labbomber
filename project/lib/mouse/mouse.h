@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LIB_MOUSE_MOUSE_H
+#define LIB_MOUSE_MOUSE_H
 #include <stdint.h>
 #include <stdbool.h>
 #include "../keyboard/i8042.h"
@@ -30,3 +30,5 @@ int     hw_mouse_subscribe_int(hw_mouse_t *mouse);
 int     hw_mouse_unsubscribe_int(hw_mouse_t *mouse);
 bool    hw_mouse_ih(hw_mouse_t *mouse);
 int     mouse_write_cmd(uint8_t cmd);
+
+#endif /* LIB_MOUSE_MOUSE_H */
