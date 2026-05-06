@@ -57,7 +57,7 @@ static void reset_blink(struct s_widget *self) {
 static uint32_t get_pos_from_mouse(struct s_widget *self, t_gui *gui) {
     int32_t rel_x = gui->input.mouse_x - (get_abs_x(self) + 4);
     if (rel_x < 0) return 0;
-    return MIN((rel_x + 5) / 11, strlen(self->data.text_input.buffer));
+    return MIN((rel_x + 5) / 11, self->data.text_input.len);
 }
 
 static void delete_selection(struct s_widget *self, uint32_t len) {
@@ -120,7 +120,7 @@ static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, voi
     uint32_t *cursor = &self->data.text_input.cursor_pos;
     int32_t  *anchor = &self->data.text_input.selection_start;
     char     *buf    = self->data.text_input.buffer;
-    uint32_t len     = strlen(buf);
+    uint32_t *len    = &self->data.text_input.len;
 
     if (scancode == 0x4B) { // Left arrow
         if (is_shift && !has_selection(self)) *anchor = *cursor;
@@ -142,7 +142,7 @@ static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, voi
             *cursor = word_end_offset(buf, *cursor);
         else if (has_selection(self) && !is_shift)
             *cursor = MAX(*anchor, *cursor);
-        else if (*cursor < len)
+        else if (*cursor < *len)
             (*cursor)++;
         
         if (!is_shift) *anchor = -1;
@@ -150,30 +150,32 @@ static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, voi
         
     } else if (scancode == 0x0E) { // Backspace
         if (has_selection(self)) {
-            delete_selection(self, len);
+            delete_selection(self, *len);
         } else if (*cursor > 0) {
             uint32_t target = is_ctrl ? word_start_offset(buf, *cursor) : (*cursor) - 1;
             
-            memmove(&buf[target], &buf[*cursor], len - *cursor + 1);
+            memmove(&buf[target], &buf[*cursor], *len - *cursor + 1);
             *cursor = target;
         }
         
         *anchor = -1;
+        *len = strlen(buf);
         reset_blink(self);
         
     } else { // Typing a character
         char c = get_char_from_scancode(scancode);
         if (c != 0) {
             if (has_selection(self)) {
-                delete_selection(self, len);
-                len = strlen(buf); // Refresh length since we just deleted text
+                delete_selection(self, *len);
+                *len = strlen(buf); // Refresh length since we just deleted text
             } else {
                 *anchor = -1;
             }
-            if (len < self->data.text_input.max_length) {
-                memmove(&buf[*cursor + 1], &buf[*cursor], len - *cursor + 1);
+            if (*len < self->data.text_input.max_length) {
+                memmove(&buf[*cursor + 1], &buf[*cursor], *len - *cursor + 1);
                 buf[*cursor] = c;
                 (*cursor)++;
+                (*len)++;
                 reset_blink(self);
             }
         }
@@ -187,10 +189,15 @@ static void on_text_input_tick(struct s_widget *self, void *state) {
             self->data.text_input.cursor_visible = !self->data.text_input.cursor_visible;
             self->data.text_input.blink_timer = 0;
         }
+        if (self->data.text_input.focus_timer > 0) {
+            self->data.text_input.selection_start = 0;
+            self->data.text_input.cursor_pos = self->data.text_input.len;
+        }
     } else {
         self->data.text_input.cursor_visible = false;
         self->data.text_input.blink_timer = 0;
     }
+
 }
 
 static void on_text_input_quit(struct s_widget *self, void *state) {
@@ -277,6 +284,7 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
     }
     
     self->data.text_input.max_length = 16;
+    self->data.text_input.len = strlen(self->data.text_input.buffer);
     self->data.text_input.cursor_pos = strlen(self->data.text_input.buffer);
     self->data.text_input.selection_start = -1;
     self->data.text_input.cursor_visible = false;

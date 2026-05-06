@@ -84,7 +84,7 @@ void gui_push_view(t_gui *gui, t_widget *view) {
     gui->views.is_overlay[gui->views.view_count] = false;
     gui->views.view_count++;
 
-    gui_set_focus(gui, widget_first_focusable(view));
+    gui_set_focus(gui, view);
 }
 
 void gui_push_overlay(t_gui *gui, t_widget *overlay) {
@@ -96,7 +96,7 @@ void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     gui->views.is_overlay[gui->views.view_count] = true;
     gui->views.view_count++;
 
-    gui_set_focus(gui, widget_first_focusable(overlay));
+    gui_set_focus(gui, overlay);
 }
 
 void gui_pop_view(t_gui *gui) {
@@ -110,7 +110,7 @@ void gui_pop_view(t_gui *gui) {
 
     if (gui->views.view_count > 0) {
         t_widget *new_top = gui->views.view_stack[gui->views.view_count - 1];
-        gui_set_focus(gui, widget_first_focusable(new_top));
+        gui_set_focus(gui, new_top);
     }
 }
 

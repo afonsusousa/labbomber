@@ -49,7 +49,18 @@ void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
     if (is_valid_press) {
         // TAB / MAKE ONLY
         if (is_make && sc == 0x0F) {
+            t_widget *top_view = gui_get_top_view(gui);
+
             if (gui->input.focused != NULL) {
+                if (gui->input.focused == top_view) {
+                    t_widget *first = widget_first_focusable(top_view);
+                    if (first != NULL) {
+                        gui_set_focus(gui, first);
+                        first->focus_cue = 1;
+                    }
+                    return;
+                }
+
                 if (gui->input.focused->focus_cue == 0) {
                     gui->input.focused->focus_cue = 1;
                     return; // Consume the key immediately
@@ -69,7 +80,7 @@ void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
                 }
             }
             else {
-                t_widget *first = widget_first_focusable(gui_get_top_view(gui));
+                t_widget *first = widget_first_focusable(top_view);
                 if (first != NULL) {
                     gui_set_focus(gui, first);
                     first->focus_cue = 1;

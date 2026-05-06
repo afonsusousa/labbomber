@@ -100,6 +100,7 @@ typedef struct s_widget {
             char        *buffer;
             uint32_t    max_length;
             uint32_t    cursor_pos;
+            uint32_t    len;
             int32_t     selection_start; // -1 if no selection
             bool        cursor_visible;
             uint32_t    blink_timer;

@@ -121,7 +121,8 @@ static void on_game_view_quit(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = (t_gui*)state;
 
-    if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
+    //isto esta feio mas não mexer até absoluta necessidade
+    if (gui->input.focused != NULL && gui->input.focused != self && gui->input.focused->on_quit != NULL) {
         gui->input.focused->on_quit(gui->input.focused, state);
         return;
     }

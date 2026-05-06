@@ -42,7 +42,7 @@ void btn_on_tick(t_widget *self, void *state) {
 }
 
 void btn_internal_on_click(t_widget *self, void *state) {
-    self->data.button.action_delay_timer = 10;
+    self->data.button.action_delay_timer = 7;
 }
 
 void btn_on_key_press(t_widget *self, uint8_t scancode, void *state) {
