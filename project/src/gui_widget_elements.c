@@ -5,6 +5,13 @@
 #include <stdio.h>
 #include <string.h>
 
+// Forward declarations for static callback functions
+static void _callback_button_on_tick(t_widget *self, void *state);
+static void _callback_button_internal_on_click(t_widget *self, void *state);
+static void _callback_button_on_key_press(t_widget *self, uint8_t scancode, void *state);
+static void _callback_dialog_on_press(t_widget *self, void *state);
+static void _callback_dialog_on_drag(t_widget *self, void *state);
+
 /*
 --------------------------------------------------------------------------------
     SIMPLE TEXT DISPLAY
@@ -32,7 +39,7 @@ t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, ui
 --------------------------------------------------------------------------------
 */
 
-void btn_on_tick(t_widget *self, void *state) {
+static void _callback_button_on_tick(t_widget *self, void *state) {
     if (self->data.button.action_delay_timer > 0) {
         self->data.button.action_delay_timer--;
         if (self->data.button.action_delay_timer == 0) {
@@ -43,18 +50,18 @@ void btn_on_tick(t_widget *self, void *state) {
     }
 }
 
-void btn_internal_on_click(t_widget *self, void *state) {
+static void _callback_button_internal_on_click(t_widget *self, void *state) {
     self->data.button.action_delay_timer = 7;
 }
 
-void btn_on_key_press(t_widget *self, uint8_t scancode, void *state) {
+static void _callback_button_on_key_press(t_widget *self, uint8_t scancode, void *state) {
     if (scancode == 0x1C) {
         WIDGET_SET_CLICKED(self, true);
     } 
     else if (scancode == 0x9C) {
         if (WIDGET_IS_CLICKED(self)) {
             WIDGET_SET_CLICKED(self, false);
-            btn_internal_on_click(self, state);
+            _callback_button_internal_on_click(self, state);
         }
     }
 }
@@ -98,9 +105,9 @@ t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, 
     btn->data.button.action_delay_timer = 0;
     btn->data.button.on_click_action = on_click;
     
-    btn->on_click = btn_internal_on_click;
-    btn->on_key_press = btn_on_key_press; 
-    btn->on_tick = btn_on_tick;
+    btn->on_click = _callback_button_internal_on_click;
+    btn->on_key_press = _callback_button_on_key_press;
+    btn->on_tick = _callback_button_on_tick;
     
     widget_add_child(parent, btn);
     return btn;
@@ -123,7 +130,7 @@ void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
 --------------------------------------------------------------------------------
 */
 
-static void on_dialog_press(t_widget *self, void *state) {
+static void _callback_dialog_on_press(t_widget *self, void *state) {
     t_ctx *ctx = (t_ctx*)state;
     t_gui *gui = &ctx->gui;
     int32_t abs_y = get_abs_y(self);
@@ -134,7 +141,7 @@ static void on_dialog_press(t_widget *self, void *state) {
     }
 }
 
-static void on_dialog_drag(t_widget *self, void *state) {
+static void _callback_dialog_on_drag(t_widget *self, void *state) {
     t_ctx *ctx = (t_ctx*)state;
     t_gui *gui = &ctx->gui;
     int32_t new_x = gui->input.mouse_x - gui->drag.dragt_dx;
@@ -168,8 +175,8 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
     dialog->data.dialog.title = (char*)title;
 
     // Default dialog dragging behavior
-    dialog->on_press = on_dialog_press;
-    dialog->on_drag = on_dialog_drag;
+    dialog->on_press = _callback_dialog_on_press;
+    dialog->on_drag = _callback_dialog_on_drag;
 
     uint32_t dlg_x = (screen_w > w) ? (screen_w - w) / 2 : 0;
     uint32_t dlg_y = (screen_h > h) ? (screen_h - h) / 2 : 0;
@@ -191,5 +198,3 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
 
     return dialog;
 }
-
-

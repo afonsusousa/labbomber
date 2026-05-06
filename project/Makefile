@@ -12,14 +12,6 @@ PROG = proj
 
 # List EVERY .c file in your project here (no folder paths, just the names)
 SRCS = \
-	main.c \
-	game.c \
-	draw.c \
-	gui_utils.c \
-	gui_menus.c \
-	widget_utils.c \
-	widget_element_simple.c \
-	widget_element_text_input.c \
 	keyboard.c \
 	mouse.c \
 	rtc.c \
@@ -27,9 +19,19 @@ SRCS = \
 	bitwise.c \
 	utils.c \
 	vbe.c \
-	debug.c \
-	event_handlers.c \
-	board_generator.c
+    board_generator.c \
+    debug.c \
+    draw.c \
+    event_handlers.c \
+    game.c \
+    gui_game.c \
+    gui_menus.c \
+    gui_utils.c \
+    gui_widget_elements.c \
+    gui_widget_text_input.c \
+    gui_widget_utils.c \
+    main.c
+	
 
 # Compilation flags. 
 # We include all the lib folders so your #include "timer.h" statements work seamlessly.

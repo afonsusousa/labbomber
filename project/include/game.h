@@ -16,13 +16,11 @@ typedef struct s_game_state {
     bool is_paused;
 } t_game_state;
 
-int  game_state_init(t_game_state *game, uint32_t width, uint32_t height);
-void game_state_reset(t_game_state *game);
-void game_state_destroy(t_game_state *game);
-void update_game_logic(struct s_ctx *ctx);
-
-void init_game(struct s_ctx *ctx);
-void gui_reset_game(struct s_ctx *ctx);
-
+int     game_state_init(t_game_state *game, uint32_t width, uint32_t height);
+void    game_state_reset(t_game_state *game);
+void    game_state_destroy(t_game_state *game);
+void    game_state_update(struct s_ctx *ctx);
+void    gui_show_game_view(struct s_ctx *ctx);
+void    gui_reset_game_view(struct s_ctx *ctx);
 
 #endif /* LCOM_PROJECT_GAME_H */
