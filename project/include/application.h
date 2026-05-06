@@ -5,7 +5,7 @@
 #include "gui.h"
 
 // Hardware-agnostic time abstraction
-typedef struct {
+typedef struct s_time {
     uint8_t year;
     uint8_t month;
     uint8_t day;

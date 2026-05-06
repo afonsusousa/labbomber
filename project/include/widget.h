@@ -141,7 +141,7 @@ void        draw_button(struct s_widget *self, hw_video_t *video, void *state);
 void        draw_text(struct s_widget *self, hw_video_t *video, void *state);
 void        draw_text_input(struct s_widget *self, hw_video_t *video, void *state);
 void        draw_dialog(struct s_widget *self, hw_video_t *video, void *state);
-void        draw_game_canvas(struct s_widget *self, hw_video_t *video, void *state);
+void        draw_game_board(struct s_widget *self, hw_video_t *video, void *state);
 
 // --- BUILDER HELPERS ---
 t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*), const char *name);

@@ -7,7 +7,7 @@
 
 widget_draw_func default_draw_funcs[] = {
     [CANVAS]     = draw_canvas,
-    [GAME]       = draw_game_canvas,
+    [GAME]       = draw_game_board,
     [BUTTON]     = draw_button,
     [TEXT]       = draw_text,
     [TEXT_INPUT] = draw_text_input,
