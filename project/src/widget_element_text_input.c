@@ -1,6 +1,7 @@
 #include "widget.h"
 #include "draw.h"
 #include "gui.h"
+#include "application.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -102,7 +103,8 @@ static uint32_t word_end_offset(const char *buffer, uint32_t cursor_pos) {
 static void on_text_input_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     if (!WIDGET_IS_FOCUSED(self)) return;
     
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
     bool is_shift = gui->input.shift_down;
     bool is_ctrl  = gui->input.ctrl_down;
 
@@ -201,22 +203,26 @@ static void on_text_input_tick(struct s_widget *self, void *state) {
 }
 
 static void on_text_input_quit(struct s_widget *self, void *state) {
-    gui_set_focus((t_gui*)state, NULL);
+    t_ctx *ctx = (t_ctx*)state;
+    gui_set_focus(&ctx->gui, NULL);
     self->data.text_input.selection_start = -1;
 }
 
 static void on_text_input_press(struct s_widget *self, void *state) {
-    self->data.text_input.cursor_pos = get_pos_from_mouse(self, (t_gui*)state);
+    t_ctx *ctx = (t_ctx*)state;
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, &ctx->gui);
     self->data.text_input.selection_start = self->data.text_input.cursor_pos;
     reset_blink(self);
 }
 
 static void on_text_input_drag(struct s_widget *self, void *state) {
-    self->data.text_input.cursor_pos = get_pos_from_mouse(self, (t_gui*)state);
+    t_ctx *ctx = (t_ctx*)state;
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, &ctx->gui);
     reset_blink(self);
 }
 
-void draw_text_input(t_widget *self, hw_video_t *video) {
+void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
+    (void)state;
     uint32_t x = get_abs_x(self);
     uint32_t y = get_abs_y(self);
 

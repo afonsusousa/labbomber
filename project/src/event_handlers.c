@@ -1,12 +1,36 @@
 #include "hardware.h"
 #include "gui.h"
+#include "application.h"
 #include "widget.h"
 #include "draw.h"
+#include "../lib/rtc/rtc.h"
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui);
 
-void handle_timer(hardware_t *hw_state, t_gui *gui) {
+void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
+    t_gui *gui = &ctx->gui;
     hw_timer_int_handler(&hw_state->timer);
+    
+    // Read physical RTC periodically and map to application time
+    if (hw_state->timer.ticks % 60 == 0) {
+        hw_rtc_t hw_time;
+        if (hw_rtc_get_time(&hw_time) == 0) {
+            // Translate hardware data to application abstraction
+            ctx->real_time.year    = hw_time.year;
+            ctx->real_time.month   = hw_time.month;
+            ctx->real_time.day     = hw_time.day;
+            ctx->real_time.hours   = hw_time.hours;
+            ctx->real_time.minutes = hw_time.minutes;
+            ctx->real_time.seconds = hw_time.seconds;
+        }
+    }
+    
+    // Phase 1: Game Simulation
+    if (!ctx->game.is_paused) {
+        ctx->game.logical_ticks++;
+        update_game_logic(ctx);
+    }
+    
     hw_vbe_clear_screen(&hw_state->video, 0x0);
 
     if (gui->views.view_count > 0) {
@@ -15,8 +39,8 @@ void handle_timer(hardware_t *hw_state, t_gui *gui) {
             start_idx--;
         }
         for (int i = start_idx; i < gui->views.view_count; i++) {
-            widget_tick(gui->views.view_stack[i], gui);
-            widget_draw(gui->views.view_stack[i], &hw_state->video);
+            widget_tick(gui->views.view_stack[i], ctx);
+            widget_draw(gui->views.view_stack[i], &hw_state->video, ctx);
         }
     }
 
@@ -31,7 +55,8 @@ void handle_timer(hardware_t *hw_state, t_gui *gui) {
 }
 
 //will need to check if this is enough for CTRL SHIFT and other 2byte keys
-void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
+void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
+    t_gui *gui = &ctx->gui;
     hw_keyboard_ih(&hw_state->keyboard);
 
     gui->input.shift_down = hw_state->keyboard.keys_pressed[0x2A] || hw_state->keyboard.keys_pressed[0x36];
@@ -90,7 +115,7 @@ void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
         }
         //Make or Break
         if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
-            gui->input.focused->on_key_press(gui->input.focused, sc, gui);
+            gui->input.focused->on_key_press(gui->input.focused, sc, ctx);
         }
     }
 
@@ -98,15 +123,16 @@ void handle_keyboard(hardware_t *hw_state, t_gui *gui, bool *esc_was_pressed) {
     if (esc_is_pressed && !(*esc_was_pressed)) {
         t_widget *top_view = gui_get_top_view(gui);
         if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
-            gui->input.focused->on_quit(gui->input.focused, gui);
+            gui->input.focused->on_quit(gui->input.focused, ctx);
         } else if (top_view != NULL && top_view->on_quit != NULL) {
-            top_view->on_quit(top_view, gui);
+            top_view->on_quit(top_view, ctx);
         }
     }
     *esc_was_pressed = esc_is_pressed;
 }
 
-void handle_mouse(hardware_t *hw_state, t_gui *gui) {
+void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
+    t_gui *gui = &ctx->gui;
     if (!hw_mouse_ih(&hw_state->mouse)) return;
 
     gui->input.mouse_x = hw_state->mouse.x;
@@ -124,9 +150,9 @@ void handle_mouse(hardware_t *hw_state, t_gui *gui) {
         
         if (is_pressed) {
             if ((*dragged)->on_drag)
-                (*dragged)->on_drag(*dragged, gui);
+                (*dragged)->on_drag(*dragged, ctx);
             else if ((*dragged)->on_press)
-                (*dragged)->on_press(*dragged, gui);
+                (*dragged)->on_press(*dragged, ctx);
         } else {
             *dragged = NULL;
         }
@@ -140,7 +166,7 @@ void handle_mouse(hardware_t *hw_state, t_gui *gui) {
                         gui->input.focused->focus_cue = 0; 
                     gui_set_focus(gui, *clicked);
                 }
-                if ((*clicked)->on_press) (*clicked)->on_press(*clicked, gui);
+                if ((*clicked)->on_press) (*clicked)->on_press(*clicked, ctx);
             }
         } else {
             if (target == *clicked) {
@@ -148,8 +174,8 @@ void handle_mouse(hardware_t *hw_state, t_gui *gui) {
             } else {
                 WIDGET_SET_CLICKED(*clicked, false);
             }
-            if ((*clicked)->on_drag) (*clicked)->on_drag(*clicked, gui);
-            else if ((*clicked)->on_press) (*clicked)->on_press(*clicked, gui);
+            if ((*clicked)->on_drag) (*clicked)->on_drag(*clicked, ctx);
+            else if ((*clicked)->on_press) (*clicked)->on_press(*clicked, ctx);
         }
     } else {
         if (*clicked) {
@@ -159,7 +185,7 @@ void handle_mouse(hardware_t *hw_state, t_gui *gui) {
             
             if (was_clicked == target) {
                 if (was_clicked->on_click) {
-                    was_clicked->on_click(was_clicked, gui);
+                    was_clicked->on_click(was_clicked, ctx);
                 }
             }
         }

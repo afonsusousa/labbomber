@@ -6,6 +6,8 @@
 #include "widget.h"
 #include "rtc.h"
 
+struct s_ctx;
+
 #define MAX_VIEWS 10
 
 typedef struct s_state {
@@ -38,11 +40,12 @@ typedef struct s_state {
     } views;
 
     hw_rtc_t *rtc;
+    hw_video_t *video;
     bool show_focus_cues;
 
 } t_gui;
 
-void      gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height);
+void      gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_height);
 void      gui_destroy(t_gui *gui);
 void      gui_set_focus(t_gui *gui, t_widget *widget);
 void      gui_set_active(t_gui *gui, t_widget *widget, bool active);
@@ -58,14 +61,15 @@ t_widget* gui_get_top_view(t_gui *gui);
 t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name);
 
 // Menus/Launchers
-void init_game(t_gui *gui);
-void gui_show_start_menu(t_gui *gui);
-void gui_show_name_menu(t_gui *gui, bool is_multiplayer);
-void gui_show_pause_menu(t_gui *gui);
-void gui_show_scoreboard(t_gui *gui);
-void gui_show_info_dialog(t_gui *gui, const char *title, const char *message);
+void init_game(struct s_ctx *ctx);
+void gui_show_start_menu(struct s_ctx *ctx);
+void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer);
+void gui_show_pause_menu(struct s_ctx *ctx);
+void gui_show_scoreboard(struct s_ctx *ctx);
+void gui_reset_game(struct s_ctx *ctx);
+void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message);
 void gui_show_confirm_dialog(
-    t_gui *gui,
+    struct s_ctx *ctx,
     const char *title,
     const char *message,
     void (*on_yes)(t_widget *, void *),

@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "game.h"
+#include "application.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,13 +15,13 @@ t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_
 
 // ENTRY POINT
 
-void gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {
-    memset(gui, 0, sizeof(*gui));
-    gui->width = screen_width;
-    gui->height = screen_height;
+void gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_height) {
+    memset(&ctx->gui, 0, sizeof(ctx->gui));
+    ctx->gui.width = screen_width;
+    ctx->gui.height = screen_height;
 
-    gui_show_start_menu(gui);
-    gui->is_running = true;
+    gui_show_start_menu(ctx);
+    ctx->gui.is_running = true;
 }
 
 // =============================================================================
@@ -29,12 +30,14 @@ void gui_init(t_gui *gui, uint32_t screen_width, uint32_t screen_height) {
 
 void pop_the_view(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
     gui_pop_view(gui);
 }
 
 void focus_self(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
     gui_set_focus(gui, self);
 }
 
@@ -56,7 +59,8 @@ static bool is_blank_string(const char *s) {
     // Shared Dialog Displays
     // -------------------------------------------------------------------------
 
-void gui_show_info_dialog(t_gui *gui, const char *title, const char *message) {
+void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message) {
+    t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "info_overlay");
     if (overlay == NULL) return;
 
@@ -73,7 +77,8 @@ void gui_show_info_dialog(t_gui *gui, const char *title, const char *message) {
     gui_push_overlay(gui, overlay);
 }
 
-void gui_show_confirm_dialog(t_gui *gui, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
+void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
+    t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "confirm_overlay");
     if (overlay == NULL) return;
 
@@ -101,40 +106,42 @@ void gui_show_confirm_dialog(t_gui *gui, const char *title, const char *message,
     // -------------------------------------------------------------------------
 
 static void on_quit_confirm(t_widget *self, void *state) {
-    t_gui *gui = (t_gui *)state;
+    t_ctx *ctx = (t_ctx *)state;
+    t_gui *gui = &ctx->gui;
     (void)self;
     gui->is_running = false;
 }
 
 static void on_quit(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
-    gui_show_confirm_dialog(gui, "QUIT", "DO YOU REALLY WANT TO QUIT", on_quit_confirm, pop_the_view);
+    t_ctx *ctx = (t_ctx *)state;
+    gui_show_confirm_dialog(ctx, "QUIT", "DO YOU REALLY WANT TO QUIT", on_quit_confirm, pop_the_view);
 }
 
 static void on_btn_singleplayer_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
-    gui_show_name_menu(gui, false);
+    t_ctx *ctx = (t_ctx *)state;
+    gui_show_name_menu(ctx, false);
 }
 
 static void on_btn_multiplayer_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
-    gui_show_name_menu(gui, true);
+    t_ctx *ctx = (t_ctx *)state;
+    gui_show_name_menu(ctx, true);
 }
 
 static void on_btn_scoreboard_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui *)state;
-    gui_show_scoreboard(gui);
+    t_ctx *ctx = (t_ctx *)state;
+    gui_show_scoreboard(ctx);
 }
 
     // -------------------------------------------------------------------------
     // Start Menu Displays
     // -------------------------------------------------------------------------
 
-void gui_show_start_menu(t_gui *gui) {
+void gui_show_start_menu(struct s_ctx *ctx) {
+    t_gui *gui = &ctx->gui;
     t_widget *menu = widget_create(CANVAS, 0, 0, gui->width, gui->height, "start_menu_view");
     if (menu == NULL) return;
 
@@ -157,45 +164,47 @@ void gui_show_start_menu(t_gui *gui) {
 
 static void on_btn_start_game_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
 
     t_widget *top_view = gui_get_top_view(gui);
     t_widget *player1_input = widget_find_by_name(top_view, "player1_input");
     t_widget *player2_input = widget_find_by_name(top_view, "player2_input");
 
     if (player1_input == NULL || player1_input->data.text_input.buffer == NULL) {
-        gui_show_info_dialog(gui, "Invalid Name", "Please enter Player 1 name");
+        gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
         return;
     }
 
     bool player1_empty = is_blank_string(player1_input->data.text_input.buffer);
     if (player1_empty) {
-        gui_show_info_dialog(gui, "Invalid Name", "Please enter Player 1 name");
+        gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
         return;
     }
 
     if (player2_input != NULL) {
         if (player2_input->data.text_input.buffer == NULL) {
-            gui_show_info_dialog(gui, "Invalid Name", "Please enter Player 2 name");
+            gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
             return;
         }
 
         bool player2_empty = is_blank_string(player2_input->data.text_input.buffer);
         if (player2_empty) {
-            gui_show_info_dialog(gui, "Invalid Name", "Please enter Player 2 name");
+            gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
             return;
         }
     }
 
     gui_pop_view(gui);
-    init_game(gui);
+    init_game(ctx);
 }
 
     // -------------------------------------------------------------------------
     // Name Menu Displays
     // -------------------------------------------------------------------------
 
-void gui_show_name_menu(t_gui *gui, bool is_multiplayer) {
+void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
+    t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "name_overlay");
     if (overlay == NULL) return;
 
@@ -224,42 +233,54 @@ void gui_show_name_menu(t_gui *gui, bool is_multiplayer) {
     // Pause Menu Callbacks
     // -------------------------------------------------------------------------
 
+static void on_pause_resume_click(t_widget *self, void *state) {
+    (void)self;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
+    ctx->game.is_paused = false;
+    gui_pop_view(gui);
+}
+
 static void on_pause_main_menu_confirm_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
+    ctx->game.is_paused = false;
     gui_pop_until_widget_found(gui, "start_menu_view");
 }
 
 static void on_pause_reset_confirm_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
-    gui_reset_game(gui);
+    t_ctx *ctx = (t_ctx*)state;
+    gui_reset_game(ctx);
+    ctx->game.is_paused = false;
 }
 
 static void on_pause_reset_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
-    gui_show_confirm_dialog(gui, "Confirm Reset", "Are you sure?", on_pause_reset_confirm_click, pop_the_view);
+    t_ctx *ctx = (t_ctx*)state;
+    gui_show_confirm_dialog(ctx, "Confirm Reset", "Are you sure?", on_pause_reset_confirm_click, pop_the_view);
 }
 
 static void on_pause_main_menu_click(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
-    gui_show_confirm_dialog(gui, "Confirm Main Menu", "Return to main menu?", on_pause_main_menu_confirm_click, pop_the_view);
+    t_ctx *ctx = (t_ctx*)state;
+    gui_show_confirm_dialog(ctx, "Confirm Main Menu", "Return to main menu?", on_pause_main_menu_confirm_click, pop_the_view);
 }
 
     // -------------------------------------------------------------------------
     // Pause Menu Displays
     // -------------------------------------------------------------------------
 
-void gui_show_pause_menu(t_gui *gui) {
+void gui_show_pause_menu(struct s_ctx *ctx) {
+    t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, pop_the_view, "pause_overlay");
     if (overlay == NULL) return;
 
     t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, gui->width, gui->height, pop_the_view, "pause_dialog");
     pause_dialog->on_quit = pop_the_view;
 
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", pop_the_view, "pause_resume_button");
+    widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", on_pause_resume_click, "pause_resume_button");
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Reset", on_pause_reset_click, "pause_reset_button");
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Main Menu", on_pause_main_menu_click, "pause_menu_button");
 
@@ -269,7 +290,8 @@ void gui_show_pause_menu(t_gui *gui) {
 
 static void on_scoreboard_close(t_widget *self, void *state) {
     (void)self;
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
     gui_pop_view(gui);
 }
 
@@ -285,7 +307,8 @@ static void on_scoreboard_close(t_widget *self, void *state) {
     // Scoreboard Display
     // -------------------------------------------------------------------------
 
-void gui_show_scoreboard(t_gui *gui) {
+void gui_show_scoreboard(struct s_ctx *ctx) {
+    t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_scoreboard_close, "scoreboard_overlay");
     if (overlay == NULL) return;
 

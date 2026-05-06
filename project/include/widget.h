@@ -30,8 +30,6 @@ typedef enum {
     OVERLAY
 } e_widget_type;
 
-struct s_game_state;
-
 typedef enum {
     WIDGET_FLAG_ACTIVE  = 1u << 0,
     WIDGET_FLAG_CLICKED = 1u << 1,
@@ -81,11 +79,6 @@ typedef struct s_widget {
     uint32_t        flags;
     uint8_t         focus_cue; // 0 false; 1 true; 3 ongoing;
     union {
-
-        struct {
-            struct s_game_state *state;
-        } game;
-
         struct {
             char        *label;
             int32_t     action_delay_timer;
@@ -113,7 +106,7 @@ typedef struct s_widget {
         } dialog;
     } data;
 
-    void (*draw)(struct s_widget *self, hw_video_t *video);
+    void (*draw)(struct s_widget *self, hw_video_t *video, void *state);
     void (*on_click)(struct s_widget *self, void *state);
     void (*on_press)(struct s_widget *self, void *state);
     void (*on_drag)(struct s_widget *self, void *state);
@@ -138,17 +131,17 @@ int32_t     get_abs_y(t_widget *widget);
 
 void        draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, bool sunken);
 
-void        widget_draw(t_widget *widget, hw_video_t *video);
+void        widget_draw(t_widget *widget, hw_video_t *video, void *state);
 void        widget_tick(t_widget *widget, void *state);
 t_widget*   widget_first_focusable(t_widget *root);
 t_widget*   widget_get_next_focusable_sibling(t_widget *widget);
 t_widget*   widget_get_prev_focusable_sibling(t_widget *widget);
-void        draw_canvas(struct s_widget *self, hw_video_t *video);
-void        draw_button(struct s_widget *self, hw_video_t *video);
-void        draw_text(struct s_widget *self, hw_video_t *video);
-void        draw_text_input(struct s_widget *self, hw_video_t *video);
-void        draw_dialog(struct s_widget *self, hw_video_t *video);
-void        draw_game_canvas(struct s_widget *self, hw_video_t *video);
+void        draw_canvas(struct s_widget *self, hw_video_t *video, void *state);
+void        draw_button(struct s_widget *self, hw_video_t *video, void *state);
+void        draw_text(struct s_widget *self, hw_video_t *video, void *state);
+void        draw_text_input(struct s_widget *self, hw_video_t *video, void *state);
+void        draw_dialog(struct s_widget *self, hw_video_t *video, void *state);
+void        draw_game_canvas(struct s_widget *self, hw_video_t *video, void *state);
 
 // --- BUILDER HELPERS ---
 t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *label, void (*on_click)(t_widget*, void*), const char *name);
@@ -159,7 +152,7 @@ t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, ui
 t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*), const char *name);
 
 
-typedef void (*widget_draw_func)(t_widget*, hw_video_t*);
+typedef void (*widget_draw_func)(t_widget*, hw_video_t*, void*);
 extern widget_draw_func default_draw_funcs[];
 
 #endif /* LCOM_PROJECT_WIDGET_H */

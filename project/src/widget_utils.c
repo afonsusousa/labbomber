@@ -203,15 +203,15 @@ void draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint
     }
 }
 
-void widget_draw(t_widget *widget, hw_video_t *video) {
+void widget_draw(t_widget *widget, hw_video_t *video, void *state) {
     if (widget == NULL || !WIDGET_IS_ACTIVE(widget)) return;
 
     if (widget->draw != NULL)
-        widget->draw(widget, video);
+        widget->draw(widget, video, state);
 
     t_widget *child = widget->children;
     while (child != NULL) {
-        widget_draw(child, video);
+        widget_draw(child, video, state);
         child = child->next;
     }
 }

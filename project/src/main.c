@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <lcom/lcf.h>
+#include <string.h>
 #include "../lib/timer/timer.h"
 #include "../lib/keyboard/keyboard.h"
 #include "../lib/mouse/mouse.h"
@@ -7,6 +8,7 @@
 #include "../lib/utils/utils.h"
 #include "hardware.h"
 #include "event_handlers.h"
+#include "application.h"
 #include "game.h"
 #include "draw.h"
 #include "widget.h"
@@ -49,10 +51,12 @@ int(proj_main_loop)(int argc, char* argv[]) {
     (void)argv;
 
     hardware_t hw_state;
+    memset(&hw_state, 0, sizeof(hw_state));
     init_hardware_state(&hw_state);
 
-    t_gui gui;
-    gui_init(&gui, hw_state.video.screen_width, hw_state.video.screen_height);
+    t_ctx app;
+    memset(&app, 0, sizeof(app));
+    gui_init(&app, hw_state.video.screen_width, hw_state.video.screen_height);
 
     if (timer_set_frequency(0, 90) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
@@ -65,7 +69,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     message msg;
     bool esc_was_pressed = false;
 
-    while (gui.is_running) {
+    while (app.gui.is_running) {
         if (driver_receive(ANY, &msg, &ipc_status) != 0) {
             printf("driver_receive failed\n");
             continue;
@@ -73,15 +77,16 @@ int(proj_main_loop)(int argc, char* argv[]) {
 
         if (is_ipc_notify(ipc_status) && _ENDPOINT_P(msg.m_source) == HARDWARE) {
             if (msg.m_notify.interrupts & hw_state.timer.mask)
-                handle_timer(&hw_state, &gui);
+                handle_timer(&hw_state, &app);
             if (msg.m_notify.interrupts & hw_state.keyboard.mask) 
-                handle_keyboard(&hw_state, &gui, &esc_was_pressed);
+                handle_keyboard(&hw_state, &app, &esc_was_pressed);
             if (msg.m_notify.interrupts & hw_state.mouse.mask)
-                handle_mouse(&hw_state, &gui);
+                handle_mouse(&hw_state, &app);
         }
     }
 
-    gui_destroy(&gui);
+    gui_destroy(&app.gui);
+    game_state_destroy(&app.game);
 
     hw_timer_unsubscribe_int(&hw_state.timer);
     hw_keyboard_unsubscribe_int(&hw_state.keyboard);

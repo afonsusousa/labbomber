@@ -1,5 +1,6 @@
 #include "widget.h"
 #include "gui.h"
+#include "application.h"
 #include "draw.h"
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +11,8 @@
 --------------------------------------------------------------------------------
 */
 
-void draw_text(t_widget *self, hw_video_t *video) {
+void draw_text(t_widget *self, hw_video_t *video, void *state) {
+    (void)state;
     hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_LIGHT_GRAY);
     if (self->data.text_display.text != NULL) {
         draw_string(video, self->data.text_display.text, get_abs_x(self) + 4, get_abs_y(self) + 4, W95_LIGHT_GRAY);
@@ -57,7 +59,8 @@ void btn_on_key_press(t_widget *self, uint8_t scancode, void *state) {
     }
 }
 
-void draw_button(t_widget *self, hw_video_t *video) {
+void draw_button(t_widget *self, hw_video_t *video, void *state) {
+    (void)state;
     uint32_t abs_x = get_abs_x(self);
     uint32_t abs_y = get_abs_y(self);
     
@@ -109,7 +112,8 @@ t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, 
 --------------------------------------------------------------------------------
 */
 
-void draw_canvas(t_widget *self, hw_video_t *video) {
+void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
+    (void)state;
     hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_TEAL);
 }
 
@@ -120,7 +124,8 @@ void draw_canvas(t_widget *self, hw_video_t *video) {
 */
 
 static void on_dialog_press(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
     int32_t abs_y = get_abs_y(self);
     if (gui->input.mouse_y >= abs_y && gui->input.mouse_y < abs_y + 24) {
         gui->drag.dragged_widget = self;
@@ -130,7 +135,8 @@ static void on_dialog_press(t_widget *self, void *state) {
 }
 
 static void on_dialog_drag(t_widget *self, void *state) {
-    t_gui *gui = (t_gui*)state;
+    t_ctx *ctx = (t_ctx*)state;
+    t_gui *gui = &ctx->gui;
     int32_t new_x = gui->input.mouse_x - gui->drag.dragt_dx;
     int32_t new_y = gui->input.mouse_y - gui->drag.dragt_dy;
     widget_set_position(self, new_x, new_y);
@@ -141,7 +147,8 @@ static void build_dialog_close_button_name(const t_widget *parent, char *buffer,
     snprintf(buffer, buffer_size, "%s_close_button", parent_name);
 }
 
-void draw_dialog(t_widget *self, hw_video_t *video) {
+void draw_dialog(t_widget *self, hw_video_t *video, void *state) {
+    (void)state;
     uint32_t abs_x = get_abs_x(self);
     uint32_t abs_y = get_abs_y(self);
     
