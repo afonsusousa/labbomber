@@ -18,6 +18,7 @@ typedef struct s_ctx {
     t_gui gui;
     t_game_state game;
     t_time real_time;       // Decoupled from hardware
+    
 } t_ctx;
 
 #endif /* LCOM_PROJECT_APPLICATION_H */

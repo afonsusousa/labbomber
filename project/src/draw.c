@@ -55,26 +55,10 @@ int draw_text_cursor(hw_mouse_t *mouse, hw_video_t *video) {
 int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32_t bg_color) {
     if (str == NULL || !sprites_initialized) return 1;
 
-    uint32_t str_len = 0;
-    uint16_t letter_h = 0;
-    
-    for (int i = 0; str[i] != '\0'; i++) {
-        unsigned char c = (unsigned char)str[i];
-        if (c >= 32 && c <= 126 && sprite_cache[c].bytes != NULL) {
-            str_len++;
-            if (sprite_cache[c].height > letter_h) letter_h = sprite_cache[c].height;
-        }
-    }
-
-    if (str_len > 0) {
-        hw_vbe_draw_rect(video, x, y, str_len * LETTER_W, letter_h, bg_color);
-    }
-
     for (int i = 0; str[i] != '\0'; i++) {
         unsigned char char_idx = (unsigned char)str[i];
         if (char_idx < 32 || char_idx > 126 || sprite_cache[char_idx].bytes == NULL)
             continue;
-
         xpm_image_t img = sprite_cache[char_idx];
         hw_vbe_draw_xpm(video, img.bytes, img, x + (i * LETTER_W), y);
     }

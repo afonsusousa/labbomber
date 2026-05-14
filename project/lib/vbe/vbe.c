@@ -37,6 +37,8 @@ static int map_video_memory(hw_video_t *video, uint16_t mode) {
         return 1;
     }
 
+    video->fast_buffer = calloc(sizeof(char), vram_size);
+
     video->double_buffer = video->frame_buffer + vram_size;
     memset(video->frame_buffer, 0, vram_size * 2);
 
@@ -70,87 +72,129 @@ int hw_vbe_init(hw_video_t *video, uint16_t mode) {
     return 0;
 }
 
-static inline uint32_t extract_color(const uint8_t *pixel_data, unsigned bytes_per_pixel) {
-    uint32_t color = 0;
-    
-    for (unsigned k = 0; k < bytes_per_pixel; k++) {
-        color |= (pixel_data[k]) << (k * 8);
-    }
-    
-    return color;
-}
-
 int hw_vbe_draw_pixel(hw_video_t *video, int32_t x, int32_t y, uint32_t color) {
-    if (video == NULL || video->double_buffer == NULL) return 1;
-    if (x < 0 || y < 0) return 0;
-    if ((uint32_t)x >= video->screen_width || (uint32_t)y >= video->screen_height) return 0;
+    if (video == NULL || video->fast_buffer == NULL) return 1;
+    if (x < 0 || y < 0 || (uint32_t)x >= video->screen_width || (uint32_t)y >= video->screen_height) return 0;
 
-    uint8_t *pixel_ptr = video->double_buffer 
-                        + ((uint32_t)y * video->bytes_per_scanline) 
-                        + ((uint32_t)x * video->bytes_per_pixel);
+    uint8_t *pixel_ptr = video->fast_buffer 
+                        + (y * video->bytes_per_scanline) 
+                        + (x * video->bytes_per_pixel);
 
-    memcpy(pixel_ptr, &color, video->bytes_per_pixel);
+    if (video->bytes_per_pixel == 2) {
+        *(uint16_t *)pixel_ptr = (uint16_t)color;
+    } else if (video->bytes_per_pixel == 4) {
+        *(uint32_t *)pixel_ptr = color;
+    } else {
+        memcpy(pixel_ptr, &color, video->bytes_per_pixel);
+    }
 
     return 0;
 }
 
 int hw_vbe_draw_hline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color) {
-    if (video == NULL || video->double_buffer == NULL) return 1;
+    if (video == NULL || video->fast_buffer == NULL) return 1;
+    if (y < 0 || (uint32_t)y >= video->screen_height) return 0;
 
-    for (uint16_t offset = 0; offset < length; offset++) {
-        int32_t draw_x = x + (int32_t)offset;
-        if (draw_x < 0 || (uint32_t)draw_x >= video->screen_width) continue;
-        hw_vbe_draw_pixel(video, draw_x, y, color);
+    int32_t x_start = (x < 0) ? 0 : x;
+    int32_t x_end = x + length;
+    if (x_end > (int32_t)video->screen_width) x_end = video->screen_width;
+    if (x_start >= x_end) return 0;
+
+    uint32_t draw_len = x_end - x_start;
+    uint8_t *pixel_ptr = video->fast_buffer + (y * video->bytes_per_scanline) + (x_start * video->bytes_per_pixel);
+
+    for (uint32_t i = 0; i < draw_len; i++) {
+        if (video->bytes_per_pixel == 2) {
+            *((uint16_t*)pixel_ptr) = (uint16_t)color;
+        } else {
+            *((uint32_t*)pixel_ptr) = color;
+        }
+        pixel_ptr += video->bytes_per_pixel;
     }
 
     return 0;
 }
 
 int hw_vbe_draw_vline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color) {
-    if (video == NULL || video->double_buffer == NULL) return 1;
+    if (video == NULL || video->fast_buffer == NULL) return 1;
 
-    for (uint16_t offset = 0; offset < length; offset++) {
-        int32_t draw_y = y + (int32_t)offset;
-        if (draw_y < 0 || (uint32_t)draw_y >= video->screen_height) continue;
-        hw_vbe_draw_pixel(video, x, draw_y, color);
+    if (x < 0 || (uint32_t)x >= video->screen_width) return 0;
+
+    int32_t y_start = (y < 0) ? 0 : y;
+    int32_t y_end = y + length;
+    if (y_end > (int32_t)video->screen_height) y_end = video->screen_height;
+
+    if (y_start >= y_end) return 0;
+
+    uint8_t *pixel_ptr = video->fast_buffer 
+                        + (y_start * video->bytes_per_scanline) 
+                        + (x * video->bytes_per_pixel);
+
+    uint32_t stride = video->bytes_per_scanline;
+    uint8_t bpp = video->bytes_per_pixel;
+
+    for (int32_t i = y_start; i < y_end; i++) {
+        if (bpp == 2) {
+            *(uint16_t *)pixel_ptr = (uint16_t)color;
+        } else {
+            *(uint32_t *)pixel_ptr = color;
+        }
+        
+        // Move the pointer exactly one row down
+        pixel_ptr += stride;
     }
 
     return 0;
 }
 
 int hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, uint16_t height, uint32_t color) {
-    if (video == NULL || video->double_buffer == NULL) return 1;
+    if (video == NULL || video->fast_buffer == NULL) return 1;
     if (width == 0 || height == 0) return 0;
 
-    for (uint16_t i = 0; i < height; i++)
-        hw_vbe_draw_hline(video, x, y + (int32_t)i, width, color);
+    int32_t y_start = (y < 0) ? 0 : y;
+    int32_t y_end = y + height;
+    if (y_end > (int32_t)video->screen_height) y_end = video->screen_height;
+
+    for (int32_t i = y_start; i < y_end; i++) {
+        hw_vbe_draw_hline(video, x, i, width, color);
+    }
 
     return 0;
 }
 
 int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y) {
-    uint32_t    transparent, color;
-    int32_t     draw_x, draw_y;
-    uint8_t     *ptr; 
+    if (video == NULL || video->fast_buffer == NULL || map == NULL) return 1;
 
-    if ((ptr = map) == NULL) return 1;
+    uint32_t transparent = xpm_transparency_color(img.type);
+    uint8_t bpp = video->bytes_per_pixel;
 
-    transparent = xpm_transparency_color(img.type);
+    int32_t y_start = (y < 0) ? -y : 0;
+    int32_t y_end = img.height;
+    if (y + (int32_t)img.height > (int32_t)video->screen_height) {
+        y_end = (int32_t)video->screen_height - y;
+    }
 
-    for (uint16_t i = 0; i < img.height; i++) {
-            draw_y = y + (int32_t)i;
+    for (int32_t i = y_start; i < y_end; i++) {
+        int32_t draw_y = y + i;
         
+        uint8_t *vram_row_ptr = video->fast_buffer + (draw_y * video->bytes_per_scanline);
+        uint8_t *map_ptr = map + (i * img.width * bpp);
+
         for (uint16_t j = 0; j < img.width; j++) {
-            draw_x = x + (int32_t)j;
+            int32_t draw_x = x + j;
 
-            color = extract_color(ptr, video->bytes_per_pixel);
+            if (draw_x >= 0 && (uint32_t)draw_x < video->screen_width) {
+                uint32_t color;
+                if (bpp == 2) color = *(uint16_t *)map_ptr;
+                else color = *(uint32_t *)map_ptr;
 
-            if (color != transparent) {
-                if (draw_x >= 0 && draw_y >= 0 && (uint32_t)draw_x < video->screen_width && (uint32_t)draw_y < video->screen_height)
-                    hw_vbe_draw_pixel(video, draw_x, draw_y, color);
+                if (color != transparent) {
+                    uint8_t *pixel_ptr = vram_row_ptr + (draw_x * bpp);
+                    if (bpp == 2) *(uint16_t *)pixel_ptr = (uint16_t)color;
+                    else *(uint32_t *)pixel_ptr = color;
+                }
             }
-
-            ptr += video->bytes_per_pixel;
+            map_ptr += bpp;
         }
     }
 
@@ -177,19 +221,26 @@ int hw_vbe_clear_screen(hw_video_t *video, uint32_t color) {
 }
 
 void hw_vbe_flip_buffer(hw_video_t *video) {
+    if (video == NULL || video->fast_buffer == NULL || video->frame_buffer == NULL) return;
+
     static int display_start_y = 0;
     uint32_t vram_size = video->bytes_per_scanline * video->screen_height;
     
+    memcpy(video->double_buffer, video->fast_buffer, vram_size);
+
     display_start_y = (display_start_y == 0) ? video->screen_height : 0;
 
     reg86_t reg;
     memset(&reg, 0, sizeof(reg));
     reg.intno = BIOS_VID_INT;
-    reg.ax = 0x4F07;
+    reg.ax = 0x4F07;  // VBE function: Set Display Start
     reg.bx = 0x0000;
     reg.cx = 0;
-    reg.dx = display_start_y;
-    sys_int86(&reg);
+    reg.dx = (uint16_t)display_start_y; // Topmost line
+    
+    if (sys_int86(&reg) != 0) {
+        return;
+    }
 
     if (display_start_y == 0) {
         video->double_buffer = video->frame_buffer + vram_size;

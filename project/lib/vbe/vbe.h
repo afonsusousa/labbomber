@@ -13,6 +13,7 @@ typedef struct {
     uint8_t     bytes_per_pixel;
     uint8_t     *frame_buffer;   // this is the frame that will be flip flopped
     uint8_t     *double_buffer;
+    uint8_t     *fast_buffer;
     unsigned    bytes_per_scanline;
 } hw_video_t;
 
