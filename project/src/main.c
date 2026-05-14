@@ -58,7 +58,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     memset(&app, 0, sizeof(app));
     gui_init(&app, hw_state.video.screen_width, hw_state.video.screen_height);
 
-    if (timer_set_frequency(0, 90) != 0) return 1;
+    if (timer_set_frequency(0, 40) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
     if (hw_keyboard_subscribe_int(&hw_state.keyboard) != 0) return 1;
     if (hw_mouse_subscribe_int(&hw_state.mouse) != 0) return 1;
