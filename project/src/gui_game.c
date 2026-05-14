@@ -41,8 +41,8 @@ static void _callback_game_board_on_press(t_widget *self, void *state) {
    
     game_state_handle_click(
         game,
-        gui->input.mouse_x - get_abs_x(self),
-        gui->input.mouse_y - get_abs_y(self)
+        gui->input.mouse_x - self->abs_x,
+        gui->input.mouse_y - self->abs_y
     );
 }
 

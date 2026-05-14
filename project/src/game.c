@@ -63,8 +63,8 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     t_ctx *ctx = (t_ctx*)state;
 
     // Get the absolute position of the widget
-    int32_t start_x = get_abs_x(self);
-    int32_t start_y = get_abs_y(self);
+    int32_t start_x = self->abs_x;
+    int32_t start_y = self->abs_y;
 
     // 1. Calculate the maximum square tile size that fits
     uint32_t max_tile_w = self->width / BOARD_COLS;

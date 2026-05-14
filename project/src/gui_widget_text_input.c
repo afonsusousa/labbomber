@@ -64,7 +64,7 @@ static void reset_blink(struct s_widget *self) {
 }
 
 static uint32_t get_pos_from_mouse(struct s_widget *self, t_gui *gui) {
-    int32_t rel_x = gui->input.mouse_x - (get_abs_x(self) + 4);
+    int32_t rel_x = gui->input.mouse_x - (self->abs_x + 4);
     if (rel_x < 0) return 0;
     return MIN((rel_x + 5) / 11, self->data.text_input.len);
 }
@@ -195,7 +195,7 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
 static void _callback_text_input_on_tick(struct s_widget *self, void *state) {
     (void)state;
     if (WIDGET_IS_FOCUSED(self)) {
-        if (++self->data.text_input.blink_timer >= 72) {
+        if (++self->data.text_input.blink_timer >= 45) {
             self->data.text_input.cursor_visible = !self->data.text_input.cursor_visible;
             self->data.text_input.blink_timer = 0;
         }
@@ -231,12 +231,12 @@ static void _callback_text_input_on_drag(struct s_widget *self, void *state) {
 
 void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    uint32_t x = get_abs_x(self);
-    uint32_t y = get_abs_y(self);
+    uint32_t x = self->abs_x;
+    uint32_t y = self->abs_y;
 
     if (self->focus_cue == 1) {
         self->focus_cue = 2;
-        self->data.text_input.focus_timer = 20;
+        self->data.text_input.focus_timer = 15;
     }
 
     if (self->data.text_input.focus_timer > 0) {

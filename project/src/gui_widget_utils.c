@@ -99,6 +99,7 @@ void widget_add_child(t_widget *parent, t_widget *child) {
         child->prev = last;
     }
     child->next = NULL;
+    widget_update_abs_coords(parent);
 }
 
 t_widget* widget_set_position(t_widget *widget, int32_t x, int32_t y) {
@@ -107,6 +108,7 @@ t_widget* widget_set_position(t_widget *widget, int32_t x, int32_t y) {
 
     widget->x = x;
     widget->y = y;
+    widget_update_abs_coords(widget);
     return widget;
 }
 
@@ -269,7 +271,7 @@ t_widget* widget_get_next_focusable_sibling(t_widget *widget) {
         current = current->next;
     }
 
-    // Wrap to first focusable sibling
+    // wrap to first focusable sibling
     current = widget->parent->children;
     while (current != NULL && current != widget) {
         if (WIDGET_CAN_RECEIVE_FOCUS(current)) {
@@ -303,4 +305,22 @@ t_widget* widget_get_prev_focusable_sibling(t_widget *widget) {
     }
 
     return last_focusable;
+}
+
+void widget_update_abs_coords(t_widget *widget) {
+    if (widget == NULL) return;
+
+    if (widget->parent) {
+        widget->abs_x = widget->parent->abs_x + widget->x;
+        widget->abs_y = widget->parent->abs_y + widget->y;
+    } else {
+        widget->abs_x = widget->x;
+        widget->abs_y = widget->y;
+    }
+
+    t_widget *child = widget->children;
+    while (child) {
+        widget_update_abs_coords(child);
+        child = child->next;
+    }
 }

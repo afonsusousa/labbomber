@@ -64,6 +64,7 @@ typedef struct s_widget {
     e_widget_type   type;
 
     int32_t         x, y;
+    int32_t         abs_x, abs_y;
     uint32_t        height, width;
 
     e_alignment     h_align;
@@ -126,8 +127,7 @@ void        widget_destroy(t_widget *widget);
 t_widget*   widget_set_position(t_widget *widget, int32_t x, int32_t y);
 t_widget*   widget_get_at(t_widget *root, int32_t x, int32_t y);
 t_widget*   widget_find_by_name(t_widget *root, const char *name);
-int32_t     get_abs_x(t_widget *widget);
-int32_t     get_abs_y(t_widget *widget);
+void        widget_update_abs_coords(t_widget *widget);
 
 void        draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, bool sunken);
 

@@ -20,9 +20,9 @@ static void _callback_dialog_on_drag(t_widget *self, void *state);
 
 void draw_text(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_LIGHT_GRAY);
+    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, W95_LIGHT_GRAY);
     if (self->data.text_display.text != NULL) {
-        draw_string(video, self->data.text_display.text, get_abs_x(self) + 4, get_abs_y(self) + 4, W95_LIGHT_GRAY);
+        draw_string(video, self->data.text_display.text, self->abs_x + 4, self->abs_y + 4, W95_LIGHT_GRAY);
     }
 }
 
@@ -51,7 +51,7 @@ static void _callback_button_on_tick(t_widget *self, void *state) {
 }
 
 static void _callback_button_internal_on_click(t_widget *self, void *state) {
-    self->data.button.action_delay_timer = 7;
+    self->data.button.action_delay_timer = 5;
 }
 
 static void _callback_button_on_key_press(t_widget *self, uint8_t scancode, void *state) {
@@ -68,8 +68,8 @@ static void _callback_button_on_key_press(t_widget *self, uint8_t scancode, void
 
 void draw_button(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    uint32_t abs_x = get_abs_x(self);
-    uint32_t abs_y = get_abs_y(self);
+    uint32_t abs_x = self->abs_x;
+    uint32_t abs_y = self->abs_y;
     
     hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
     draw_win95_border(video, 
@@ -121,7 +121,7 @@ t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, 
 
 void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    hw_vbe_draw_rect(video, get_abs_x(self), get_abs_y(self), self->width, self->height, W95_TEAL);
+    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, W95_TEAL);
 }
 
 /* 
@@ -133,10 +133,10 @@ void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
 static void _callback_dialog_on_press(t_widget *self, void *state) {
     t_ctx *ctx = (t_ctx*)state;
     t_gui *gui = &ctx->gui;
-    int32_t abs_y = get_abs_y(self);
+    int32_t abs_y = self->abs_y;
     if (gui->input.mouse_y >= abs_y && gui->input.mouse_y < abs_y + 24) {
         gui->drag.dragged_widget = self;
-        gui->drag.dragt_dx = gui->input.mouse_x - get_abs_x(self);
+        gui->drag.dragt_dx = gui->input.mouse_x - self->abs_x;
         gui->drag.dragt_dy = gui->input.mouse_y - abs_y;
     }
 }
@@ -156,8 +156,8 @@ static void build_dialog_close_button_name(const t_widget *parent, char *buffer,
 
 void draw_dialog(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    uint32_t abs_x = get_abs_x(self);
-    uint32_t abs_y = get_abs_y(self);
+    uint32_t abs_x = self->abs_x;
+    uint32_t abs_y = self->abs_y;
     
     hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
     
