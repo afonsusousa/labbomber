@@ -11,12 +11,12 @@ int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32
 void init_sprite_cache();
 void draw_board(hw_video_t *video);
 
-// Grass and terrain drawing
-void draw_grass(hw_video_t *video, int32_t x, int32_t y, int type, uint32_t size);
+/* Grass and terrain drawing */
+void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size);
 void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size);
 void draw_brick(hw_video_t *video, int32_t x, int32_t y, uint32_t size);
 
-// Sprite decision functions
+/* Sprite decision functions - return sprite cache index */
 int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
 int decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y);
 
