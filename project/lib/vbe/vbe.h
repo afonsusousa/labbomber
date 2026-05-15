@@ -37,6 +37,7 @@ int     hw_vbe_draw_hline(hw_video_t *video, int32_t x, int32_t y, uint16_t leng
 int     hw_vbe_draw_vline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, uint32_t color);
 int     hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, uint16_t height, uint32_t color);
 int     hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y);
+int     hw_vbe_draw_scaled_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y, uint32_t scale);
 void    hw_vbe_flip_buffer(hw_video_t *video);
 
 #endif /* LIB_VBE_VBE_H */

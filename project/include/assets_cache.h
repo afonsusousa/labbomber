@@ -1,0 +1,51 @@
+/* assets_cache.h - sprite cache externs and initialization */
+#ifndef ASSETS_CACHE_H
+#define ASSETS_CACHE_H
+
+#include <stddef.h>
+#include <lcom/xpm.h>
+#include <stdbool.h>
+
+#define SPRITE_CACHE_SIZE 256
+
+void init_sprite_cache(void);
+
+extern xpm_image_t sprite_cache[SPRITE_CACHE_SIZE];
+extern bool sprites_initialized;
+
+/* Common sprite indices */
+#define SPRITE_BOMB1                128
+#define SPRITE_BOMB2                129
+#define SPRITE_MOUSE_POINTER        130
+#define SPRITE_MOUSE_TEXT           131
+#define SPRITE_BOMB3                132
+#define SPRITE_BRICK                133
+#define SPRITE_EXPLOSION_1_CENTER   134
+#define SPRITE_EXPLOSION_2_CENTER   135
+#define SPRITE_EXPLOSION_3_ARM      136
+#define SPRITE_EXPLOSION_3_CENTER   137
+#define SPRITE_EXPLOSION_3_HAND     138
+#define SPRITE_EXPLOSION_4_ARM      139
+#define SPRITE_EXPLOSION_4_CENTER   140
+#define SPRITE_EXPLOSION_4_HAND     141
+#define SPRITE_EXPLOSION_5_ARM      142
+#define SPRITE_EXPLOSION_5_CENTER   143
+#define SPRITE_EXPLOSION_5_HAND     144
+#define SPRITE_EXPLOSION_6_ARM      145
+#define SPRITE_EXPLOSION_6_CENTER   146
+#define SPRITE_EXPLOSION_6_HAND     147
+#define SPRITE_FLOWER1              148
+#define SPRITE_FLOWER2              149
+#define SPRITE_FLOWER3              150
+#define SPRITE_GRASS_LEFT_BORDER    151
+#define SPRITE_GRASS_LEFT           152
+#define SPRITE_GRASS_TOP_BORDER     153
+#define SPRITE_GRASS_TOP_LEFT_BORDER 154
+#define SPRITE_GRASS_TOP_LEFT       155
+#define SPRITE_GRASS_TOP            156
+#define SPRITE_GRASS                157
+#define SPRITE_WALL1                158
+#define SPRITE_WALL2                159
+#define SPRITE_WALL3                160
+
+#endif /* ASSETS_CACHE_H */

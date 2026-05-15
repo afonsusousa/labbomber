@@ -11,7 +11,7 @@ PROG = proj
 .PATH: ${.CURDIR}/lib/vbe
 
 # List EVERY .c file in your project here (no folder paths, just the names)
-SRCS = keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c board_generator.c debug.c draw.c event_handlers.c game.c gui_game.c gui_menus.c gui_utils.c gui_widget_elements.c gui_widget_text_input.c gui_widget_utils.c main.c	
+SRCS = keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c board_generator.c debug.c draw.c assets.c glyphs.c event_handlers.c game.c game_draw_utils.c gui_game.c gui_menus.c gui_utils.c gui_widget_elements.c gui_widget_text_input.c gui_widget_utils.c main.c	
 # Compilation flags. 
 # We include all the lib folders so your #include "timer.h" statements work seamlessly.
 CFLAGS += -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__ 

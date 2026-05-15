@@ -3,9 +3,11 @@
 #include "board_generator.h"
 #include "widget.h"
 #include "gui.h"
+#include "draw.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define BOARD_BASE_TILE_SIZE 16
 
 // FUNÇÕES QUE VÃO CONDUZIR O JOGO
 
@@ -66,16 +68,18 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     int32_t start_x = self->abs_x;
     int32_t start_y = self->abs_y;
 
-    // 1. Calculate the maximum square tile size that fits
-    uint32_t max_tile_w = self->width / BOARD_COLS;
-    uint32_t max_tile_h = self->height / BOARD_ROWS;
-    uint32_t tile = (max_tile_w < max_tile_h) ? max_tile_w : max_tile_h;
+    int32_t max_tile_w = (int32_t)self->width / BOARD_COLS;
+    int32_t max_tile_h = (int32_t)self->height / BOARD_ROWS;
+    int32_t tile = max_tile_w < max_tile_h ? max_tile_w : max_tile_h;
+    tile = (tile / BOARD_BASE_TILE_SIZE) * BOARD_BASE_TILE_SIZE;
+    if (tile < BOARD_BASE_TILE_SIZE) {
+        tile = BOARD_BASE_TILE_SIZE;
+    }
 
-    // 2. Calculate offsets to center the board within the widget
-    uint32_t total_board_w = tile * BOARD_COLS;
-    uint32_t total_board_h = tile * BOARD_ROWS;
-    int32_t offset_x = (self->width - total_board_w) / 2;
-    int32_t offset_y = (self->height - total_board_h) / 2;
+    const int32_t total_board_w = BOARD_COLS * tile;
+    const int32_t total_board_h = BOARD_ROWS * tile;
+    int32_t offset_x = ((int32_t)self->width - total_board_w) / 2;
+    int32_t offset_y = ((int32_t)self->height - total_board_h) / 2;
 
     start_x += offset_x;
     start_y += offset_y;
@@ -88,11 +92,17 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             int px = start_x + (x * tile);
             int py = start_y + (y * tile);
 
-            if (val == 1) {
-                hw_vbe_draw_rect(video, px, py, tile, tile, 0xAAAAAA);
+            if (val == 0) {
+                int grass_type = decide_grass_sprite(ctx->game.board, BOARD_ROWS, BOARD_COLS, x, y);
+                draw_grass(video, px, py, grass_type, tile);
+            } else if (val == 1) {
+                int wall_sprite = decide_wall_sprite(ctx->game.board, BOARD_ROWS, BOARD_COLS, x, y);
+                draw_wall(video, px, py, wall_sprite, tile);
             } else if (val == 2) {
-                hw_vbe_draw_rect(video, px, py, tile, tile, 0x884400);
+                // Brick
+                draw_brick(video, px, py, tile);
             } else {
+                // Fallback for unknown values
                 hw_vbe_draw_rect(video, px, py, tile, tile, 0x000000);
             }
         }

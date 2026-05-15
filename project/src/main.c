@@ -23,7 +23,7 @@ void init_hardware_state(hardware_t *hw_state) {
     hw_rtc_init(&hw_state->time_info);
     hw_keyboard_init(&hw_state->keyboard);
     hw_mouse_init(&hw_state->mouse);
-    hw_vbe_init(&hw_state->video, 0x110);
+    hw_vbe_init(&hw_state->video, 0x11A);
     
     hw_state->is_running = true;
     
