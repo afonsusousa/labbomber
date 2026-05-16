@@ -1,44 +1,10 @@
 #include "assets_cache.h"
 #include "assets.h"
 #include "glyphs.h"
+#include "assets_player.h"
 #include <lcom/xpm.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
-/* Sprite indices (moved from draw.c) */
-#define SPRITE_BOMB1                128
-#define SPRITE_BOMB2                129
-#define SPRITE_MOUSE_POINTER 130
-#define SPRITE_MOUSE_TEXT    131
-#define SPRITE_BOMB3                132
-#define SPRITE_BRICK                133
-#define SPRITE_EXPLOSION_1_CENTER   134
-#define SPRITE_EXPLOSION_2_CENTER   135
-#define SPRITE_EXPLOSION_3_ARM      136
-#define SPRITE_EXPLOSION_3_CENTER   137
-#define SPRITE_EXPLOSION_3_HAND     138
-#define SPRITE_EXPLOSION_4_ARM      139
-#define SPRITE_EXPLOSION_4_CENTER   140
-#define SPRITE_EXPLOSION_4_HAND     141
-#define SPRITE_EXPLOSION_5_ARM      142
-#define SPRITE_EXPLOSION_5_CENTER   143
-#define SPRITE_EXPLOSION_5_HAND     144
-#define SPRITE_EXPLOSION_6_ARM      145
-#define SPRITE_EXPLOSION_6_CENTER   146
-#define SPRITE_EXPLOSION_6_HAND     147
-#define SPRITE_FLOWER1              148
-#define SPRITE_FLOWER2              149
-#define SPRITE_FLOWER3              150
-#define SPRITE_GRASS_LEFT_BORDER    151
-#define SPRITE_GRASS_LEFT           152
-#define SPRITE_GRASS_TOP_BORDER     153
-#define SPRITE_GRASS_TOP_LEFT_BORDER 154
-#define SPRITE_GRASS_TOP_LEFT       155
-#define SPRITE_GRASS_TOP            156
-#define SPRITE_GRASS                157
-#define SPRITE_WALL1                158
-#define SPRITE_WALL2                159
-#define SPRITE_WALL3                160
 
 /* Sprite cache storage */
 xpm_image_t sprite_cache[SPRITE_CACHE_SIZE];
@@ -73,6 +39,24 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)explosion_5_arm, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_5_ARM]);
     xpm_load((xpm_map_t)explosion_5_center, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_5_CENTER]);
     xpm_load((xpm_map_t)explosion_5_hand, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_5_HAND]);
+    
+    /* Load player assets */
+    xpm_load((xpm_map_t)player_1_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_1_STANDING]);
+    xpm_load((xpm_map_t)player_1_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_1_LEFT]);
+    xpm_load((xpm_map_t)player_1_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_1_RIGHT]);
+    xpm_load((xpm_map_t)player_1_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_1_BACK]);
+    xpm_load((xpm_map_t)player_2_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_2_STANDING]);
+    xpm_load((xpm_map_t)player_2_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_2_LEFT]);
+    xpm_load((xpm_map_t)player_2_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_2_RIGHT]);
+    xpm_load((xpm_map_t)player_2_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_2_BACK]);
+    xpm_load((xpm_map_t)player_3_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_3_STANDING]);
+    xpm_load((xpm_map_t)player_3_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_3_LEFT]);
+    xpm_load((xpm_map_t)player_3_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_3_RIGHT]);
+    xpm_load((xpm_map_t)player_3_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_3_BACK]);
+    xpm_load((xpm_map_t)player_4_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_STANDING]);
+    xpm_load((xpm_map_t)player_4_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_LEFT]);
+    xpm_load((xpm_map_t)player_4_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_RIGHT]);
+    xpm_load((xpm_map_t)player_4_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_BACK]);
     xpm_load((xpm_map_t)explosion_6_arm, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_ARM]);
     xpm_load((xpm_map_t)explosion_6_center, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_CENTER]);
     xpm_load((xpm_map_t)explosion_6_hand, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_HAND]);

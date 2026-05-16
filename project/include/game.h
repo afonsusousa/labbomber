@@ -3,6 +3,24 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef enum {
+    PLAYER_STANDING = 0,
+    PLAYER_LEFT,
+    PLAYER_RIGHT,
+    PLAYER_BACK
+} player_direction_t;
+
+typedef struct {
+    int32_t x;
+    int32_t y;
+    player_direction_t direction;
+    uint8_t animation_phase; // 0-3 for the 4 directional sprites
+    bool is_moving;
+    uint8_t pause_counter;   // TEMP:     frames to pause at edges
+} player_t;
 
 struct s_ctx;
 struct s_time;
@@ -23,7 +41,8 @@ typedef struct s_game_state {
     
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
-    // Simulation state belongs to the game
+    player_t players[2];
+
     uint32_t logical_ticks;
     bool is_paused;
 } t_game_state;

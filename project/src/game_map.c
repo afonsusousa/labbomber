@@ -1,8 +1,13 @@
-#include "vbe.h"
-#include "assets_cache.h"
 #include "draw.h"
+#include "assets_cache.h"
 #include <stdint.h>
 #include <lcom/xpm.h>
+
+static int is_solid(const uint8_t *board, int rows, int cols, int x, int y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return 1;
+    uint8_t val = board[y * cols + x];
+    return (val != 0);
+}
 
 void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size) {
     if (!sprites_initialized || sprite_cache[sprite_index].bytes == NULL) return;
@@ -11,12 +16,6 @@ void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint3
     uint32_t scale = size / img.width;
     if (scale == 0) scale = 1;
     hw_vbe_draw_scaled_xpm(video, img.bytes, img, x, y, scale);
-}
-
-static int is_solid(const uint8_t *board, int rows, int cols, int x, int y) {
-    if (x < 0 || x >= cols || y < 0 || y >= rows) return 1;
-    uint8_t val = board[y * cols + x];
-    return (val != 0); 
 }
 
 int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y) {
@@ -31,7 +30,7 @@ int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y) 
         if (!UL)
             return SPRITE_GRASS_TOP_BORDER;
         return SPRITE_GRASS_TOP;
-    } 
+    }
     
     if (L) {
         if (!UL)

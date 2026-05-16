@@ -78,7 +78,7 @@ typedef struct s_widget {
     struct s_widget *prev;
 
     uint32_t        flags;
-    uint8_t         focus_cue; // 0 false; 1 true; 3 ongoing;
+    uint8_t         focus_cue; // 0 false; 1 true; 2 ongoing;
     union {
         struct {
             char        *label;

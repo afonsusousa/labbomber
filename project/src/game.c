@@ -25,6 +25,20 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->is_paused = false;
 
     generateBoard((char *)game->board, time.day, time.month, time.year);
+    set_date_seed(time.day, time.month, time.year);
+    
+    game->players[0].x = 50;
+    game->players[0].y = 50;
+    game->players[0].direction = PLAYER_STANDING;
+    game->players[0].animation_phase = 0;
+    game->players[0].is_moving = false;
+    
+    game->players[1].x = width - 100;
+    game->players[1].y = height - 100;
+    game->players[1].direction = PLAYER_STANDING;
+    game->players[1].animation_phase = 0;
+    game->players[1].is_moving = false;
+    
     return 0;
 }
 
@@ -45,8 +59,21 @@ void game_state_destroy(t_game_state *game) {
 }
 
 void game_state_update(t_ctx *ctx) {
-    (void)ctx;
-    // update da logica do jogo AQUI
+    if (ctx == NULL) return;
+    
+    for (int i = 0; i < 2; i++) {
+        player_t *player = &ctx->game.players[i];
+        
+        if (player->pause_counter > 0) {
+            player->pause_counter--;
+            player->is_moving = false;
+        } else {
+            int32_t start_x, start_y;
+            get_player_start_position(player->player_id, ctx->game.width, ctx->game.height, &start_x, &start_y);
+            update_player_movement(player, start_x, start_y);
+        }
+        update_player_animation(player, ctx->game.logical_ticks);
+    }
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
@@ -64,7 +91,6 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
 
     t_ctx *ctx = (t_ctx*)state;
 
-    // Get the absolute position of the widget
     int32_t start_x = self->abs_x;
     int32_t start_y = self->abs_y;
 
@@ -107,4 +133,5 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
+    draw_player(ctx->game.players, video, tile);
 }

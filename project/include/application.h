@@ -4,7 +4,6 @@
 #include "game.h"
 #include "gui.h"
 
-// Hardware-agnostic time abstraction
 typedef struct s_time {
     uint8_t year;
     uint8_t month;
@@ -17,8 +16,7 @@ typedef struct s_time {
 typedef struct s_ctx {
     t_gui gui;
     t_game_state game;
-    t_time real_time;       // Decoupled from hardware
-    
+    t_time real_time;
 } t_ctx;
 
 #endif /* LCOM_PROJECT_APPLICATION_H */

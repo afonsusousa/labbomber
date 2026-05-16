@@ -47,5 +47,21 @@ extern bool sprites_initialized;
 #define SPRITE_WALL1                158
 #define SPRITE_WALL2                159
 #define SPRITE_WALL3                160
+#define SPRITE_PLAYER_1_STANDING    161
+#define SPRITE_PLAYER_1_LEFT        162
+#define SPRITE_PLAYER_1_RIGHT       163
+#define SPRITE_PLAYER_1_BACK        164
+#define SPRITE_PLAYER_2_STANDING    165
+#define SPRITE_PLAYER_2_LEFT        166
+#define SPRITE_PLAYER_2_RIGHT       167
+#define SPRITE_PLAYER_2_BACK        168
+#define SPRITE_PLAYER_3_STANDING    169
+#define SPRITE_PLAYER_3_LEFT        170
+#define SPRITE_PLAYER_3_RIGHT       171
+#define SPRITE_PLAYER_3_BACK        172
+#define SPRITE_PLAYER_4_STANDING    173
+#define SPRITE_PLAYER_4_LEFT        174
+#define SPRITE_PLAYER_4_RIGHT       175
+#define SPRITE_PLAYER_4_BACK        176
 
 #endif /* ASSETS_CACHE_H */
