@@ -68,8 +68,7 @@ void game_state_update(t_ctx *ctx) {
             player->pause_counter--;
             player->is_moving = false;
         } else {
-            int32_t start_x, start_y;
-            get_player_start_position(player->player_id, ctx->game.width, ctx->game.height, &start_x, &start_y);
+            int32_t start_x = 50, start_y = 50;
             update_player_movement(player, start_x, start_y);
         }
         update_player_animation(player, ctx->game.logical_ticks);

@@ -14,7 +14,6 @@ void set_date_seed(int day, int month, int year) {
 
 int draw_player(player_t *player, hw_video_t *video, uint32_t size) {
     if (player == NULL || !sprites_initialized) return 1;
-    if (player->player_id < 1 || player->player_id > 4) return 1;
 
     int current_phase = player->animation_phase % 4; 
     int current_direction = player->direction % 4; 
@@ -39,17 +38,6 @@ int draw_player(player_t *player, hw_video_t *video, uint32_t size) {
     
     hw_vbe_draw_scaled_xpm(video, img.bytes, img, draw_x, draw_y, scale);
     return 0;
-}
-
-void get_player_start_position(int player_id, uint32_t width, uint32_t height, int32_t *out_x, int32_t *out_y) {
-    if (out_x == NULL || out_y == NULL) return;
-    if (player_id == 1) {
-        *out_x = 50;
-        *out_y = 50;
-    } else {
-        *out_x = width - 100;
-        *out_y = height - 100;
-    }
 }
 
 void update_player_movement(player_t *player, int32_t start_x, int32_t start_y) {
