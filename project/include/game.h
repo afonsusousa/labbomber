@@ -48,11 +48,7 @@ typedef struct s_game_state {
 
     uint32_t logical_ticks;
     bool is_paused;
-    
-    bool key_w;
-    bool key_a;
-    bool key_d;
-    bool key_s;
+
 } t_game_state;
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);

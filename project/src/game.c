@@ -22,10 +22,6 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->height = height;
     game->logical_ticks = 0;
     game->is_paused = false;
-    game->key_w = false;
-    game->key_a = false;
-    game->key_d = false;
-    game->key_s = false;
 
     generateBoard((char *)game->board, time.day, time.month, time.year);
     set_date_seed(time.day, time.month, time.year);
