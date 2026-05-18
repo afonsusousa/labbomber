@@ -56,41 +56,37 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
     t_gui *gui = &ctx->gui;
     hw_keyboard_ih(&hw_state->keyboard);
 
-    // Update modifier key states
     gui->input.shift_down = hw_state->keyboard.keys_pressed[KEY_SHIFT_LEFT] || hw_state->keyboard.keys_pressed[KEY_SHIFT_RIGHT];
     gui->input.ctrl_down  = hw_state->keyboard.keys_pressed[KEY_CTRL];
 
     uint8_t sc = hw_state->keyboard.scancode;
-
-    // Ignore extended key prefix
-    if (sc == 0xE0) {
-        return; 
-    }
+    if (sc == 0xE0) return; // Ignore extended key prefix
 
     bool is_make = IS_MAKE_CODE(sc);
+    uint8_t key_index = MAKE_FROM_BREAK(sc);
 
-    // Process make codes (key presses) with special logic
-    if (is_make) {
-        // Handle tab navigation in UI
-        if (sc == KEY_TAB) {
-            gui_handle_tab_navigation(gui, gui->input.shift_down);
-            return;
-        }
+    if (key_index == KEY_ESC) {
+        if (is_make && !(*esc_was_pressed)) {
+            *esc_was_pressed = true;
 
-        // Handle ESC key for quit
-        bool esc_is_pressed = hw_state->keyboard.keys_pressed[KEY_ESC];
-        if (esc_is_pressed && !(*esc_was_pressed)) {
             t_widget *top_view = gui_get_top_view(gui);
             if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
                 gui->input.focused->on_quit(gui->input.focused, ctx);
             } else if (top_view != NULL && top_view->on_quit != NULL) {
                 top_view->on_quit(top_view, ctx);
             }
+        } else if (!is_make) {
+            *esc_was_pressed = false;
         }
-        *esc_was_pressed = esc_is_pressed;
     }
 
-    // Pass all key events (both make and break) to the widget
+    if (is_make) {
+        if (sc == KEY_TAB) {
+            gui_handle_tab_navigation(gui, gui->input.shift_down);
+            return;
+        }
+    }
+
     if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
         gui->input.focused->on_key_press(gui->input.focused, sc, ctx);
     }
@@ -123,13 +119,7 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
                 if (target->on_press) target->on_press(target, ctx);
             }
         } else {
-            // --- 2. MOUSE HELD DOWN (Dragging or Holding) ---
-            
-            // Update visual state: true only if cursor is still over the original widget
             WIDGET_SET_CLICKED(*clicked, (target == *clicked));
-
-            // A drag might have been initiated during 'on_press' in the block above,
-            // so we route the event to the dragged widget if it exists, otherwise the clicked one.
             t_widget *active = *dragged ? *dragged : *clicked;
             
             if (active->on_drag) active->on_drag(active, ctx);

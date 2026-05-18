@@ -265,11 +265,13 @@ static void _callback_return_to_main_menu(t_widget *self, void *state) {
 
 void gui_show_pause_menu(struct s_ctx *ctx) {
     t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "pause_overlay");
+    
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "pause_overlay");
     if (overlay == NULL) return;
 
-    t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, gui->width, gui->height, _callback_pop_view, "pause_dialog");
-    pause_dialog->on_quit = _callback_pop_view;
+    t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, gui->width, gui->height, _callback_resume_game, "pause_dialog");
+    
+    pause_dialog->on_quit = _callback_resume_game;
 
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "pause_resume_button");
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "pause_reset_button");
