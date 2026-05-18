@@ -43,53 +43,41 @@ int draw_player(player_t *player, hw_video_t *video, uint32_t size) {
 void update_player_movement(player_t *player, int32_t start_x, int32_t start_y) {
     if (player == NULL) return;
     
-    const int SQUARE_SIZE = 300;
     const int MOVE_SPEED = 2;
-    const int PAUSE_FRAMES = 120;
+    const int MAX_WIDTH = 1024;   // Board width constraint
+    const int MAX_HEIGHT = 768;   // Board height constraint
     
-    int32_t rel_x = player->x - start_x;
-    int32_t rel_y = player->y - start_y;
+    if (!player->is_moving) {
+        return;
+    }
     
-    //THIS IS JUST A TEST RN
-    if (rel_x < SQUARE_SIZE && rel_y == 0) {
-        // Moving right
-        player->x += MOVE_SPEED;
-        player->direction = PLAYER_RIGHT;
-        player->is_moving = true;
-        if (player->x - start_x >= SQUARE_SIZE) {
-            player->x = start_x + SQUARE_SIZE;
-            player->pause_counter = PAUSE_FRAMES;
-        }
-    } else if (rel_x == SQUARE_SIZE && rel_y < SQUARE_SIZE) {
-        // Moving down
-        player->y += MOVE_SPEED;
-        player->direction = PLAYER_STANDING;
-        player->is_moving = true;
-        if (player->y - start_y >= SQUARE_SIZE) {
-            player->y = start_y + SQUARE_SIZE;
-            player->pause_counter = PAUSE_FRAMES;
-        }
-    } else if (rel_x > 0 && rel_y == SQUARE_SIZE) {
-        // Moving left
-        player->x -= MOVE_SPEED;
-        player->direction = PLAYER_LEFT;
-        player->is_moving = true;
-        if (player->x - start_x <= 0) {
-            player->x = start_x;
-            player->pause_counter = PAUSE_FRAMES;
-        }
-    } else if (rel_x == 0 && rel_y > 0) {
-        // Moving up
-        player->y -= MOVE_SPEED;
-        player->direction = PLAYER_BACK;
-        player->is_moving = true;
-        if (player->y - start_y <= 0) {
-            player->y = start_y;
-            player->pause_counter = PAUSE_FRAMES;
-        }
-    } else {
-        // At starting position not moving
-        player->is_moving = false;
+    switch (player->direction) {
+        case PLAYER_BACK:
+            // Move up
+            if (player->y - MOVE_SPEED >= start_y) {
+                player->y -= MOVE_SPEED;
+            }
+            break;
+        case PLAYER_LEFT:
+            // Move left
+            if (player->x - MOVE_SPEED >= start_x) {
+                player->x -= MOVE_SPEED;
+            }
+            break;
+        case PLAYER_RIGHT:
+            // Move right
+            if (player->x + MOVE_SPEED <= start_x + MAX_WIDTH) {
+                player->x += MOVE_SPEED;
+            }
+            break;
+        case PLAYER_STANDING:
+            // Move down
+            if (player->y + MOVE_SPEED <= start_y + MAX_HEIGHT) {
+                player->y += MOVE_SPEED;
+            }
+            break;
+        default:
+            break;
     }
 }
 

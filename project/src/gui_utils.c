@@ -75,6 +75,46 @@ void gui_set_focus(t_gui *gui, t_widget *widget) {
     }
 }
 
+void gui_handle_tab_navigation(t_gui *gui, bool shift_down) {
+    if (gui == NULL) return;
+
+    t_widget *top_view = gui_get_top_view(gui);
+    if (top_view == NULL) return;
+
+    if (gui->input.focused != NULL) {
+        if (gui->input.focused == top_view) {
+            t_widget *first = widget_first_focusable(top_view);
+            if (first != NULL) {
+                gui_set_focus(gui, first);
+                first->focus_cue = 1;
+            }
+            return;
+        }
+
+        if (gui->input.focused->focus_cue == 0) {
+            gui->input.focused->focus_cue = 1;
+            return;
+        }
+
+        t_widget *next_focus = shift_down 
+            ? widget_get_prev_focusable_sibling(gui->input.focused)
+            : widget_get_next_focusable_sibling(gui->input.focused);
+
+        if (next_focus != NULL) {
+            gui->input.focused->focus_cue = (gui->input.focused->focus_cue == 2) ? 2 : 0;
+            gui_set_focus(gui, next_focus);
+            next_focus->focus_cue = 1; 
+        }
+    }
+    else {
+        t_widget *first = widget_first_focusable(top_view);
+        if (first != NULL) {
+            gui_set_focus(gui, first);
+            first->focus_cue = 1;
+        }
+    }
+}
+
 void gui_push_view(t_gui *gui, t_widget *view) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 

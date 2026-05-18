@@ -8,6 +8,7 @@
 // Forward declarations for static callback functions
 static void _callback_game_board_on_press(t_widget *self, void *state);
 static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
+static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
 static void _callback_status_bar_on_tick(t_widget *self, void *state);
 static void _callback_game_view_on_quit(t_widget *self, void *state);
 static void _callback_text_label_on_destroy(t_widget *self);
@@ -52,6 +53,13 @@ static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t sca
     game_state_handle_key_press(game, scancode);
 }
 
+static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
+    (void)self;
+    t_ctx *ctx = (t_ctx*)state;
+    t_game_state *game = &ctx->game;
+    game_state_handle_key_press(game, scancode);
+}
+
 // -------------------------------------------------------------------------
 // Game View
 // -------------------------------------------------------------------------
@@ -87,6 +95,7 @@ void gui_show_game_view(t_ctx *ctx) {
 
     widget_add_child(view, game_canvas);
     view->on_quit = _callback_game_view_on_quit;
+    view->on_key_press = _callback_game_view_on_key_press;
     gui_push_view(gui, view);
 }
 

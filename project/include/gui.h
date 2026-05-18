@@ -51,6 +51,7 @@ void      gui_set_focus(t_gui *gui, t_widget *widget);
 void      gui_set_active(t_gui *gui, t_widget *widget, bool active);
 void      widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical);
 
+void      gui_handle_tab_navigation(t_gui *gui, bool shift_down);
 int       gui_get_curr_time(t_gui *gui, hw_rtc_t *out);
 
 // Stack API

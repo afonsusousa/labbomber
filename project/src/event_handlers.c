@@ -11,11 +11,9 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     hw_timer_int_handler(&hw_state->timer);
     
-    // Read physical RTC periodically and map to application time
     if (hw_state->timer.ticks % 60 == 0) {
         hw_rtc_t hw_time;
         if (hw_rtc_get_time(&hw_time) == 0) {
-            // Translate hardware data to application abstraction
             ctx->real_time.year    = hw_time.year;
             ctx->real_time.month   = hw_time.month;
             ctx->real_time.day     = hw_time.day;
@@ -25,7 +23,6 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         }
     }
     
-    // Phase 1: Game Simulation
     if (!ctx->game.is_paused) {
         ctx->game.logical_ticks++;
         game_state_update(ctx);
@@ -59,76 +56,44 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
     t_gui *gui = &ctx->gui;
     hw_keyboard_ih(&hw_state->keyboard);
 
-    gui->input.shift_down = hw_state->keyboard.keys_pressed[0x2A] || hw_state->keyboard.keys_pressed[0x36];
-    gui->input.ctrl_down  = hw_state->keyboard.keys_pressed[0x1D];
+    // Update modifier key states
+    gui->input.shift_down = hw_state->keyboard.keys_pressed[KEY_SHIFT_LEFT] || hw_state->keyboard.keys_pressed[KEY_SHIFT_RIGHT];
+    gui->input.ctrl_down  = hw_state->keyboard.keys_pressed[KEY_CTRL];
 
     uint8_t sc = hw_state->keyboard.scancode;
 
+    // Ignore extended key prefix
     if (sc == 0xE0) {
         return; 
     }
-    bool is_make = (sc & 0x80) == 0;
-    bool is_valid_press = hw_state->keyboard.is_two_bytes ||
-                          hw_state->keyboard.keys_pressed[sc & 0x7F] ||
-                          (!is_make);
-    if (is_valid_press) {
-        // TAB / MAKE ONLY
-        if (is_make && sc == 0x0F) {
-            t_widget *top_view = gui_get_top_view(gui);
 
-            if (gui->input.focused != NULL) {
-                if (gui->input.focused == top_view) {
-                    t_widget *first = widget_first_focusable(top_view);
-                    if (first != NULL) {
-                        gui_set_focus(gui, first);
-                        first->focus_cue = 1;
-                    }
-                    return;
-                }
+    bool is_make = IS_MAKE_CODE(sc);
 
-                if (gui->input.focused->focus_cue == 0) {
-                    gui->input.focused->focus_cue = 1;
-                    return; // Consume the key immediately
-                }
-
-                t_widget *next_focus = NULL;
-                if (gui->input.shift_down) {
-                    next_focus = widget_get_prev_focusable_sibling(gui->input.focused);
-                } else {
-                    next_focus = widget_get_next_focusable_sibling(gui->input.focused);
-                }
-
-                if (next_focus != NULL) {
-                    gui->input.focused->focus_cue = (gui->input.focused->focus_cue == 2) ? 2 : 0;
-                    gui_set_focus(gui, next_focus);
-                    next_focus->focus_cue = 1; 
-                }
-            }
-            else {
-                t_widget *first = widget_first_focusable(top_view);
-                if (first != NULL) {
-                    gui_set_focus(gui, first);
-                    first->focus_cue = 1;
-                }
-            }
+    // Process make codes (key presses) with special logic
+    if (is_make) {
+        // Handle tab navigation in UI
+        if (sc == KEY_TAB) {
+            gui_handle_tab_navigation(gui, gui->input.shift_down);
             return;
         }
-        //Make or Break
-        if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
-            gui->input.focused->on_key_press(gui->input.focused, sc, ctx);
+
+        // Handle ESC key for quit
+        bool esc_is_pressed = hw_state->keyboard.keys_pressed[KEY_ESC];
+        if (esc_is_pressed && !(*esc_was_pressed)) {
+            t_widget *top_view = gui_get_top_view(gui);
+            if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
+                gui->input.focused->on_quit(gui->input.focused, ctx);
+            } else if (top_view != NULL && top_view->on_quit != NULL) {
+                top_view->on_quit(top_view, ctx);
+            }
         }
+        *esc_was_pressed = esc_is_pressed;
     }
 
-    bool esc_is_pressed = hw_state->keyboard.keys_pressed[0x01];
-    if (esc_is_pressed && !(*esc_was_pressed)) {
-        t_widget *top_view = gui_get_top_view(gui);
-        if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
-            gui->input.focused->on_quit(gui->input.focused, ctx);
-        } else if (top_view != NULL && top_view->on_quit != NULL) {
-            top_view->on_quit(top_view, ctx);
-        }
+    // Pass all key events (both make and break) to the widget
+    if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
+        gui->input.focused->on_key_press(gui->input.focused, sc, ctx);
     }
-    *esc_was_pressed = esc_is_pressed;
 }
 
 void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {

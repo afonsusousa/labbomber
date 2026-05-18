@@ -4,6 +4,7 @@
 #include "widget.h"
 #include "gui.h"
 #include "draw.h"
+#include "../lib/keyboard/i8042.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,10 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->height = height;
     game->logical_ticks = 0;
     game->is_paused = false;
+    game->key_w = false;
+    game->key_a = false;
+    game->key_d = false;
+    game->key_s = false;
 
     generateBoard((char *)game->board, time.day, time.month, time.year);
     set_date_seed(time.day, time.month, time.year);
@@ -79,8 +84,78 @@ void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
     // Clicks do jogo AQUI
 }
 
-void game_state_handle_key_press(t_game_state *gane, int8_t scancode) {
-    // Keyboard
+// Helper function to determine direction based on currently pressed keys
+static player_direction_t get_current_direction(t_game_state *game) {
+    // Check for diagonal combinations first
+    if (game->key_w && game->key_a) {
+        return PLAYER_BACK_LEFT;
+    } else if (game->key_w && game->key_d) {
+        return PLAYER_BACK_RIGHT;
+    } else if (game->key_s && game->key_a) {
+        return PLAYER_STANDING_LEFT;
+    } else if (game->key_s && game->key_d) {
+        return PLAYER_STANDING_RIGHT;
+    }
+    
+    // Check for single directions
+    if (game->key_w) {
+        return PLAYER_BACK;
+    } else if (game->key_a) {
+        return PLAYER_LEFT;
+    } else if (game->key_d) {
+        return PLAYER_RIGHT;
+    } else if (game->key_s) {
+        return PLAYER_STANDING;
+    }
+    
+    return PLAYER_STANDING;
+}
+
+void game_state_handle_key_press(t_game_state *game, int8_t scancode) {
+    if (game == NULL)
+        return;
+    
+    if (game->is_paused)
+        return;
+    
+    player_t *player = &game->players[0];
+    
+    bool is_make = IS_MAKE_CODE(scancode);
+    uint8_t key_index = MAKE_FROM_BREAK(scancode);
+    
+    if (is_make) {
+        // Key press - update key state
+        if (key_index == KEY_W) {
+            game->key_w = true;
+        } else if (key_index == KEY_A) {
+            game->key_a = true;
+        } else if (key_index == KEY_D) {
+            game->key_d = true;
+        } else if (key_index == KEY_S) {
+            game->key_s = true;
+        }
+        player->is_moving = true;
+    } else {
+        // Key release - update key state
+        if (key_index == KEY_W) {
+            game->key_w = false;
+        } else if (key_index == KEY_A) {
+            game->key_a = false;
+        } else if (key_index == KEY_D) {
+            game->key_d = false;
+        } else if (key_index == KEY_S) {
+            game->key_s = false;
+        }
+        
+        // Only stop moving if no movement keys are pressed
+        if (!game->key_w && !game->key_a && 
+            !game->key_d && !game->key_s) {
+            player->is_moving = false;
+        }
+    }
+    
+    // Update direction based on current key state
+    player->direction = get_current_direction(game);
 }
 
 void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
