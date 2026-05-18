@@ -15,18 +15,6 @@ widget_draw_func default_draw_funcs[] = {
     [OVERLAY]    = NULL
 };
 
-int32_t get_abs_x(t_widget *self) {
-    if (!self) return 0;
-    if (self->parent == NULL) return self->x;
-    return get_abs_x(self->parent) + self->x;
-}
-
-int32_t get_abs_y(t_widget *self) {
-    if (!self) return 0;
-    if (self->parent == NULL) return self->y;
-    return get_abs_y(self->parent) + self->y;
-}
-
 t_widget* widget_get_at(t_widget *root, int32_t x, int32_t y) {
     if (root == NULL || !WIDGET_IS_ACTIVE(root)) {
         return NULL;
@@ -45,8 +33,8 @@ t_widget* widget_get_at(t_widget *root, int32_t x, int32_t y) {
         last_child = last_child->prev;
     }
 
-    int32_t abs_x = get_abs_x(root);
-    int32_t abs_y = get_abs_y(root);
+    int32_t abs_x = root->abs_x;
+    int32_t abs_y = root->abs_y;
     bool is_inside = (x >= abs_x && x < (abs_x + (int32_t)root->width) &&
                       y >= abs_y && y < (abs_y + (int32_t)root->height));
 

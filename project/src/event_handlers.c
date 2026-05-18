@@ -104,64 +104,54 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     gui->input.mouse_y = hw_state->mouse.y;
 
     bool is_pressed = hw_state->mouse.left_click;
-    t_widget *top_view = gui_get_top_view(gui);
-    t_widget *target = widget_get_at(top_view, gui->input.mouse_x, gui->input.mouse_y);
+    t_widget *target = widget_get_at(gui_get_top_view(gui), gui->input.mouse_x, gui->input.mouse_y);
 
     t_widget **dragged = &gui->drag.dragged_widget;
     t_widget **clicked = &gui->input.clicked_widget;
     t_widget **hovered = &gui->input.hovered;
 
-    if (*dragged) { // something is being dragged
-        
-        if (is_pressed) {
-            if ((*dragged)->on_drag)
-                (*dragged)->on_drag(*dragged, ctx);
-            else if ((*dragged)->on_press)
-                (*dragged)->on_press(*dragged, ctx);
-        } else {
-            *dragged = NULL;
-        }
-    } else if (is_pressed) {
+    if (is_pressed) {
         if (!*clicked) {
+            // --- 1. MOUSE JUST PRESSED ---
             *clicked = target;
-            if (*clicked) {
-                WIDGET_SET_CLICKED(*clicked, true);
-                if (WIDGET_CAN_RECEIVE_FOCUS(*clicked)) {
-                    if (gui->input.focused != NULL) 
-                        gui->input.focused->focus_cue = 0; 
-                    gui_set_focus(gui, *clicked);
+            if (target) {
+                WIDGET_SET_CLICKED(target, true);
+                if (WIDGET_CAN_RECEIVE_FOCUS(target)) {
+                    if (gui->input.focused) gui->input.focused->focus_cue = 0; 
+                    gui_set_focus(gui, target);
                 }
-                if ((*clicked)->on_press) (*clicked)->on_press(*clicked, ctx);
+                if (target->on_press) target->on_press(target, ctx);
             }
         } else {
-            if (target == *clicked) {
-                WIDGET_SET_CLICKED(*clicked, true);
-            } else {
-                WIDGET_SET_CLICKED(*clicked, false);
-            }
-            if ((*clicked)->on_drag) (*clicked)->on_drag(*clicked, ctx);
-            else if ((*clicked)->on_press) (*clicked)->on_press(*clicked, ctx);
+            // --- 2. MOUSE HELD DOWN (Dragging or Holding) ---
+            
+            // Update visual state: true only if cursor is still over the original widget
+            WIDGET_SET_CLICKED(*clicked, (target == *clicked));
+
+            // A drag might have been initiated during 'on_press' in the block above,
+            // so we route the event to the dragged widget if it exists, otherwise the clicked one.
+            t_widget *active = *dragged ? *dragged : *clicked;
+            
+            if (active->on_drag) active->on_drag(active, ctx);
+            else if (active->on_press) active->on_press(active, ctx);
         }
     } else {
+        *dragged = NULL;
         if (*clicked) {
-            t_widget *was_clicked = *clicked;
-            *clicked = NULL;
-            WIDGET_SET_CLICKED(was_clicked, false);
+            WIDGET_SET_CLICKED(*clicked, false);
             
-            if (was_clicked == target) {
-                if (was_clicked->on_click) {
-                    was_clicked->on_click(was_clicked, ctx);
-                }
+            // click only if release over the same widget we pressed
+            if (*clicked == target && (*clicked)->on_click) {
+                (*clicked)->on_click(*clicked, ctx);
             }
+            *clicked = NULL;
         }
-    } 
+    }
 
-    // only update hover if we aren't dragging anything 
-    if (!*dragged) {
-        if (*hovered != target) {
-            if (*hovered) WIDGET_SET_HOVERED(*hovered, false);
-            *hovered = target;
-            if (*hovered) WIDGET_SET_HOVERED(*hovered, true);
-        }
+    // Only update hover if we aren't dragging anything around
+    if (!*dragged && *hovered != target) {
+        if (*hovered) WIDGET_SET_HOVERED(*hovered, false);
+        *hovered = target;
+        if (*hovered) WIDGET_SET_HOVERED(*hovered, true);
     }
 }
