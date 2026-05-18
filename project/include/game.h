@@ -20,6 +20,9 @@ typedef struct {
     uint8_t animation_phase; // 0-3 for the 4 directional sprites
     bool is_moving;
     uint8_t pause_counter;   // TEMP:     frames to pause at edges
+
+    uint8_t movement_stack[4];
+    uint8_t stack_count;
 } player_t;
 
 struct s_ctx;
@@ -61,5 +64,11 @@ void    game_state_handle_key_press(t_game_state *gane, int8_t scancode);
 
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
+
+// Player movement helpers
+void    get_player_start_position(int player_id, uint32_t width, uint32_t height, int32_t *out_x, int32_t *out_y);
+void    update_player_movement(player_t *player, int32_t start_x, int32_t start_y);
+void    update_player_animation(player_t *player, uint32_t logical_ticks);
+void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 
 #endif /* LCOM_PROJECT_GAME_H */
