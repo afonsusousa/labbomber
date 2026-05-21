@@ -46,15 +46,11 @@ void gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_height) 
 
 static void _callback_pop_view(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    gui_pop_view(gui);
+    gui_pop_view(GUI(state));
 }
 
 static void _callback_focus_self(t_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    gui_set_focus(gui, self);
+    gui_set_focus(GUI(state), self);
 }
 
 static bool is_blank_string(const char *s) {
@@ -114,34 +110,29 @@ void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *m
 // =============================================================================
 
 static void _callback_confirm_quit(t_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx *)state;
-    t_gui *gui = &ctx->gui;
+    t_gui *gui = GUI(state);
     (void)self;
     gui->is_running = false;
 }
 
 static void _callback_quit(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx *)state;
-    gui_show_confirm_dialog(ctx, "QUIT", "DO YOU REALLY WANT TO QUIT", _callback_confirm_quit, _callback_pop_view);
+    gui_show_confirm_dialog(CTX(state), "QUIT", "DO YOU REALLY WANT TO QUIT", _callback_confirm_quit, _callback_pop_view);
 }
 
 static void _callback_show_singleplayer_name_menu(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx *)state;
-    gui_show_name_menu(ctx, false);
+    gui_show_name_menu(CTX(state), false);
 }
 
 static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx *)state;
-    gui_show_name_menu(ctx, true);
+    gui_show_name_menu(CTX(state), true);
 }
 
 static void _callback_show_scoreboard(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx *)state;
-    gui_show_scoreboard(ctx);
+    gui_show_scoreboard(CTX(state));
 }
 
 void gui_show_start_menu(struct s_ctx *ctx) {
@@ -165,39 +156,38 @@ void gui_show_start_menu(struct s_ctx *ctx) {
 
 static void _callback_start_game(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
+    t_gui *gui = GUI(state);
 
     t_widget *top_view = gui_get_top_view(gui);
     t_widget *player1_input = widget_find_by_name(top_view, "player1_input");
     t_widget *player2_input = widget_find_by_name(top_view, "player2_input");
 
     if (player1_input == NULL || player1_input->data.text_input.buffer == NULL) {
-        gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
+        gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
         return;
     }
 
     bool player1_empty = is_blank_string(player1_input->data.text_input.buffer);
     if (player1_empty) {
-        gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
+        gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
         return;
     }
 
     if (player2_input != NULL) {
         if (player2_input->data.text_input.buffer == NULL) {
-            gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
+            gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 2 name");
             return;
         }
 
         bool player2_empty = is_blank_string(player2_input->data.text_input.buffer);
         if (player2_empty) {
-            gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
+            gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 2 name");
             return;
         }
     }
 
     gui_pop_view(gui);
-    gui_show_game_view(ctx);
+    gui_show_game_view(CTX(state));
 }
 
 void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
@@ -228,39 +218,34 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
 
 static void _callback_resume_game(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    ctx->game.is_paused = false;
+    t_gui *gui = GUI(state);
+    GAME(state)->is_paused = false;
     gui_pop_view(gui);
 }
 
 static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    ctx->game.is_paused = false;
+    t_gui *gui = GUI(state);
+    GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "start_menu_view");
 }
 
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    game_state_reset(&ctx->game);
-    ctx->game.is_paused = false;
+    t_gui *gui = GUI(state);
+    game_state_reset(GAME(state));
+    GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }
 
 static void _callback_reset_game(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    gui_show_confirm_dialog(ctx, "Confirm Reset", "Are you sure?", _callback_confirm_reset_game, _callback_pop_view);
+    gui_show_confirm_dialog(CTX(state), "Confirm Reset", "Are you sure?", _callback_confirm_reset_game, _callback_pop_view);
 }
 
 static void _callback_return_to_main_menu(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    gui_show_confirm_dialog(ctx, "Confirm Main Menu", "Return to main menu?", _callback_confirm_return_to_main_menu, _callback_pop_view);
+    gui_show_confirm_dialog(CTX(state), "Confirm Main Menu", "Return to main menu?", _callback_confirm_return_to_main_menu, _callback_pop_view);
 }
 
 void gui_show_pause_menu(struct s_ctx *ctx) {
@@ -287,9 +272,7 @@ void gui_show_pause_menu(struct s_ctx *ctx) {
 
 static void _callback_close_scoreboard(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    gui_pop_view(gui);
+    gui_pop_view(GUI(state));
 }
 
 void gui_show_scoreboard(struct s_ctx *ctx) {

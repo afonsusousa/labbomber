@@ -39,8 +39,24 @@ static void gui_clear_widget_refs(t_gui *gui, t_widget *root) {
     }
 
     if (widget_is_descendant_of(gui->drag.dragged_widget, root)) {
-        gui->drag.dragged_widget = NULL;
+        gui_end_drag(gui);
     }
+}
+
+void gui_begin_drag(t_gui *gui, t_widget *widget, int32_t mouse_x, int32_t mouse_y) {
+    if (gui == NULL || widget == NULL) return;
+
+    gui->drag.dragged_widget = widget;
+    gui->drag.drag_offset_x = mouse_x - widget->abs_x;
+    gui->drag.drag_offset_y = mouse_y - widget->abs_y;
+}
+
+void gui_end_drag(t_gui *gui) {
+    if (gui == NULL) return;
+
+    gui->drag.dragged_widget = NULL;
+    gui->drag.drag_offset_x = 0;
+    gui->drag.drag_offset_y = 0;
 }
 
 t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {

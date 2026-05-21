@@ -111,12 +111,13 @@ static uint32_t word_end_offset(const char *buffer, uint32_t cursor_pos) {
 static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     if (!WIDGET_IS_FOCUSED(self)) return;
 
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
+    t_gui *gui = GUI(state);
+    if (!IS_MAKE_CODE(scancode)) return;
+
     bool is_shift = gui->input.shift_down;
     bool is_ctrl  = gui->input.ctrl_down;
 
-    if (scancode == 0x1C) { // Enter
+    if (scancode == KB_ENTER) {
         t_widget *next_focus = widget_get_next_focusable_sibling(self);
         self->focus_cue = 0;
         if (next_focus != NULL) {
@@ -132,7 +133,7 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
     char     *buf    = self->data.text_input.buffer;
     uint32_t *len    = &self->data.text_input.len;
 
-    if (scancode == 0x4B) { // Left arrow
+    if (scancode == KB_LEFT) {
         if (is_shift && !has_selection(self)) *anchor = *cursor;
 
         if (is_ctrl)
@@ -145,7 +146,7 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
         if (!is_shift) *anchor = -1;
         reset_blink(self);
 
-    } else if (scancode == 0x4D) { // Right arrow
+    } else if (scancode == KB_RIGHT) {
         if (is_shift && !has_selection(self)) *anchor = *cursor;
 
         if (is_ctrl)
@@ -158,7 +159,7 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
         if (!is_shift) *anchor = -1;
         reset_blink(self);
 
-    } else if (scancode == 0x0E) { // Backspace
+    } else if (scancode == KB_BACKSPACE) {
         if (has_selection(self)) {
             delete_selection(self, *len);
         } else if (*cursor > 0) {
@@ -199,10 +200,6 @@ static void _callback_text_input_on_tick(struct s_widget *self, void *state) {
             self->data.text_input.cursor_visible = !self->data.text_input.cursor_visible;
             self->data.text_input.blink_timer = 0;
         }
-        if (self->data.text_input.focus_timer > 0) {
-            self->data.text_input.selection_start = 0;
-            self->data.text_input.cursor_pos = self->data.text_input.len;
-        }
     } else {
         self->data.text_input.cursor_visible = false;
         self->data.text_input.blink_timer = 0;
@@ -211,21 +208,25 @@ static void _callback_text_input_on_tick(struct s_widget *self, void *state) {
 }
 
 static void _callback_text_input_on_quit(struct s_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    gui_set_focus(&ctx->gui, NULL);
+    gui_set_focus(GUI(state), NULL);
     self->data.text_input.selection_start = -1;
 }
 
 static void _callback_text_input_on_press(struct s_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    self->data.text_input.cursor_pos = get_pos_from_mouse(self, &ctx->gui);
+    t_gui *gui = GUI(state);
+
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, gui);
     self->data.text_input.selection_start = self->data.text_input.cursor_pos;
+    gui_begin_drag(gui, self, gui->input.mouse_x, gui->input.mouse_y);
     reset_blink(self);
 }
 
 static void _callback_text_input_on_drag(struct s_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    self->data.text_input.cursor_pos = get_pos_from_mouse(self, &ctx->gui);
+    t_gui *gui = GUI(state);
+
+    if (gui->drag.dragged_widget != self) return;
+
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, gui);
     reset_blink(self);
 }
 
@@ -237,6 +238,8 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
     if (self->focus_cue == 1) {
         self->focus_cue = 2;
         self->data.text_input.focus_timer = 15;
+        self->data.text_input.selection_start = 0;
+        self->data.text_input.cursor_pos = self->data.text_input.len;
     }
 
     if (self->data.text_input.focus_timer > 0) {

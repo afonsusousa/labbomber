@@ -29,8 +29,8 @@ typedef struct s_state {
 
     struct {
         t_widget *dragged_widget;
-        int32_t  dragt_dx;
-        int32_t  dragt_dy;
+        int32_t  drag_offset_x;
+        int32_t  drag_offset_y;
     } drag;
 
     struct {
@@ -49,6 +49,8 @@ void      gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_hei
 void      gui_destroy(t_gui *gui);
 void      gui_set_focus(t_gui *gui, t_widget *widget);
 void      gui_set_active(t_gui *gui, t_widget *widget, bool active);
+void      gui_begin_drag(t_gui *gui, t_widget *widget, int32_t mouse_x, int32_t mouse_y);
+void      gui_end_drag(t_gui *gui);
 void      widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool is_vertical);
 
 void      gui_handle_tab_navigation(t_gui *gui, bool shift_down);

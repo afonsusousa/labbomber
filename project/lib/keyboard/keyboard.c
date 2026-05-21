@@ -38,6 +38,7 @@ void hw_keyboard_ih(hw_keyboard_t *kbd) {
 
     if (scancode == 0xE0) {
         kbd->is_two_bytes = true;
+        kbd->scancode = 0xE0;
     } else {
         kbd->scancode = scancode;
 

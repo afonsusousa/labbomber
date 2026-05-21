@@ -151,9 +151,9 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
         return;
     }
 
-    t_ctx *ctx = (t_ctx *)state;
+    t_game_state *game = GAME(state);
 
-    int32_t tile = ctx->game.tile_size;
+    int32_t tile = game->tile_size;
     int32_t board_width = BOARD_COLS * tile;
     int32_t board_height = BOARD_ROWS * tile;
     int32_t start_x = self->abs_x + ((int32_t)self->width - board_width) / 2;
@@ -162,17 +162,17 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
 
-            int val = ctx->game.board[y * BOARD_COLS + x];
+            int val = game->board[y * BOARD_COLS + x];
 
             // Get center coordinate of the tile
             int px = start_x + (x * tile) + (tile / 2);
             int py = start_y + (y * tile) + (tile / 2);
 
             if (val == 0) {
-                int grass_type = decide_grass_sprite(ctx->game.board, BOARD_ROWS, BOARD_COLS, x, y);
+                int grass_type = decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
                 draw_grass(video, px, py, grass_type);
             } else if (val == 1) {
-                int wall_sprite = decide_wall_sprite(ctx->game.board, BOARD_ROWS, BOARD_COLS, x, y);
+                int wall_sprite = decide_wall_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
                 draw_wall(video, px, py, wall_sprite);
             } else if (val == 2) {
                 // Brick
@@ -188,6 +188,6 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     draw_bomb(video, &ctx->game.bomb, bomb_x, bomb_y);
 
     for (int i = 0; i < 2; i++) {
-        draw_player(&ctx->game.players[i], video, start_x, start_y);
+        draw_player(&game->players[i], video, start_x, start_y);
     }
 }

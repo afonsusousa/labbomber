@@ -23,8 +23,8 @@ static void update_status_date(t_widget *status_bar, t_ctx *ctx);
 // manter exatamente igual
 static void _callback_game_view_on_quit(t_widget *self, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
+    t_ctx *ctx = CTX(state);
+    t_gui *gui = GUI(state);
 
     //isto esta feio mas não mexer até absoluta necessidade
     if (gui->input.focused != NULL && gui->input.focused != self && gui->input.focused->on_quit != NULL) {
@@ -36,9 +36,8 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
 }
 
 static void _callback_game_board_on_press(t_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    t_game_state *game = &ctx->game;
+    t_gui *gui = GUI(state);
+    t_game_state *game = GAME(state);
    
     game_state_handle_click(
         game,
@@ -48,16 +47,12 @@ static void _callback_game_board_on_press(t_widget *self, void *state) {
 }
 
 static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    t_game_state *game = &ctx->game;
-    game_state_handle_key_press(game, scancode);
+    game_state_handle_key_press(GAME(state), scancode);
 }
 
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     (void)self;
-    t_ctx *ctx = (t_ctx*)state;
-    t_game_state *game = &ctx->game;
-    game_state_handle_key_press(game, scancode);
+    game_state_handle_key_press(GAME(state), scancode);
 }
 
 // -------------------------------------------------------------------------
@@ -86,9 +81,6 @@ void gui_show_game_view(t_ctx *ctx) {
     game_canvas->on_press = _callback_game_board_on_press;
     game_canvas->on_key_press = _callback_game_board_on_key_press;
 
-    //TODO: REVISIT ON_DRAG LATER
-    game_canvas->on_drag = _callback_game_board_on_press;
-
     //o game state vai levar o board, os players, start time, etc
     if (game_state_init(&ctx->game, gui->width, canvas_h, ctx->real_time) != 0) {
         widget_destroy(view);
@@ -107,9 +99,7 @@ void gui_show_game_view(t_ctx *ctx) {
 
 static void _callback_status_bar_on_tick(t_widget *self, void *state) {
     if (self == NULL) return;
-    t_ctx *ctx = (t_ctx*)state;
-    if (ctx == NULL) return;
-    update_status_date(self, ctx);
+    update_status_date(self, CTX(state));
 }
 
 // ignorar mais ou menos
