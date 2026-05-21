@@ -12,17 +12,12 @@ int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32
 void init_sprite_cache();
 
 void set_date_seed(int day, int month, int year);
-int draw_player(player_t *player, hw_video_t *video, uint32_t size);
-
-// Player movement helpers
-void get_player_start_position(int player_id, uint32_t width, uint32_t height, int32_t *out_x, int32_t *out_y);
-void update_player_movement(player_t *player, int32_t start_x, int32_t start_y);
-void update_player_animation(player_t *player, uint32_t logical_ticks);
+int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int32_t board_start_y);
 
 /* Grass and terrain drawing */
-void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size);
-void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size);
-void draw_brick(hw_video_t *video, int32_t x, int32_t y, uint32_t size);
+void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index);
+void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index);
+void draw_brick(hw_video_t *video, int32_t x, int32_t y);
 
 int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
 int decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y);

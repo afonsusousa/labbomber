@@ -1,11 +1,12 @@
 #include "draw.h"
 #include "vbe.h"
 #include "assets_cache.h"
-#include "draw.h"
+#include "game.h"
 #include <stdint.h>
 #include <lcom/xpm.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 static int seed = 0;
 
@@ -13,31 +14,31 @@ void set_date_seed(int day, int month, int year) {
     seed = year * 10000 + month * 100 + day;
 }
 
-int draw_player(player_t *player, hw_video_t *video, uint32_t size) {
+int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int32_t board_start_y) {
     if (player == NULL || !sprites_initialized) return 1;
 
     int current_phase = player->animation_phase % 4; 
-    int current_direction = player->direction % 4; 
+    int current_direction = player->sprite_dir % 4; 
 
     int sprite_index = SPRITE_PLAYER_1_STANDING + (current_phase * 4) + current_direction;
 
-    if (sprite_index >= SPRITE_CACHE_SIZE || sprite_cache[sprite_index].bytes == NULL) {
+    if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL) {
         return 1;
     }
 
-    xpm_image_t img = sprite_cache[sprite_index];
-    uint32_t scale = size / img.width;
-    if (scale == 0) scale = 1;
-    
-    int32_t draw_x = player->x + 100;
-    int32_t draw_y = player->y + 100;
-    
+    xpm_image_t img = scaled_sprite_cache[sprite_index];
+
+    int32_t draw_x = board_start_x + player->pos.x - (img.width / 2);
+    int32_t draw_y = board_start_y + player->pos.y - (img.height / 2); // Center alignment
+
     // --- THE SNEAK OFFSET ---
     if (current_phase == 1) {
-        draw_y += (1 * scale); 
+        uint32_t sneak_amount = img.height / 20;
+        if (sneak_amount == 0) sneak_amount = 1;
+        draw_y += sneak_amount;
     }
-    
-    hw_vbe_draw_scaled_xpm(video, img.bytes, img, draw_x, draw_y, scale);
+
+    hw_vbe_draw_xpm(video, img.bytes, img, draw_x, draw_y);
     return 0;
 }
 
@@ -66,59 +67,70 @@ static void push_movement_key(player_t *player, uint8_t key_index) {
     }
 }
 
-void update_player_direction(player_t *player, uint8_t key_index, bool is_make) {
-    if (key_index != KEY_W && key_index != KEY_A && 
-        key_index != KEY_D && key_index != KEY_S) {
-        return;
-    }
+void update_player_direction(player_t *player, uint8_t key, bool is_make) {
+    if (key != KEY_W && key != KEY_A && key != KEY_D && key != KEY_S) return;
 
-    if (is_make) {
-        push_movement_key(player, key_index);
-    } else {
-        remove_movement_key(player, key_index);
-    }
+    is_make ? push_movement_key(player, key) : remove_movement_key(player, key);
 
-    if (player->stack_count > 0) {
-        player->is_moving = true;
-        uint8_t active_key = player->movement_stack[player->stack_count - 1];
+    if (player->stack_count > 0 && !player->is_moving) {
+        uint8_t top_key = player->movement_stack[player->stack_count - 1];
         
-        if (active_key == KEY_W) player->direction = PLAYER_BACK;
-        else if (active_key == KEY_A) player->direction = PLAYER_LEFT;
-        else if (active_key == KEY_D) player->direction = PLAYER_RIGHT;
-        else if (active_key == KEY_S) player->direction = PLAYER_STANDING;
-    } else {
-        player->is_moving = false;
+        player->dir = (top_key == KEY_W) ? PLAYER_BACK : 
+                      (top_key == KEY_A) ? PLAYER_LEFT : 
+                      (top_key == KEY_D) ? PLAYER_RIGHT : PLAYER_STANDING;
+                      
+        player->sprite_dir = player->dir; // Visual update since we start moving
+        player->is_moving = true;
     }
 }
 
-// collisions will go here
-void update_player_movement(player_t *player, int32_t start_x, int32_t start_y) {
-    if (player == NULL) return;
-    
-    const int MOVE_SPEED = 2;
-    const int MAX_WIDTH = 1024;
-    const int MAX_HEIGHT = 768;
-    
-    if (!player->is_moving) {
-        return;
+
+void update_player_movement(t_game_state *game, player_t *player) {
+    if (!player || !player->is_moving) return;
+
+    t_tuple new_pos = player->pos;
+    int tile = game->tile_size, half = tile / 2, speed = 5; 
+
+    int dx = (player->dir == PLAYER_RIGHT) - (player->dir == PLAYER_LEFT);
+    int dy = (player->dir == PLAYER_STANDING) - (player->dir == PLAYER_BACK);
+
+    new_pos.x += dx * speed;
+    new_pos.y += dy * speed;
+
+    if (dx > 0) {
+        int t = ((player->pos.x - half) / tile + 1) * tile + half;
+        if (new_pos.x > t) new_pos.x = t;
+    } else if (dx < 0) {
+        int t = ((player->pos.x - half - 1) / tile) * tile + half;
+        if (new_pos.x < t) new_pos.x = t;
+    } else if (dy > 0) {
+        int t = ((player->pos.y - half) / tile + 1) * tile + half;
+        if (new_pos.y > t) new_pos.y = t;
+    } else if (dy < 0) {
+        int t = ((player->pos.y - half - 1) / tile) * tile + half;
+        if (new_pos.y < t) new_pos.y = t;
     }
-    
-    if (player->direction == PLAYER_BACK) {
-        if (player->y - MOVE_SPEED >= start_y)
-            player->y -= MOVE_SPEED;
+
+    int snap_x = ((new_pos.x - half) % tile) == 0;
+    int snap_y = ((new_pos.y - half) % tile) == 0;
+
+    if ((dx != 0 && snap_y) || (dy != 0 && snap_x)) {
+        player->pos = new_pos;
+
+        if (snap_x && snap_y) {
+            if (player->stack_count == 0) {
+                player->is_moving = false; 
+            } else {
+                uint8_t top_key = player->movement_stack[player->stack_count - 1];
+                
+                player->dir = (top_key == KEY_W) ? PLAYER_BACK : 
+                              (top_key == KEY_A) ? PLAYER_LEFT : 
+                              (top_key == KEY_D) ? PLAYER_RIGHT : PLAYER_STANDING;
+                
+                player->sprite_dir = player->dir; // Visual update on the corner turn
+            }
+        }
     } 
-    else if (player->direction == PLAYER_LEFT) {
-        if (player->x - MOVE_SPEED >= start_x)
-            player->x -= MOVE_SPEED;
-    } 
-    else if (player->direction == PLAYER_RIGHT) {
-        if (player->x + MOVE_SPEED <= start_x + MAX_WIDTH)
-            player->x += MOVE_SPEED;
-    } 
-    else if (player->direction == PLAYER_STANDING) {
-        if (player->y + MOVE_SPEED <= start_y + MAX_HEIGHT)
-            player->y += MOVE_SPEED;
-    }
 }
 
 void update_player_animation(player_t *player, uint32_t logical_ticks) {

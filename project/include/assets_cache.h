@@ -9,8 +9,11 @@
 #define SPRITE_CACHE_SIZE 256
 
 void init_sprite_cache(void);
+void scale_cached_sprite(int index, uint32_t target_w, uint32_t target_h, uint8_t bpp);
+void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t player_h, uint8_t bpp);
 
 extern xpm_image_t sprite_cache[SPRITE_CACHE_SIZE];
+extern xpm_image_t scaled_sprite_cache[SPRITE_CACHE_SIZE]; // New scaled cache
 extern bool sprites_initialized;
 
 /* Common sprite indices */

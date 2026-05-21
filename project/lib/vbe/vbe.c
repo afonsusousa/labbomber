@@ -199,31 +199,24 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x,
     return 0;
 }
 
-int hw_vbe_draw_scaled_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y, uint32_t scale) {
-    if (!video || !video->fast_buffer || !map || scale == 0) return 1;
+int hw_vbe_draw_scaled_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y, uint32_t target_width, uint32_t target_height) {
+    if (!video || !video->fast_buffer || !map || target_width == 0 || target_height == 0) return 1;
 
     uint32_t trans = xpm_transparency_color(img.type);
     uint8_t bpp = video->bytes_per_pixel;
-    int32_t sw = img.width * scale;
-    int32_t sh = img.height * scale;
 
     int32_t y_start = (y < 0) ? -y : 0;
-    int32_t y_end = (y + sh > video->screen_height) ? (int32_t)video->screen_height - y : sh;
+    int32_t y_end = (y + (int32_t)target_height > video->screen_height) ? (int32_t)video->screen_height - y : (int32_t)target_height;
     int32_t x_start = (x < 0) ? -x : 0;
-    int32_t x_end = (x + sw > video->screen_width) ? (int32_t)video->screen_width - x : sw;
-
-    // Initial counter setups (Zero-Division algorithm)
-    uint32_t src_y = y_start / scale;
-    uint32_t scale_y_count = y_start % scale;
+    int32_t x_end = (x + (int32_t)target_width > video->screen_width) ? (int32_t)video->screen_width - x : (int32_t)target_width;
 
     for (int32_t sy = y_start; sy < y_end; sy++) {
+        uint32_t src_y = (sy * img.height) / target_height;
         uint8_t *src_row = map + (src_y * img.width * bpp);
         uint8_t *dst_row = video->fast_buffer + ((y + sy) * video->bytes_per_scanline) + (x * bpp);
 
-        uint32_t src_x = x_start / scale;
-        uint32_t scale_x_count = x_start % scale;
-
         for (int32_t sx = x_start; sx < x_end; sx++) {
+            uint32_t src_x = (sx * img.width) / target_width;
             uint8_t *src_ptr = src_row + (src_x * bpp);
             uint32_t color = get_pixel_color(src_ptr, bpp);
 
@@ -233,20 +226,6 @@ int hw_vbe_draw_scaled_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int
                 else if (bpp == 2) *(uint16_t *)dst_ptr = (uint16_t)color;
                 else memcpy(dst_ptr, &color, bpp);
             }
-
-            // Increment X scaling logic seamlessly
-            scale_x_count++;
-            if (scale_x_count == scale) {
-                scale_x_count = 0;
-                src_x++;
-            }
-        }
-
-        // Increment Y scaling logic seamlessly
-        scale_y_count++;
-        if (scale_y_count == scale) {
-            scale_y_count = 0;
-            src_y++;
         }
     }
     return 0;

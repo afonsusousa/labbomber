@@ -13,13 +13,18 @@ typedef enum {
     PLAYER_BACK
 } player_direction_t;
 
-typedef struct {
+typedef struct s_tuple {
     int32_t x;
     int32_t y;
-    player_direction_t direction;
+} t_tuple;
+
+typedef struct {
+    t_tuple pos;
+    player_direction_t dir;
+
+    player_direction_t sprite_dir;
     uint8_t animation_phase; // 0-3 for the 4 directional sprites
     bool is_moving;
-    uint8_t pause_counter;   // TEMP:     frames to pause at edges
 
     uint8_t movement_stack[4];
     uint8_t stack_count;
@@ -38,10 +43,12 @@ struct s_time;
 #endif
 
 typedef struct s_game_state {
-    
+
     uint32_t width;
     uint32_t height;
-    
+
+    uint32_t tile_size;
+
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     player_t players[2];
@@ -63,7 +70,7 @@ void    gui_reset_game_view(struct s_ctx *ctx);
 
 // Player movement helpers
 void    get_player_start_position(int player_id, uint32_t width, uint32_t height, int32_t *out_x, int32_t *out_y);
-void    update_player_movement(player_t *player, int32_t start_x, int32_t start_y);
+void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 

@@ -9,13 +9,11 @@ static int is_solid(const uint8_t *board, int rows, int cols, int x, int y) {
     return (val != 0);
 }
 
-void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size) {
-    if (!sprites_initialized || sprite_cache[sprite_index].bytes == NULL) return;
+void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index) {
+    if (!sprites_initialized || scaled_sprite_cache[sprite_index].bytes == NULL) return;
 
-    xpm_image_t img = sprite_cache[sprite_index];
-    uint32_t scale = size / img.width;
-    if (scale == 0) scale = 1;
-    hw_vbe_draw_scaled_xpm(video, img.bytes, img, x, y, scale);
+    xpm_image_t img = scaled_sprite_cache[sprite_index];
+    hw_vbe_draw_xpm(video, img.bytes, img, x - (img.width / 2), y - (img.height / 2));
 }
 
 int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y) {
@@ -60,26 +58,22 @@ int decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y) {
     }
 }
 
-void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index, uint32_t size) {
-    if (!sprites_initialized || sprite_cache[sprite_index].bytes == NULL) {
-        hw_vbe_draw_rect(video, x, y, size, size, 0x666666);
+void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index) {
+    if (!sprites_initialized || scaled_sprite_cache[sprite_index].bytes == NULL) {
+        hw_vbe_draw_rect(video, x - 8, y - 8, 16, 16, 0x666666);
         return;
     }
     
-    xpm_image_t img = sprite_cache[sprite_index];
-    uint32_t scale = size / img.width;
-    if (scale == 0) scale = 1;
-    hw_vbe_draw_scaled_xpm(video, img.bytes, img, x, y, scale);
+    xpm_image_t img = scaled_sprite_cache[sprite_index];
+    hw_vbe_draw_xpm(video, img.bytes, img, x - (img.width / 2), y - (img.height / 2));
 }
 
-void draw_brick(hw_video_t *video, int32_t x, int32_t y, uint32_t size) {
-    if (!sprites_initialized || sprite_cache[SPRITE_BRICK].bytes == NULL) {
-        hw_vbe_draw_rect(video, x, y, size, size, 0x884400);
+void draw_brick(hw_video_t *video, int32_t x, int32_t y) {
+    if (!sprites_initialized || scaled_sprite_cache[SPRITE_BRICK].bytes == NULL) {
+        hw_vbe_draw_rect(video, x - 8, y - 8, 16, 16, 0x884400);
         return;
     }
     
-    xpm_image_t img = sprite_cache[SPRITE_BRICK];
-    uint32_t scale = size / img.width;
-    if (scale == 0) scale = 1;
-    hw_vbe_draw_scaled_xpm(video, img.bytes, img, x, y, scale);
+    xpm_image_t img = scaled_sprite_cache[SPRITE_BRICK];
+    hw_vbe_draw_xpm(video, img.bytes, img, x - (img.width / 2), y - (img.height / 2));
 }

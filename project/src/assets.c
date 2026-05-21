@@ -8,6 +8,7 @@
 
 /* Sprite cache storage */
 xpm_image_t sprite_cache[SPRITE_CACHE_SIZE];
+xpm_image_t scaled_sprite_cache[SPRITE_CACHE_SIZE];
 bool sprites_initialized = false;
 
 void init_sprite_cache() {
@@ -75,4 +76,81 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)wall3, XPM_5_6_5, &sprite_cache[SPRITE_WALL3]);
 
     sprites_initialized = true;
+}
+
+static uint32_t get_pixel_color(uint8_t *ptr, uint8_t bpp) {
+    if (bpp == 2) return *(uint16_t *)ptr;
+    if (bpp == 4) return *(uint32_t *)ptr;
+    uint32_t color = 0;
+    for (int i = 0; i < bpp; i++) color |= (ptr[i] << (i * 8));
+    return color;
+}
+
+static void set_pixel_color(uint8_t *ptr, uint8_t bpp, uint32_t color) {
+    if (bpp == 2) *(uint16_t *)ptr = (uint16_t)color;
+    else if (bpp == 4) *(uint32_t *)ptr = color;
+    else {
+        for (int i = 0; i < bpp; i++) ptr[i] = (color >> (i * 8)) & 0xFF;
+    }
+}
+
+void scale_cached_sprite(int index, uint32_t target_w, uint32_t target_h, uint8_t bpp) {
+    if (index < 0 || index >= SPRITE_CACHE_SIZE || sprite_cache[index].bytes == NULL) return;
+    
+    // Free previously scaled image if present
+    if (scaled_sprite_cache[index].bytes != NULL && scaled_sprite_cache[index].bytes != sprite_cache[index].bytes) {
+        free(scaled_sprite_cache[index].bytes);
+    }
+    
+    // If no scaling needed
+    if (target_w == sprite_cache[index].width && target_h == sprite_cache[index].height) {
+        scaled_sprite_cache[index] = sprite_cache[index]; // Note: bytes pointer points to original, shouldn't be freed
+        return;
+    }
+
+    xpm_image_t orig = sprite_cache[index];
+    xpm_image_t scaled = orig;
+    scaled.width = target_w;
+    scaled.height = target_h;
+    
+    scaled.bytes = malloc(target_w * target_h * bpp);
+    if (!scaled.bytes) return;
+
+    for (uint32_t y = 0; y < target_h; y++) {
+        uint32_t src_y = (y * orig.height) / target_h;
+        uint8_t *src_row = orig.bytes + (src_y * orig.width * bpp);
+        uint8_t *dst_row = scaled.bytes + (y * target_w * bpp);
+
+        for (uint32_t x = 0; x < target_w; x++) {
+            uint32_t src_x = (x * orig.width) / target_w;
+            uint32_t color = get_pixel_color(src_row + (src_x * bpp), bpp);
+            set_pixel_color(dst_row + (x * bpp), bpp, color);
+        }
+    }
+    
+    scaled_sprite_cache[index] = scaled;
+}
+
+void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t player_h, uint8_t bpp) {
+    if (!sprites_initialized) return;
+
+    // Grass
+    scale_cached_sprite(SPRITE_GRASS_LEFT_BORDER, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_GRASS_LEFT, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_GRASS_TOP_BORDER, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_GRASS_TOP_LEFT_BORDER, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_GRASS_TOP_LEFT, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_GRASS_TOP, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_GRASS, tile_size, tile_size, bpp);
+
+    // Walls & Bricks
+    scale_cached_sprite(SPRITE_BRICK, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_WALL1, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_WALL2, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_WALL3, tile_size, tile_size, bpp);
+
+    // Players (looping all 16 states)
+    for (int i = 0; i < 16; i++) {
+        scale_cached_sprite(SPRITE_PLAYER_1_STANDING + i, player_w, player_h, bpp);
+    }
 }
