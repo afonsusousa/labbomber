@@ -6,7 +6,7 @@
 #include "../lib/rtc/rtc.h"
 #include <time.h>
 
-void draw_debug_overlay(hw_video_t *video, const t_gui *gui, int32_t player_x, int32_t player_y, int32_t player_board_pos_x, int32_t player_board_pos_y);
+void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 
 static bool app_time_is_valid(const t_time *time) {
     if (time == NULL) return false;
@@ -117,7 +117,7 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         draw_mouse(&hw_state->mouse, &hw_state->video);
     }
 
-    draw_debug_overlay(&hw_state->video, gui, ctx->game.players[0].pos.x, ctx->game.players[0].pos.y, ctx->game.players[0].board_pos.x, ctx->game.players[0].board_pos.y);
+    draw_debug_overlay(&hw_state->video, gui, ctx->game);
     hw_vbe_flip_buffer(&hw_state->video);
 }
 
@@ -183,6 +183,7 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     if (is_pressed) {
         if (!*clicked) {
             // --- 1. MOUSE JUST PRESSED ---
+            ctx->game.click_count++;
             *clicked = target;
             if (target) {
                 WIDGET_SET_CLICKED(target, true);

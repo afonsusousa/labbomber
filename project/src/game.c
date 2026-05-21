@@ -13,6 +13,25 @@
 
 // FUNÇÕES QUE VÃO CONDUZIR O JOGO
 
+t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
+    const int inner_width = BOARD_COLS - 2;
+    const int inner_height = BOARD_ROWS - 2;
+
+    while (true) {
+        click_count %= (inner_width * inner_height);
+        int x = (click_count % inner_width) + 1;
+        int y = (click_count / inner_width) + 1;
+        int index = y * BOARD_COLS + x;
+        if (board[index] == 0) {
+            t_tuple result;
+            result.x = x;
+            result.y = y;
+            return result;
+        }
+        click_count++;
+    }
+}
+
 // todo: tirar o "struct"
 int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
     if (game == NULL || width == 0 || height == 0) return 1;
@@ -49,8 +68,14 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
    // --- PLAYER 1 ---
 
-    game->players[0].pos = (t_tuple) {(game->tile_size) + (game->tile_size / 2), (game->tile_size) + (game->tile_size  / 2)};
-    game->players[0].board_pos = (t_tuple) {1, 1};
+   t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
+
+    game->players[0].pos = (t_tuple) {
+        (spawnpoint.x * game->tile_size) + (game->tile_size / 2), 
+        (spawnpoint.y * game->tile_size) + (game->tile_size / 2)
+    };
+
+    game->players[0].board_pos = spawnpoint;
     game->players[0].sprite_dir = PLAYER_STANDING;
     game->players[0].animation_phase = 0;
     game->players[0].is_moving = false;
@@ -61,6 +86,8 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->players[1].animation_phase = 0;
     game->players[1].is_moving = false;
     game->players[1].stack_count = 0; 
+
+    game->click_count = 0;
 
     game->bomb.active = false;
     game->bomb.board_pos = (t_tuple) {0, 0};

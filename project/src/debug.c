@@ -18,7 +18,7 @@ static void draw_debug_line(hw_video_t *video, int32_t x, int32_t y, const char 
     draw_string(video, line, x, y, 0x000000);
 }
 
-void draw_debug_overlay(hw_video_t *video, const t_gui *gui, int32_t player_x, int32_t player_y, int32_t player_board_pos_x, int32_t player_board_pos_y) {
+void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game) {
     if (video == NULL || gui == NULL) return;
 
     int32_t x = 8;
@@ -46,16 +46,17 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, int32_t player_x, i
 
     y += 14;
 
-    snprintf(line,
-            sizeof(line),
-            "Player: (%d,%d)",
-            player_x,
-            player_y);
+    snprintf(line, sizeof(line), "Player Pos: (%d,%d)", game.players[0].pos.x, game.players[0].pos.y);
 
     draw_string(video, line, x, y, 0x000000);
 
     y += 14;
 
-    snprintf(line, sizeof(line), "board pos: (%d,%d)", player_board_pos_x, player_board_pos_y);
+    snprintf(line, sizeof(line), "board pos: (%d,%d)", game.players[0].board_pos.x, game.players[0].board_pos.y);
+    draw_string(video, line, x, y, 0x000000);
+
+    y+=14;
+
+    snprintf(line, sizeof(line), "Click Count: (%d)", game.click_count);
     draw_string(video, line, x, y, 0x000000);
 }
