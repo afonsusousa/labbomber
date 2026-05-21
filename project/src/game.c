@@ -89,9 +89,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     game->click_count = 0;
 
-    game->bomb.active = false;
-    game->bomb.board_pos = (t_tuple) {0, 0};
-    game->bomb.placed_tick = 0;
+    bomb_init(&game->bomb);
 
     scale_all_game_sprites(game->tile_size, pw, ph, 2);
 
@@ -104,7 +102,7 @@ void game_state_reset(t_game_state *game)
 
     game->logical_ticks = 0;
     game->is_paused = false;
-    game->bomb.active = false;
+    bomb_reset(&game->bomb);
 }
 
 void game_state_destroy(t_game_state *game) {
@@ -126,9 +124,7 @@ void game_state_update(t_ctx *ctx) {
         update_player_animation(player, ctx->game.logical_ticks);
     }
 
-    if (ctx->game.bomb.active && ctx->game.logical_ticks - ctx->game.bomb.placed_tick >= BOMB_DURATION_TICKS) {
-        ctx->game.bomb.active = false;
-    }
+    bomb_update(&ctx->game.bomb);
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
@@ -187,7 +183,9 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
-    draw_bomb(&game->bomb, game->logical_ticks, video, start_x, start_y, game->tile_size);
+    int32_t bomb_x = start_x + (ctx->game.bomb.board_pos.x * tile) + (tile / 2);
+    int32_t bomb_y = start_y + (ctx->game.bomb.board_pos.y * tile) + (tile / 2);
+    draw_bomb(video, &ctx->game.bomb, bomb_x, bomb_y);
 
     for (int i = 0; i < 2; i++) {
         draw_player(&game->players[i], video, start_x, start_y);

@@ -33,8 +33,9 @@ typedef struct {
 
 typedef struct {
     bool active;
+    uint8_t state;
     t_tuple board_pos;
-    uint32_t placed_tick;
+    uint32_t bomb_timer;
 } bomb_t;
 
 struct s_ctx;
@@ -52,6 +53,13 @@ struct s_time;
 #define GAME_TICKS_PER_SECOND 60
 #define BOMB_DURATION_SECONDS 3
 #define BOMB_DURATION_TICKS (BOMB_DURATION_SECONDS * GAME_TICKS_PER_SECOND)
+#define BOMB_BLINK_TICKS (2 * GAME_TICKS_PER_SECOND)
+#define BOMB_EXPLODE_TICKS GAME_TICKS_PER_SECOND
+
+#define BOMB_INACTIVE 0
+#define BOMB_PLACED 1
+#define BOMB_BLINK 2
+#define BOMB_EXPLODE 3
 
 typedef struct s_game_state {
 
@@ -87,6 +95,11 @@ void    get_player_start_position(int player_id, uint32_t width, uint32_t height
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
+
+// Bomb helpers
+void    bomb_init(bomb_t *bomb);
+void    bomb_reset(bomb_t *bomb);
+void    bomb_update(bomb_t *bomb);
 void    place_player_bomb(t_game_state *game, const player_t *player);
 
 #endif /* LCOM_PROJECT_GAME_H */
