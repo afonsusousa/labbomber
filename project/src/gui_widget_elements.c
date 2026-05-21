@@ -121,7 +121,7 @@ t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, 
 
 void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, W95_TEAL);
+    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, 0x000000);
 }
 
 /* 
@@ -131,21 +131,20 @@ void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
 */
 
 static void _callback_dialog_on_press(t_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
+    t_gui *gui = GUI(state);
     int32_t abs_y = self->abs_y;
     if (gui->input.mouse_y >= abs_y && gui->input.mouse_y < abs_y + 24) {
-        gui->drag.dragged_widget = self;
-        gui->drag.dragt_dx = gui->input.mouse_x - self->abs_x;
-        gui->drag.dragt_dy = gui->input.mouse_y - abs_y;
+        gui_begin_drag(gui, self, gui->input.mouse_x, gui->input.mouse_y);
     }
 }
 
 static void _callback_dialog_on_drag(t_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
-    int32_t new_x = gui->input.mouse_x - gui->drag.dragt_dx;
-    int32_t new_y = gui->input.mouse_y - gui->drag.dragt_dy;
+    t_gui *gui = GUI(state);
+    if (gui->drag.dragged_widget != self)
+        return;
+
+    int32_t new_x = gui->input.mouse_x - gui->drag.drag_offset_x;
+    int32_t new_y = gui->input.mouse_y - gui->drag.drag_offset_y;
     widget_set_position(self, new_x, new_y);
 }
 

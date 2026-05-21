@@ -176,13 +176,11 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     bool is_pressed = hw_state->mouse.left_click;
     t_widget *target = widget_get_at(gui_get_top_view(gui), gui->input.mouse_x, gui->input.mouse_y);
 
-    t_widget **dragged = &gui->drag.dragged_widget;
     t_widget **clicked = &gui->input.clicked_widget;
     t_widget **hovered = &gui->input.hovered;
 
     if (is_pressed) {
         if (!*clicked) {
-            // --- 1. MOUSE JUST PRESSED ---
             ctx->game.click_count++;
             *clicked = target;
             if (target) {
@@ -194,27 +192,27 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
                 if (target->on_press) target->on_press(target, ctx);
             }
         } else {
-            WIDGET_SET_CLICKED(*clicked, (target == *clicked));
-            t_widget *active = *dragged ? *dragged : *clicked;
-            
-            if (active->on_drag) active->on_drag(active, ctx);
-            else if (active->on_press) active->on_press(active, ctx);
+            WIDGET_SET_CLICKED(*clicked, true);
+
+            t_widget *active_drag = gui->drag.dragged_widget;
+            if (active_drag != NULL && active_drag->on_drag != NULL) {
+                active_drag->on_drag(active_drag, ctx);
+            }
         }
     } else {
-        *dragged = NULL;
         if (*clicked) {
             WIDGET_SET_CLICKED(*clicked, false);
             
-            // click only if release over the same widget we pressed
             if (*clicked == target && (*clicked)->on_click) {
                 (*clicked)->on_click(*clicked, ctx);
             }
             *clicked = NULL;
         }
+
+        gui_end_drag(gui);
     }
 
-    // Only update hover if we aren't dragging anything around
-    if (!*dragged && *hovered != target) {
+    if (gui->drag.dragged_widget == NULL && *hovered != target) {
         if (*hovered) WIDGET_SET_HOVERED(*hovered, false);
         *hovered = target;
         if (*hovered) WIDGET_SET_HOVERED(*hovered, true);

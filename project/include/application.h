@@ -19,6 +19,8 @@ typedef struct s_ctx {
     t_time real_time;
 } t_ctx;
 
+#include "macros.h"
+
 int app_update_real_time(t_ctx *ctx);
 void app_tick_real_time(t_ctx *ctx);
 

@@ -111,8 +111,7 @@ static uint32_t word_end_offset(const char *buffer, uint32_t cursor_pos) {
 static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     if (!WIDGET_IS_FOCUSED(self)) return;
 
-    t_ctx *ctx = (t_ctx*)state;
-    t_gui *gui = &ctx->gui;
+    t_gui *gui = GUI(state);
     bool is_shift = gui->input.shift_down;
     bool is_ctrl  = gui->input.ctrl_down;
 
@@ -211,21 +210,25 @@ static void _callback_text_input_on_tick(struct s_widget *self, void *state) {
 }
 
 static void _callback_text_input_on_quit(struct s_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    gui_set_focus(&ctx->gui, NULL);
+    gui_set_focus(GUI(state), NULL);
     self->data.text_input.selection_start = -1;
 }
 
 static void _callback_text_input_on_press(struct s_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    self->data.text_input.cursor_pos = get_pos_from_mouse(self, &ctx->gui);
+    t_gui *gui = GUI(state);
+
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, gui);
     self->data.text_input.selection_start = self->data.text_input.cursor_pos;
+    gui_begin_drag(gui, self, gui->input.mouse_x, gui->input.mouse_y);
     reset_blink(self);
 }
 
 static void _callback_text_input_on_drag(struct s_widget *self, void *state) {
-    t_ctx *ctx = (t_ctx*)state;
-    self->data.text_input.cursor_pos = get_pos_from_mouse(self, &ctx->gui);
+    t_gui *gui = GUI(state);
+
+    if (gui->drag.dragged_widget != self) return;
+
+    self->data.text_input.cursor_pos = get_pos_from_mouse(self, gui);
     reset_blink(self);
 }
 
