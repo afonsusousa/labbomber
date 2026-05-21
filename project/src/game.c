@@ -183,9 +183,9 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
-    int32_t bomb_x = start_x + (ctx->game.bomb.board_pos.x * tile) + (tile / 2);
-    int32_t bomb_y = start_y + (ctx->game.bomb.board_pos.y * tile) + (tile / 2);
-    draw_bomb(video, &ctx->game.bomb, bomb_x, bomb_y);
+    int32_t bomb_x = start_x + (game->bomb.board_pos.x * tile) + (tile / 2);
+    int32_t bomb_y = start_y + (game->bomb.board_pos.y * tile) + (tile / 2);
+    draw_bomb(video, &game->bomb, bomb_x, bomb_y);
 
     for (int i = 0; i < 2; i++) {
         draw_player(&game->players[i], video, start_x, start_y);
