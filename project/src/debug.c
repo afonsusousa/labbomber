@@ -18,7 +18,7 @@ static void draw_debug_line(hw_video_t *video, int32_t x, int32_t y, const char 
     draw_string(video, line, x, y, 0x000000);
 }
 
-void draw_debug_overlay(hw_video_t *video, const t_gui *gui) {
+void draw_debug_overlay(hw_video_t *video, const t_gui *gui, int32_t player_x, int32_t player_y, int32_t player_board_pos_x, int32_t player_board_pos_y) {
     if (video == NULL || gui == NULL) return;
 
     int32_t x = 8;
@@ -42,5 +42,20 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui) {
              gui->input.mouse_x, gui->input.mouse_y,
              gui->input.ctrl_down ? 1 : 0,
              gui->input.shift_down ? 1 : 0);
+    draw_string(video, line, x, y, 0x000000);
+
+    y += 14;
+
+    snprintf(line,
+            sizeof(line),
+            "Player: (%d,%d)",
+            player_x,
+            player_y);
+
+    draw_string(video, line, x, y, 0x000000);
+
+    y += 14;
+
+    snprintf(line, sizeof(line), "board pos: (%d,%d)", player_board_pos_x, player_board_pos_y);
     draw_string(video, line, x, y, 0x000000);
 }

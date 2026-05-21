@@ -50,6 +50,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
    // --- PLAYER 1 ---
 
     game->players[0].pos = (t_tuple) {(game->tile_size) + (game->tile_size / 2), (game->tile_size) + (game->tile_size  / 2)};
+    game->players[0].board_pos = (t_tuple) {1, 1};
     game->players[0].sprite_dir = PLAYER_STANDING;
     game->players[0].animation_phase = 0;
     game->players[0].is_moving = false;

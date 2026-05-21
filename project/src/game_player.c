@@ -84,6 +84,9 @@ void update_player_direction(player_t *player, uint8_t key, bool is_make) {
     }
 }
 
+bool collision(uint8_t *board, t_tuple new_pos) {
+    return board[new_pos.y * BOARD_COLS + new_pos.x] != 0;
+}
 
 void update_player_movement(t_game_state *game, player_t *player) {
     if (!player || !player->is_moving) return;
@@ -111,6 +114,16 @@ void update_player_movement(t_game_state *game, player_t *player) {
         if (new_pos.y < t) new_pos.y = t;
     }
 
+    t_tuple new_board_pos;
+
+    new_board_pos.x = player->board_pos.x + dx;
+    new_board_pos.y = player->board_pos.y + dy;
+
+    if (collision(game->board, new_board_pos)){
+        player->is_moving = false;
+        return;
+    }
+
     int snap_x = ((new_pos.x - half) % tile) == 0;
     int snap_y = ((new_pos.y - half) % tile) == 0;
 
@@ -118,6 +131,8 @@ void update_player_movement(t_game_state *game, player_t *player) {
         player->pos = new_pos;
 
         if (snap_x && snap_y) {
+            player->board_pos.x = (player->pos.x - half) / tile;
+            player->board_pos.y = (player->pos.y - half) / tile;
             if (player->stack_count == 0) {
                 player->is_moving = false; 
             } else {

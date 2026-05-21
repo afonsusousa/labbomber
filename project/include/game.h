@@ -20,6 +20,7 @@ typedef struct s_tuple {
 
 typedef struct {
     t_tuple pos;
+    t_tuple board_pos;
     player_direction_t dir;
 
     player_direction_t sprite_dir;
