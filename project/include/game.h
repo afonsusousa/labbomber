@@ -57,6 +57,8 @@ typedef struct s_game_state {
     uint32_t logical_ticks;
     bool is_paused;
 
+    uint32_t click_count;
+
 } t_game_state;
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);
