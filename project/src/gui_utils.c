@@ -24,10 +24,6 @@ static void gui_clear_widget_refs(t_gui *gui, t_widget *root) {
         gui->input.focused = NULL;
     }
 
-    if (widget_is_descendant_of(gui->input.previous_focus, root)) {
-        gui->input.previous_focus = NULL;
-    }
-
     if (widget_is_descendant_of(gui->input.clicked_widget, root)) {
         WIDGET_SET_CLICKED(gui->input.clicked_widget, false);
         gui->input.clicked_widget = NULL;
@@ -42,6 +38,8 @@ static void gui_clear_widget_refs(t_gui *gui, t_widget *root) {
         gui_end_drag(gui);
     }
 }
+
+static t_widget* gui_get_initial_focus(t_widget *root);
 
 void gui_begin_drag(t_gui *gui, t_widget *widget, int32_t mouse_x, int32_t mouse_y) {
     if (gui == NULL || widget == NULL) return;
@@ -77,18 +75,23 @@ t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
 }
 
 void gui_set_focus(t_gui *gui, t_widget *widget) {
-    if (gui->input.focused != widget) {
-        if (gui->input.focused != NULL) {
-            WIDGET_SET_FOCUSED(gui->input.focused, false);
-            if (WIDGET_IS_ACTIVE(gui->input.focused)) {
-                gui->input.previous_focus = gui->input.focused;
-            }
-        }
-        gui->input.focused = widget;
-        if (gui->input.focused != NULL) {
-            WIDGET_SET_FOCUSED(gui->input.focused, true);
-        }
+    if (gui == NULL || gui->input.focused == widget) return;
+
+    if (gui->input.focused != NULL) {
+        WIDGET_SET_FOCUSED(gui->input.focused, false);
     }
+
+    gui->input.focused = widget;
+    if (gui->input.focused != NULL) {
+        WIDGET_SET_FOCUSED(gui->input.focused, true);
+    }
+}
+
+static t_widget* gui_get_initial_focus(t_widget *root) {
+    if (root == NULL) return NULL;
+
+    t_widget *focusable = widget_first_focusable(root);
+    return focusable != NULL ? focusable : root;
 }
 
 void gui_handle_tab_navigation(t_gui *gui, bool shift_down) {
@@ -97,37 +100,27 @@ void gui_handle_tab_navigation(t_gui *gui, bool shift_down) {
     t_widget *top_view = gui_get_top_view(gui);
     if (top_view == NULL) return;
 
-    if (gui->input.focused != NULL) {
-        if (gui->input.focused == top_view) {
-            t_widget *first = widget_first_focusable(top_view);
-            if (first != NULL) {
-                gui_set_focus(gui, first);
-                first->focus_cue = 1;
-            }
-            return;
-        }
-
-        if (gui->input.focused->focus_cue == 0) {
-            gui->input.focused->focus_cue = 1;
-            return;
-        }
-
-        t_widget *next_focus = shift_down 
-            ? widget_get_prev_focusable_sibling(gui->input.focused)
-            : widget_get_next_focusable_sibling(gui->input.focused);
-
-        if (next_focus != NULL) {
-            gui->input.focused->focus_cue = (gui->input.focused->focus_cue == 2) ? 2 : 0;
-            gui_set_focus(gui, next_focus);
-            next_focus->focus_cue = 1; 
-        }
+    if (gui->input.focused == NULL) {
+        gui_set_focus(gui, gui_get_initial_focus(top_view));
+        return;
     }
-    else {
-        t_widget *first = widget_first_focusable(top_view);
-        if (first != NULL) {
-            gui_set_focus(gui, first);
-            first->focus_cue = 1;
-        }
+
+    if (gui->input.focused->focus_cue == 0) {
+        gui->input.focused->focus_cue = 1;
+        return;
+    }
+
+    t_widget *next_focus = shift_down
+        ? widget_get_prev_focusable_sibling(gui->input.focused)
+        : widget_get_next_focusable_sibling(gui->input.focused);
+
+    if (next_focus == NULL) {
+        next_focus = gui_get_initial_focus(top_view);
+    }
+
+    gui_set_focus(gui, next_focus);
+    if (next_focus != NULL) {
+        next_focus->focus_cue = 1;
     }
 }
 
@@ -140,7 +133,7 @@ void gui_push_view(t_gui *gui, t_widget *view) {
     gui->views.is_overlay[gui->views.view_count] = false;
     gui->views.view_count++;
 
-    gui_set_focus(gui, view);
+    gui_set_focus(gui, gui_get_initial_focus(view));
 }
 
 void gui_push_overlay(t_gui *gui, t_widget *overlay) {
@@ -152,7 +145,7 @@ void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     gui->views.is_overlay[gui->views.view_count] = true;
     gui->views.view_count++;
 
-    gui_set_focus(gui, overlay);
+    gui_set_focus(gui, gui_get_initial_focus(overlay));
 }
 
 void gui_pop_view(t_gui *gui) {
@@ -166,7 +159,7 @@ void gui_pop_view(t_gui *gui) {
 
     if (gui->views.view_count > 0) {
         t_widget *new_top = gui->views.view_stack[gui->views.view_count - 1];
-        gui_set_focus(gui, new_top);
+        gui_set_focus(gui, gui_get_initial_focus(new_top));
     }
 }
 

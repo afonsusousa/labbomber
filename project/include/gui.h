@@ -18,7 +18,6 @@ typedef struct s_state {
     bool    is_running;
     struct {
         t_widget *focused;
-        t_widget *previous_focus; // Added to track previous focus
         t_widget *hovered;
         t_widget *clicked_widget; // Widget that was pressed down on
         int32_t  mouse_x;
