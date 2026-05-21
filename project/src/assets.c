@@ -144,6 +144,9 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
     scale_cached_sprite(SPRITE_GRASS, tile_size, tile_size, bpp);
 
     // Walls & Bricks
+    scale_cached_sprite(SPRITE_BOMB1, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_BOMB2, tile_size, tile_size, bpp);
+    scale_cached_sprite(SPRITE_BOMB3, tile_size, tile_size, bpp);
     scale_cached_sprite(SPRITE_BRICK, tile_size, tile_size, bpp);
     scale_cached_sprite(SPRITE_WALL1, tile_size, tile_size, bpp);
     scale_cached_sprite(SPRITE_WALL2, tile_size, tile_size, bpp);

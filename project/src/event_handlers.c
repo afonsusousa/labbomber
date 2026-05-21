@@ -4,23 +4,93 @@
 #include "widget.h"
 #include "draw.h"
 #include "../lib/rtc/rtc.h"
+#include <time.h>
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui, int32_t player_x, int32_t player_y, int32_t player_board_pos_x, int32_t player_board_pos_y);
+
+static bool app_time_is_valid(const t_time *time) {
+    if (time == NULL) return false;
+
+    return time->month >= 1 && time->month <= 12 &&
+           time->day >= 1 && time->day <= 31 &&
+           time->hours <= 23 &&
+           time->minutes <= 59 &&
+           time->seconds <= 59;
+}
+
+static uint8_t days_in_month(uint8_t month, uint8_t year) {
+    static const uint8_t days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    if (month < 1 || month > 12) return 31;
+    if (month == 2 && year % 4 == 0) return 29;
+
+    return days[month - 1];
+}
+
+int app_update_real_time(t_ctx *ctx) {
+    if (ctx == NULL) return 1;
+
+    hw_rtc_t hw_time;
+    if (hw_rtc_get_time(&hw_time) != 0) {
+        time_t now = time(NULL);
+        struct tm *tm_now = localtime(&now);
+        if (tm_now == NULL) return 1;
+
+        ctx->real_time.year    = (uint8_t)(tm_now->tm_year % 100);
+        ctx->real_time.month   = (uint8_t)(tm_now->tm_mon + 1);
+        ctx->real_time.day     = (uint8_t)tm_now->tm_mday;
+        ctx->real_time.hours   = (uint8_t)tm_now->tm_hour;
+        ctx->real_time.minutes = (uint8_t)tm_now->tm_min;
+        ctx->real_time.seconds = (uint8_t)tm_now->tm_sec;
+
+        return app_time_is_valid(&ctx->real_time) ? 0 : 1;
+    }
+
+    ctx->real_time.year    = hw_time.year;
+    ctx->real_time.month   = hw_time.month;
+    ctx->real_time.day     = hw_time.day;
+    ctx->real_time.hours   = hw_time.hours;
+    ctx->real_time.minutes = hw_time.minutes;
+    ctx->real_time.seconds = hw_time.seconds;
+
+    return app_time_is_valid(&ctx->real_time) ? 0 : 1;
+}
+
+void app_tick_real_time(t_ctx *ctx) {
+    if (ctx == NULL || !app_time_is_valid(&ctx->real_time)) {
+        app_update_real_time(ctx);
+        return;
+    }
+
+    ctx->real_time.seconds++;
+    if (ctx->real_time.seconds < 60) return;
+
+    ctx->real_time.seconds = 0;
+    ctx->real_time.minutes++;
+    if (ctx->real_time.minutes < 60) return;
+
+    ctx->real_time.minutes = 0;
+    ctx->real_time.hours++;
+    if (ctx->real_time.hours < 24) return;
+
+    ctx->real_time.hours = 0;
+    ctx->real_time.day++;
+    if (ctx->real_time.day <= days_in_month(ctx->real_time.month, ctx->real_time.year)) return;
+
+    ctx->real_time.day = 1;
+    ctx->real_time.month++;
+    if (ctx->real_time.month <= 12) return;
+
+    ctx->real_time.month = 1;
+    ctx->real_time.year++;
+}
 
 void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     hw_timer_int_handler(&hw_state->timer);
     
     if (hw_state->timer.ticks % 60 == 0) {
-        hw_rtc_t hw_time;
-        if (hw_rtc_get_time(&hw_time) == 0) {
-            ctx->real_time.year    = hw_time.year;
-            ctx->real_time.month   = hw_time.month;
-            ctx->real_time.day     = hw_time.day;
-            ctx->real_time.hours   = hw_time.hours;
-            ctx->real_time.minutes = hw_time.minutes;
-            ctx->real_time.seconds = hw_time.seconds;
-        }
+        app_tick_real_time(ctx);
     }
     
     if (!ctx->game.is_paused) {
@@ -89,6 +159,10 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
 
     if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
         gui->input.focused->on_key_press(gui->input.focused, sc, ctx);
+    }
+
+    if (is_make && key_index == KEY_E) {
+        hw_state->keyboard.keys_pressed[KEY_E] = false;
     }
 }
 

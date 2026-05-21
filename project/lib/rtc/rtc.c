@@ -17,6 +17,7 @@
 #define RTC_REG_B       0x0B
 #define RTC_UIP_MSK     BIT(7)
 #define RTC_DM_MSK      BIT(2)
+#define RTC_24H_MSK     BIT(1)
 
 static uint8_t bcd_to_bin(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
@@ -79,14 +80,24 @@ int hw_rtc_get_time(hw_rtc_t *info) {
     if (rtc_read_reg(RTC_REG_B, &reg_b) != 0) return 1;
 
     bool is_bcd = !(reg_b & RTC_DM_MSK);
+    bool is_24h = reg_b & RTC_24H_MSK;
+    bool is_pm = !is_24h && (info->hours & BIT(7));
 
     if (is_bcd) {
         info->seconds = bcd_to_bin(info->seconds);
         info->minutes = bcd_to_bin(info->minutes);
-        info->hours = bcd_to_bin(info->hours);
+        info->hours = bcd_to_bin(info->hours & 0x7F);
         info->day = bcd_to_bin(info->day);
         info->month = bcd_to_bin(info->month);
         info->year = bcd_to_bin(info->year);
+    } else {
+        info->hours &= 0x7F;
+    }
+
+    if (is_pm && info->hours < 12) {
+        info->hours += 12;
+    } else if (!is_24h && !is_pm && info->hours == 12) {
+        info->hours = 0;
     }
 
     return 0;

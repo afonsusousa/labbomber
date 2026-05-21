@@ -33,6 +33,7 @@
 #define KEY_TAB             0x0F
 #define KEY_Q               0x10
 #define KEY_W               0x11
+#define KEY_E               0x12
 #define KEY_A               0x1E
 #define KEY_S               0x1F
 #define KEY_D               0x20

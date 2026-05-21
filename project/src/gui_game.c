@@ -67,6 +67,8 @@ static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scan
 // AQUI: o Launcher do jogo - o botao start dochama isto
 void gui_show_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
+    app_update_real_time(ctx);
+
     t_widget *view = widget_create(CANVAS, 0, 0, gui->width, gui->height, "game_view");
     if (view == NULL) return;
 

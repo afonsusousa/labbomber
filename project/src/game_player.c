@@ -42,6 +42,33 @@ int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int3
     return 0;
 }
 
+int draw_bomb(const bomb_t *bomb, uint32_t logical_ticks, hw_video_t *video, int32_t board_start_x, int32_t board_start_y, uint32_t tile_size) {
+    if (bomb == NULL || !bomb->active || !sprites_initialized) return 1;
+
+    uint32_t elapsed_ticks = logical_ticks - bomb->placed_tick;
+    if (elapsed_ticks >= BOMB_DURATION_TICKS) return 1;
+
+    int sprite_index = SPRITE_BOMB1;
+    if (elapsed_ticks >= 2 * GAME_TICKS_PER_SECOND) {
+        sprite_index = SPRITE_BOMB3;
+    } else if (elapsed_ticks >= GAME_TICKS_PER_SECOND) {
+        sprite_index = SPRITE_BOMB2;
+    }
+
+    if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL) {
+        return 1;
+    }
+
+    xpm_image_t img = scaled_sprite_cache[sprite_index];
+    int32_t center_x = board_start_x + (bomb->board_pos.x * (int32_t)tile_size) + ((int32_t)tile_size / 2);
+    int32_t center_y = board_start_y + (bomb->board_pos.y * (int32_t)tile_size) + ((int32_t)tile_size / 2);
+    int32_t draw_x = center_x - (img.width / 2);
+    int32_t draw_y = center_y - (img.height / 2);
+
+    hw_vbe_draw_xpm(video, img.bytes, img, draw_x, draw_y);
+    return 0;
+}
+
 static void remove_movement_key(player_t *player, uint8_t key_index) {
     for (int i = 0; i < player->stack_count; i++) {
         if (player->movement_stack[i] == key_index) {
@@ -82,6 +109,14 @@ void update_player_direction(player_t *player, uint8_t key, bool is_make) {
         player->sprite_dir = player->dir; // Visual update since we start moving
         player->is_moving = true;
     }
+}
+
+void place_player_bomb(t_game_state *game, const player_t *player) {
+    if (game == NULL || player == NULL || game->bomb.active) return;
+
+    game->bomb.active = true;
+    game->bomb.board_pos = player->board_pos;
+    game->bomb.placed_tick = game->logical_ticks;
 }
 
 bool collision(uint8_t *board, t_tuple new_pos) {

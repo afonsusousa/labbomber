@@ -62,6 +62,10 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->players[1].is_moving = false;
     game->players[1].stack_count = 0; 
 
+    game->bomb.active = false;
+    game->bomb.board_pos = (t_tuple) {0, 0};
+    game->bomb.placed_tick = 0;
+
     scale_all_game_sprites(game->tile_size, pw, ph, 2);
 
     return 0;
@@ -73,6 +77,7 @@ void game_state_reset(t_game_state *game)
 
     game->logical_ticks = 0;
     game->is_paused = false;
+    game->bomb.active = false;
 }
 
 void game_state_destroy(t_game_state *game) {
@@ -80,6 +85,8 @@ void game_state_destroy(t_game_state *game) {
 
     game->width = 0;
     game->height = 0;
+    game->tile_size = 0;
+    game->is_paused = true;
 }
 
 void game_state_update(t_ctx *ctx) {
@@ -91,6 +98,10 @@ void game_state_update(t_ctx *ctx) {
         update_player_movement(&ctx->game, player);
         update_player_animation(player, ctx->game.logical_ticks);
     }
+
+    if (ctx->game.bomb.active && ctx->game.logical_ticks - ctx->game.bomb.placed_tick >= BOMB_DURATION_TICKS) {
+        ctx->game.bomb.active = false;
+    }
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
@@ -98,12 +109,16 @@ void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
     // Clicks do jogo AQUI
 }
 
-void game_state_handle_key_press(t_game_state *game, int8_t scancode) {
+void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     if (game == NULL || game->is_paused) return;
 
     player_t *player = &game->players[0];
     bool is_make = IS_MAKE_CODE(scancode);
     uint8_t key_index = MAKE_FROM_BREAK(scancode);
+
+    if (is_make && key_index == KEY_E) {
+        place_player_bomb(game, player);
+    }
 
     update_player_direction(player, key_index, is_make);
 }
@@ -145,6 +160,8 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
+    draw_bomb(&ctx->game.bomb, ctx->game.logical_ticks, video, start_x, start_y, ctx->game.tile_size);
+
     for (int i = 0; i < 2; i++) {
         draw_player(&ctx->game.players[i], video, start_x, start_y);
     }
