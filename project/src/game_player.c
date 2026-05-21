@@ -92,7 +92,6 @@ void update_player_movement(t_game_state *game, player_t *player) {
     if (!player || !player->is_moving) return;
 
     //direction cancelling
-    
     if (player->stack_count > 0) {
         uint8_t top_key = player->movement_stack[player->stack_count - 1];
         int next_dir = (top_key == KEY_W) ? PLAYER_BACK : 
@@ -110,7 +109,7 @@ void update_player_movement(t_game_state *game, player_t *player) {
     }
 
     t_tuple new_pos = player->pos;
-    int tile = game->tile_size, half = tile / 2, speed = 5; 
+    int tile = game->tile_size, half = tile / 2, speed = 4; 
 
     int dx = (player->dir == PLAYER_RIGHT) - (player->dir == PLAYER_LEFT);
     int dy = (player->dir == PLAYER_STANDING) - (player->dir == PLAYER_BACK);
@@ -149,10 +148,7 @@ void update_player_movement(t_game_state *game, player_t *player) {
 
     if ((dx != 0 && snap_y) || (dy != 0 && snap_x)) {
         player->pos = new_pos;
-
         if (snap_x && snap_y) {
-            player->board_pos.x = (player->pos.x - half) / tile;
-            player->board_pos.y = (player->pos.y - half) / tile;
             
             if (player->stack_count == 0) {
                 player->is_moving = false; 
@@ -166,7 +162,17 @@ void update_player_movement(t_game_state *game, player_t *player) {
                 player->sprite_dir = player->dir;
             }
         }
-    } 
+    }
+    // CONTINUOUS BOARD POSITION UPDATE
+    int offset = tile / 10; 
+    
+    if (dx > 0) player->board_pos.x = (player->pos.x - offset) / tile;
+    else if (dx < 0) player->board_pos.x = (player->pos.x + offset) / tile;
+    else player->board_pos.x = player->pos.x / tile;
+
+    if (dy > 0) player->board_pos.y = (player->pos.y - offset) / tile;
+    else if (dy < 0) player->board_pos.y = (player->pos.y + offset) / tile;
+    else player->board_pos.y = player->pos.y / tile; 
 }
 
 void update_player_animation(player_t *player, uint32_t logical_ticks) {
