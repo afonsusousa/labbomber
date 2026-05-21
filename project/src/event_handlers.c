@@ -130,7 +130,7 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
     gui->input.ctrl_down  = hw_state->keyboard.keys_pressed[KEY_CTRL];
 
     uint8_t sc = hw_state->keyboard.scancode;
-    if (sc == 0xE0) return; // Ignore extended key prefix
+    if (sc == KB_EXT_PREFIX) return; // ignore extended  prefix
 
     bool is_make = IS_MAKE_CODE(sc);
     uint8_t key_index = MAKE_FROM_BREAK(sc);
