@@ -59,8 +59,10 @@ void bomb_update(t_game_state *game) {
             bomb->state = BOMB_BLINK;
             break;
         case 6:
-        case 7:
             bomb->state = BOMB_EXPLODE;
+            break;
+        case 7:
+            bomb->bomb_timer = 0;
             break;
         default:
             bomb->state = BOMB_PLACED;
