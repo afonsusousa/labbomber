@@ -203,11 +203,9 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x,
     return 0;
 }
 
-// sister right here expects centered coordinates
 int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t center_x, int32_t center_y, uint8_t rotation) {
     if (!video || !video->fast_buffer || !map) return 1;
 
-    // if not rotating use standard faster top-left drawing function
     if (rotation == XPM_ROTATE_0) {
         return hw_vbe_draw_xpm(video, map, img, center_x, center_y);
     }
@@ -234,13 +232,25 @@ int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, in
             int32_t vy = (int32_t)sy - pivot_y;
             int32_t dx, dy;
 
+            // -1 because we are using EVENxEVEN sized sprite, that have no true center!!!
             switch (rot) {
-                case XPM_ROTATE_90:  dx = center_x - vy; dy = center_y + vx; break;
-                case XPM_ROTATE_180: dx = center_x - vx; dy = center_y - vy; break;
-                case XPM_ROTATE_270: dx = center_x + vy; dy = center_y - vx; break;
-                default:             dx = center_x + vx; dy = center_y + vy; break;
+                case XPM_ROTATE_90:  
+                    dx = center_x - vy - 1; 
+                    dy = center_y + vx; 
+                    break;
+                case XPM_ROTATE_180: 
+                    dx = center_x - vx - 1; 
+                    dy = center_y - vy - 1; 
+                    break;
+                case XPM_ROTATE_270: 
+                    dx = center_x + vy;     
+                    dy = center_y - vx - 1; 
+                    break;
+                default:             
+                    dx = center_x + vx;     
+                    dy = center_y + vy;     
+                    break;
             }
-
             if (dx < 0 || dy < 0 || (uint32_t)dx >= video->screen_width || (uint32_t)dy >= video->screen_height) continue;
 
             uint8_t *dst_ptr = video->fast_buffer + (dy * video->bytes_per_scanline) + (dx * bpp);
