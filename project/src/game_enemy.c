@@ -104,6 +104,67 @@ int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t
     return 0;
 }
 
+bool enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir) {
+    if (game == NULL || enemy == NULL) return false;
+
+    t_tuple next = enemy->board_pos;
+
+    if (dir == DIR_LEFT) next.x--;
+
+    else if (dir == DIR_RIGHT) next.x++;
+
+    else if (dir == DIR_BACK) next.y--;
+
+    else next.y++;
+
+    return !collision(game->board, next);
+}
+
+// enemies tentam andar sempre em frente ou virar em curvas com chance igual, mas tem 5% de chance de inverter a direção (para evitar que fiquem presos em loops pequenos)
+void choose_enemy_direction(t_game_state *game, enemy_t *enemy) {
+
+    if (game == NULL || enemy == NULL) return;
+
+    direction_t opposite = opposite_dir(enemy->dir);
+
+    // 5% de chance de inverter direção
+    if ((rand() % 20) == 1) {
+        enemy->dir = opposite;
+        return;
+    }
+
+    direction_t valid_dirs[4];
+
+    int count = 0;
+
+    direction_t dirs[4] = {
+        DIR_LEFT,
+        DIR_RIGHT,
+        DIR_BACK,
+        DIR_STANDING
+    };
+
+    for (int i = 0; i < 4; i++) {
+        direction_t dir = dirs[i];
+
+        if (dir == opposite) continue;
+
+        if (enemy_can_move(game, enemy, dir)) {
+            valid_dirs[count] = dir;
+            count++;
+        }
+    }
+
+    // obrigado a inverter se não tiver outras opções
+    if (count == 0) {
+        if (enemy_can_move(game, enemy, opposite)) enemy->dir = opposite;
+        return;
+    }
+
+    // escolher direção aleatória entre as válidas
+    enemy->dir = valid_dirs[rand() % count];
+}
+
 void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
 
     if (!enemy || !enemy->active || !enemy->is_moving) return;
@@ -171,7 +232,10 @@ void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
 
         enemy->pos = new_pos;
 
-        if (snap_x && snap_y) enemy->sprite_dir = enemy->dir;
+        if (snap_x && snap_y) {
+            choose_enemy_direction(game, enemy);
+            enemy->sprite_dir = enemy->dir;
+        }
     }
 
     int offset = tile / 10;

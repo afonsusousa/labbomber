@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef enum {
     DIR_STANDING = 0,
@@ -114,6 +115,8 @@ void    gui_reset_game_view(struct s_ctx *ctx);
 
 // Entity helpers
 bool   collision(uint8_t *board, t_tuple pos);
+direction_t opposite_dir(direction_t dir);
+int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]);
 
 // Player movement helpers
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
@@ -124,6 +127,8 @@ void    update_player_direction(player_t *player, uint8_t scancode, bool is_make
 
 // Enemy helpers
 int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]); //geração determinística
+bool    enemy_can_move(t_game_state *game ,enemy_t *enemy, direction_t dir);
+void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
 void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
 void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
 

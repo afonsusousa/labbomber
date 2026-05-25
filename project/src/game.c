@@ -74,21 +74,34 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     for (int i = 0; i < game->enemy_count; i++) {
 
-        game->enemies[i].pos.x =
-            (spawn_out[i].x * game->tile_size) + (game->tile_size / 2);
+        enemy_t *enemy = &game->enemies[i];
 
-        game->enemies[i].pos.y =
-            (spawn_out[i].y * game->tile_size) + (game->tile_size / 2);
+        enemy->pos.x = (spawn_out[i].x * game->tile_size) + (game->tile_size / 2);
+        enemy->pos.y = (spawn_out[i].y * game->tile_size) + (game->tile_size / 2);
 
-        game->enemies[i].board_pos.x = spawn_out[i].x;
-        game->enemies[i].board_pos.y = spawn_out[i].y;
+        enemy->board_pos.x = spawn_out[i].x;
+        enemy->board_pos.y = spawn_out[i].y;
 
-        game->enemies[i].active = true;
-        game->enemies[i].is_moving = true;
+        enemy->active = true;
+        enemy->is_moving = true;
 
-        game->enemies[i].dir = DIR_RIGHT;
-        game->enemies[i].sprite_dir = DIR_RIGHT;
-        game->enemies[i].animation_phase = 0;
+        direction_t valid_dirs[4];
+
+        int count = get_valid_directions(game->board, enemy->board_pos, valid_dirs);
+
+        if (count > 0) {
+            direction_t dir = valid_dirs[rand() % count];
+            enemy->dir = dir;
+            enemy->sprite_dir = dir;
+        }
+
+        else {
+            enemy->dir = DIR_STANDING;
+            enemy->sprite_dir = DIR_STANDING;
+            enemy->is_moving = false;
+        }
+
+        enemy->animation_phase = 0;
     }
 
     game->click_count = 0;
