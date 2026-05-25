@@ -87,11 +87,20 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->players[1].is_moving = false;
     game->players[1].stack_count = 0; 
 
-    game->enemy.pos = (t_tuple) {
-        (1 * game->tile_size) + (game->tile_size / 2),
-        (1 * game->tile_size) + (game->tile_size / 2)
-    };
-    game->enemy.animation_phase = 0;
+    // --- ENEMIES ---
+    int enemy_x[4] = {1, 15, 1, 15};
+    int enemy_y[4] = {1, 1, 9, 9};
+
+    for (int i = 0; i < 4; i++) {
+        game->enemy[i].pos.x = (enemy_x[i] * game->tile_size) + (game->tile_size / 2);
+        game->enemy[i].pos.y = (enemy_y[i] * game->tile_size) + (game->tile_size / 2);
+        game->enemy[i].board_pos.x = enemy_x[i];
+        game->enemy[i].board_pos.y = enemy_y[i];
+        game->enemy[i].dir = PLAYER_BACK;
+        game->enemy[i].sprite_dir = PLAYER_BACK;
+        game->enemy[i].animation_phase = 0;
+        game->enemy[i].active = true;
+    }
 
     game->click_count = 0;
 
@@ -130,9 +139,11 @@ void game_state_update(t_ctx *ctx) {
         update_player_animation(player, ctx->game.logical_ticks);
     }
 
-    bomb_update(&ctx->game.bomb);
+    for (int i = 0; i < 4; i++) {
+        update_enemy_animation(&ctx->game.enemy[i], ctx->game.logical_ticks);
+    }
 
-    update_enemy_animation(&ctx->game.enemy, ctx->game.logical_ticks);
+    bomb_update(&ctx->game.bomb);
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
@@ -199,5 +210,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
         draw_player(&game->players[i], video, start_x, start_y);
     }
 
-    draw_enemy(&game->enemy, video, start_x, start_y);
+    for (int i = 0; i < 4; i++) {
+        draw_enemy(&game->enemy[i], video, start_x, start_y);
+    }
 }

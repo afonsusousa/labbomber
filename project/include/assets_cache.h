@@ -67,8 +67,20 @@ extern bool sprites_initialized;
 #define SPRITE_PLAYER_4_RIGHT       175
 #define SPRITE_PLAYER_4_BACK        176
 #define SPRITE_ENEMY_1_STANDING     177
-#define SPRITE_ENEMY_2_STANDING     178
-#define SPRITE_ENEMY_3_STANDING     179
-#define SPRITE_ENEMY_4_STANDING     180
+#define SPRITE_ENEMY_1_LEFT         178
+#define SPRITE_ENEMY_1_RIGHT        179
+#define SPRITE_ENEMY_1_BACK         180
+#define SPRITE_ENEMY_2_STANDING     181
+#define SPRITE_ENEMY_2_LEFT         182
+#define SPRITE_ENEMY_2_RIGHT        183
+#define SPRITE_ENEMY_2_BACK         184
+#define SPRITE_ENEMY_3_STANDING     185
+#define SPRITE_ENEMY_3_LEFT         186
+#define SPRITE_ENEMY_3_RIGHT        187
+#define SPRITE_ENEMY_3_BACK         188
+#define SPRITE_ENEMY_4_STANDING     189
+#define SPRITE_ENEMY_4_LEFT         190
+#define SPRITE_ENEMY_4_RIGHT        191
+#define SPRITE_ENEMY_4_BACK         192
 
 #endif /* ASSETS_CACHE_H */

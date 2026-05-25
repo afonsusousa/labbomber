@@ -60,10 +60,23 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)player_4_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_RIGHT]);
     xpm_load((xpm_map_t)player_4_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_BACK]);
 
+    /* Load enemy assets */
     xpm_load((xpm_map_t)enemy_1_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_1_STANDING]);
+    xpm_load((xpm_map_t)enemy_1_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_1_LEFT]);
+    xpm_load((xpm_map_t)enemy_1_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_1_RIGHT]);
+    xpm_load((xpm_map_t)enemy_1_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_1_BACK]);
     xpm_load((xpm_map_t)enemy_2_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_2_STANDING]);
+    xpm_load((xpm_map_t)enemy_2_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_2_LEFT]);
+    xpm_load((xpm_map_t)enemy_2_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_2_RIGHT]);
+    xpm_load((xpm_map_t)enemy_2_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_2_BACK]);
     xpm_load((xpm_map_t)enemy_3_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_3_STANDING]);
+    xpm_load((xpm_map_t)enemy_3_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_3_LEFT]);
+    xpm_load((xpm_map_t)enemy_3_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_3_RIGHT]);
+    xpm_load((xpm_map_t)enemy_3_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_3_BACK]);
     xpm_load((xpm_map_t)enemy_4_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_4_STANDING]);
+    xpm_load((xpm_map_t)enemy_4_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_4_LEFT]);
+    xpm_load((xpm_map_t)enemy_4_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_4_RIGHT]);
+    xpm_load((xpm_map_t)enemy_4_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_4_BACK]);
 
     xpm_load((xpm_map_t)explosion_6_arm, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_ARM]);
     xpm_load((xpm_map_t)explosion_6_center, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_CENTER]);
@@ -164,7 +177,7 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
         scale_cached_sprite(SPRITE_PLAYER_1_STANDING + i, player_w, player_h, bpp);
     }
     // Enemy
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 16; i++) {
         scale_cached_sprite(SPRITE_ENEMY_1_STANDING + i, player_w, player_h, bpp);
     }
 }

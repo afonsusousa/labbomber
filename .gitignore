@@ -1,9 +1,12 @@
 *.o
-
 *.d
-
 *.out
 *.exe
+
+*.core
+core.*
+game.o-*
+
 lab2
 lab3/lab3
 
