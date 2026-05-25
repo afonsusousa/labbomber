@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdint.h>
-#include <stdbool.h>
 
 typedef enum {
     PLAYER_STANDING = 0,
@@ -59,6 +57,13 @@ struct s_time;
 #define BOARD_COLS 17
 #endif
 
+#define TOTAL_CELLS (BOARD_ROWS * BOARD_COLS)
+
+#define BOARD_IDX(x, y) ((y) * BOARD_COLS + (x))
+
+#define MAX_ENEMIES 10
+#define MIN_DIST_FROM_PLAYER 6
+
 #define GAME_TICKS_PER_SECOND 60
 #define BOMB_DURATION_SECONDS 3
 #define BOMB_DURATION_TICKS (BOMB_DURATION_SECONDS * GAME_TICKS_PER_SECOND)
@@ -81,7 +86,8 @@ typedef struct s_game_state {
 
     player_t players[2];
 
-    enemy_t enemy[4];
+    enemy_t enemies[MAX_ENEMIES];
+    uint8_t enemy_count;
     
     bomb_t bomb;
 
@@ -103,12 +109,14 @@ void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
 // Player movement helpers
+t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
 void    get_player_start_position(int player_id, uint32_t width, uint32_t height, int32_t *out_x, int32_t *out_y);
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 
 // Enemy helpers
+int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]); //geração determinística
 void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
 
 // Bomb helpers

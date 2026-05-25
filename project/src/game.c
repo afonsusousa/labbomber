@@ -13,25 +13,6 @@
 
 // FUNÇÕES QUE VÃO CONDUZIR O JOGO
 
-t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
-    const int inner_width = BOARD_COLS - 2;
-    const int inner_height = BOARD_ROWS - 2;
-
-    while (true) {
-        click_count %= (inner_width * inner_height);
-        int x = (click_count % inner_width) + 1;
-        int y = (click_count / inner_width) + 1;
-        int index = y * BOARD_COLS + x;
-        if (board[index] == 0) {
-            t_tuple result;
-            result.x = x;
-            result.y = y;
-            return result;
-        }
-        click_count++;
-    }
-}
-
 // todo: tirar o "struct"
 int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
     if (game == NULL || width == 0 || height == 0) return 1;
@@ -88,18 +69,25 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->players[1].stack_count = 0; 
 
     // --- ENEMIES ---
-    int enemy_x[4] = {1, 15, 1, 15};
-    int enemy_y[4] = {1, 1, 9, 9};
+    t_tuple spawn_out[MAX_ENEMIES];
+    game->enemy_count = spawn_enemies(game->board, game->players[0].board_pos, 4, spawn_out);
 
-    for (int i = 0; i < 4; i++) {
-        game->enemy[i].pos.x = (enemy_x[i] * game->tile_size) + (game->tile_size / 2);
-        game->enemy[i].pos.y = (enemy_y[i] * game->tile_size) + (game->tile_size / 2);
-        game->enemy[i].board_pos.x = enemy_x[i];
-        game->enemy[i].board_pos.y = enemy_y[i];
-        game->enemy[i].dir = PLAYER_BACK;
-        game->enemy[i].sprite_dir = PLAYER_BACK;
-        game->enemy[i].animation_phase = 0;
-        game->enemy[i].active = true;
+    for (int i = 0; i < game->enemy_count; i++) {
+
+        game->enemies[i].pos.x =
+            (spawn_out[i].x * game->tile_size) + (game->tile_size / 2);
+
+        game->enemies[i].pos.y =
+            (spawn_out[i].y * game->tile_size) + (game->tile_size / 2);
+
+        game->enemies[i].board_pos.x = spawn_out[i].x;
+        game->enemies[i].board_pos.y = spawn_out[i].y;
+
+        game->enemies[i].active = true;
+
+        game->enemies[i].dir = PLAYER_STANDING;
+        game->enemies[i].sprite_dir = PLAYER_STANDING;
+        game->enemies[i].animation_phase = 0;
     }
 
     game->click_count = 0;
@@ -139,8 +127,8 @@ void game_state_update(t_ctx *ctx) {
         update_player_animation(player, ctx->game.logical_ticks);
     }
 
-    for (int i = 0; i < 4; i++) {
-        update_enemy_animation(&ctx->game.enemy[i], ctx->game.logical_ticks);
+    for (int i = 0; i < ctx->game.enemy_count; i++) {
+        update_enemy_animation(&ctx->game.enemies[i], ctx->game.logical_ticks);
     }
 
     bomb_update(&ctx->game.bomb);
@@ -210,7 +198,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
         draw_player(&game->players[i], video, start_x, start_y);
     }
 
-    for (int i = 0; i < 4; i++) {
-        draw_enemy(&game->enemy[i], video, start_x, start_y);
+    for (int i = 0; i < game->enemy_count; i++) {
+        draw_enemy(&game->enemies[i], video, start_x, start_y);
     }
 }
