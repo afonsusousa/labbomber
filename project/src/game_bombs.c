@@ -1,12 +1,11 @@
+#include "game.h"
+#include "vbe.h"
 #include "assets_cache.h"
 #include "draw.h"
-#include "macros.h"
-#include "game.h"
 #include <stddef.h>
-#include <stdint.h>
 
 void bomb_init(bomb_t *bomb) {
-    if (!bomb) return;
+    if (bomb == NULL) return;
 
     bomb->active = false;
     bomb->state = BOMB_INACTIVE;
@@ -17,7 +16,7 @@ void bomb_init(bomb_t *bomb) {
 }
 
 void bomb_reset(bomb_t *bomb) {
-    if (!bomb) return;
+    if (bomb == NULL) return;
 
     bomb->active = false;
     bomb->state = BOMB_INACTIVE;
@@ -92,14 +91,15 @@ static int get_bomb_sprite_index(const bomb_t *bomb) {
     }
 }
 
-int draw_bomb(hw_video_t *video, t_game_state *game, int32_t board_start_x, int32_t board_start_y, uint32_t tile_size) {
+int draw_bomb(hw_video_t *video, t_game_state *game) {
     if (game == NULL || !sprites_initialized) return 1;
 
     bomb_t *bomb = &game->bomb;
     if (!bomb->active) return 1;
 
-    if (bomb->state == BOMB_FIRE)
-        return draw_bomb_explosion(video, game, board_start_x, board_start_y, tile_size);
+    if (bomb->state == BOMB_FIRE) {
+        return draw_bomb_explosion(video, game);
+    }
 
     int sprite_index = get_bomb_sprite_index(bomb);
     if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL) {
@@ -107,9 +107,13 @@ int draw_bomb(hw_video_t *video, t_game_state *game, int32_t board_start_x, int3
     }
 
     xpm_image_t img = scaled_sprite_cache[sprite_index];
-    int32_t draw_x = board_start_x + (bomb->board_pos.x * (int32_t)tile_size) + ((int32_t)tile_size / 2) - (img.width / 2);
-    int32_t draw_y = board_start_y + (bomb->board_pos.y * (int32_t)tile_size) + ((int32_t)tile_size / 2) - (img.height / 2);
 
-    hw_vbe_draw_xpm(video, img.bytes, img, draw_x, draw_y);
+    hw_vbe_draw_xpm(
+        video,
+        img.bytes,
+        img,
+        GET_X(game, game->bomb.board_pos.x),
+        GET_Y(game, game->bomb.board_pos.y)
+    );
     return 0;
 }

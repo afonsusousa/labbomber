@@ -14,7 +14,7 @@ void set_date_seed(int day, int month, int year) {
     seed = year * 10000 + month * 100 + day;
 }
 
-int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int32_t board_start_y) {
+int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     if (player == NULL || !sprites_initialized) return 1;
 
     int current_phase = player->animation_phase % 4; 
@@ -28,8 +28,7 @@ int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int3
 
     xpm_image_t img = scaled_sprite_cache[sprite_index];
 
-    int32_t draw_x = board_start_x + player->pos.x - (img.width / 2);
-    int32_t draw_y = board_start_y + player->pos.y - (img.height / 2); // Center alignment
+    int32_t draw_y = game->start_y + player->pos.y;
 
     // --- THE SNEAK OFFSET ---
     if (current_phase == 1) {
@@ -38,7 +37,13 @@ int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int3
         draw_y += sneak_amount;
     }
 
-    hw_vbe_draw_xpm(video, img.bytes, img, draw_x, draw_y);
+    hw_vbe_draw_xpm(
+        video,
+        img.bytes,
+        img,
+        game->start_x + player->pos.x,
+        draw_y
+    );
     return 0;
 }
 
@@ -85,7 +90,7 @@ void update_player_direction(player_t *player, uint8_t key, bool is_make) {
 }
 
 bool collision(uint8_t *board, t_tuple new_pos) {
-    return board[new_pos.y * BOARD_COLS + new_pos.x] != 0;
+    return board[new_pos.y * BOARD_COLS + new_pos.x] != TILE_TYPE_GRASS;
 }
 
 void update_player_movement(t_game_state *game, player_t *player) {

@@ -174,6 +174,9 @@ int hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, ui
 int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y) {
     if (!video || !video->fast_buffer || !map) return 1;
 
+    x -= img.width / 2;
+    y -= img.height / 2;
+
     uint32_t trans = xpm_transparency_color(img.type);
     uint8_t bpp = video->bytes_per_pixel;
 
@@ -206,9 +209,7 @@ int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, in
 
     // if not rotating use standard faster top-left drawing function
     if (rotation == XPM_ROTATE_0) {
-        int32_t top_left_x = center_x - (int32_t)(img.width / 2);
-        int32_t top_left_y = center_y - (int32_t)(img.height / 2);
-        return hw_vbe_draw_xpm(video, map, img, top_left_x, top_left_y);
+        return hw_vbe_draw_xpm(video, map, img, center_x, center_y);
     }
 
     uint32_t trans = xpm_transparency_color(img.type);

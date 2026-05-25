@@ -44,7 +44,6 @@ typedef struct {
 struct s_ctx;
 struct s_time;
 
-// Assuming these macros are defined in your game.h
 #ifndef BOARD_ROWS
 #define BOARD_ROWS 11
 #endif
@@ -64,6 +63,17 @@ struct s_time;
 #define BOMB_EXPLODE 3
 #define BOMB_FIRE 4
 
+#define MAX_PLAYERS 2
+#define PLAYER_1 0
+#define PLAYER_2 1
+
+#define TILE_TYPE_GRASS 0
+#define TILE_TYPE_WALL 1
+#define TILE_TYPE_BRICK 2
+
+#define GET_X(game, value) ((game)->start_x + (value) * (game)->tile_size + (game)->tile_size / 2)
+#define GET_Y(game, value) ((game)->start_y + (value) * (game)->tile_size + (game)->tile_size / 2)
+
 typedef struct s_game_state {
 
     uint32_t width;
@@ -71,9 +81,12 @@ typedef struct s_game_state {
 
     uint32_t tile_size;
 
+    int32_t start_x;
+    int32_t start_y;
+
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
-    player_t players[2];
+    player_t players[MAX_PLAYERS];
     bomb_t bomb;
 
     uint32_t logical_ticks;

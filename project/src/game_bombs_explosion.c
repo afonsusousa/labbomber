@@ -46,13 +46,13 @@ static void bomb_compute_explosion_reach(t_game_state *game) {
             int32_t x = bomb->board_pos.x + (DIR_X[dir] * dist);
             int32_t y = bomb->board_pos.y + (DIR_Y[dir] * dist);
 
-            if (!IN_BOUNDS(x, y) || game->board[y * BOARD_COLS + x] == 1) {
+            if (!IN_BOUNDS(x, y) || game->board[y * BOARD_COLS + x] == TILE_TYPE_WALL) {
                 explosion_set_blocked_step(bomb, dir, dist - 1);
                 break;
             }
 
             explosion_set_blocked_step(bomb, dir, dist);
-            if (game->board[y * BOARD_COLS + x] == 2) break; // Stop at destructible block
+            if (game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) break; // Stop at destructible block
         }
     }
 }
@@ -70,8 +70,8 @@ static void bomb_apply_explosion_contact(t_game_state *game, uint8_t radius) {
         int32_t x = game->bomb.board_pos.x + (DIR_X[dir] * radius);
         int32_t y = game->bomb.board_pos.y + (DIR_Y[dir] * radius);
 
-        if (IN_BOUNDS(x, y) && explosion_collides(game, x, y) && game->board[y * BOARD_COLS + x] == 2) {
-            game->board[y * BOARD_COLS + x] = 0;
+        if (IN_BOUNDS(x, y) && explosion_collides(game, x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
+            game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
         }
     }
 }
@@ -117,9 +117,7 @@ static int explosion_side_sprite_index(uint8_t frame, bool is_tip) {
     return is_tip ? explosion_hand_sprites[frame] : explosion_arm_sprites[frame];
 }
 
-static void bomb_draw_explosion_ray(hw_video_t *video, const t_game_state *game, int32_t board_start_x, 
-                                    int32_t board_start_y, uint32_t tile_size, uint8_t dir, 
-                                    uint8_t rotation, uint8_t frame) {
+static void bomb_draw_explosion_ray(hw_video_t *video, const t_game_state *game, uint8_t dir, uint8_t rotation, uint8_t frame) {
     const bomb_t *bomb = &game->bomb;
     uint8_t reach = explosion_reach(bomb, dir);
 
@@ -130,14 +128,18 @@ static void bomb_draw_explosion_ray(hw_video_t *video, const t_game_state *game,
         xpm_image_t img = scaled_sprite_cache[sprite_index];
         if (!img.bytes) continue;
 
-        int32_t center_x = board_start_x + ((bomb->board_pos.x + (DIR_X[dir] * dist)) * tile_size) + (tile_size / 2);
-        int32_t center_y = board_start_y + ((bomb->board_pos.y + (DIR_Y[dir] * dist)) * tile_size) + (tile_size / 2);
-
-        hw_vbe_draw_rotated_xpm(video, img.bytes, img, center_x, center_y, rotation);
+        hw_vbe_draw_rotated_xpm(
+            video,
+            img.bytes,
+            img,
+            GET_X(game, bomb->board_pos.x + (DIR_X[dir] * dist)),
+            GET_Y(game, bomb->board_pos.y + (DIR_Y[dir] * dist)),
+            rotation
+        );
     }
 }
 
-int draw_bomb_explosion(hw_video_t *video, t_game_state *game, int32_t board_start_x, int32_t board_start_y, uint32_t tile_size) {
+int draw_bomb_explosion(hw_video_t *video, t_game_state *game) {
     if (!game || !sprites_initialized || !game->bomb.active) return 1;
 
     const bomb_t *bomb = &game->bomb;
@@ -146,16 +148,20 @@ int draw_bomb_explosion(hw_video_t *video, t_game_state *game, int32_t board_sta
     
     if (center_index >= 0 && center_index < SPRITE_CACHE_SIZE && scaled_sprite_cache[center_index].bytes) {
         xpm_image_t img = scaled_sprite_cache[center_index];
-        int32_t draw_x = board_start_x + (bomb->board_pos.x * tile_size) + (tile_size / 2) - (img.width / 2);
-        int32_t draw_y = board_start_y + (bomb->board_pos.y * tile_size) + (tile_size / 2) - (img.height / 2);
-        hw_vbe_draw_xpm(video, img.bytes, img, draw_x, draw_y);
+        hw_vbe_draw_xpm(
+            video,
+            img.bytes,
+            img,
+            GET_X(game, bomb->board_pos.x),
+            GET_Y(game, bomb->board_pos.y)
+        );
     }
 
     if (bomb->explosion_current_radius > 0) {
-        bomb_draw_explosion_ray(video, game, board_start_x, board_start_y, tile_size, EXPLOSION_DIR_RIGHT, XPM_ROTATE_180, frame);
-        bomb_draw_explosion_ray(video, game, board_start_x, board_start_y, tile_size, EXPLOSION_DIR_LEFT, XPM_ROTATE_0, frame);
-        bomb_draw_explosion_ray(video, game, board_start_x, board_start_y, tile_size, EXPLOSION_DIR_DOWN, XPM_ROTATE_270, frame);
-        bomb_draw_explosion_ray(video, game, board_start_x, board_start_y, tile_size, EXPLOSION_DIR_UP, XPM_ROTATE_90, frame);
+        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_RIGHT, XPM_ROTATE_180, frame);
+        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_LEFT, XPM_ROTATE_0, frame);
+        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_DOWN, XPM_ROTATE_270, frame);
+        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_UP, XPM_ROTATE_90, frame);
     }
     
     return 0;

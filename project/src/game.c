@@ -22,7 +22,7 @@ t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
         int x = (click_count % inner_width) + 1;
         int y = (click_count / inner_width) + 1;
         int index = y * BOARD_COLS + x;
-        if (board[index] == 0) {
+        if (board[index] == TILE_TYPE_GRASS) {
             t_tuple result;
             result.x = x;
             result.y = y;
@@ -53,6 +53,11 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     game->tile_size = tile;
 
+    int32_t board_width = BOARD_COLS * tile;
+    int32_t board_height = BOARD_ROWS * tile;
+    game->start_x = (width - board_width) / 2;
+    game->start_y = (height - board_height) / 2;
+
     generateBoard((char *)game->board, time.day, time.month, time.year);
     set_date_seed(time.day, time.month, time.year);
 
@@ -70,28 +75,28 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
 
-    game->players[0].pos = (t_tuple) {
+    game->players[PLAYER_1].pos = (t_tuple) {
         (spawnpoint.x * game->tile_size) + (game->tile_size / 2), 
         (spawnpoint.y * game->tile_size) + (game->tile_size / 2)
     };
 
-    game->players[0].board_pos = spawnpoint;
-    game->players[0].sprite_dir = PLAYER_STANDING;
-    game->players[0].animation_phase = 0;
-    game->players[0].is_moving = false;
-    game->players[0].stack_count = 0;
+    game->players[PLAYER_1].board_pos = spawnpoint;
+    game->players[PLAYER_1].sprite_dir = PLAYER_STANDING;
+    game->players[PLAYER_1].animation_phase = 0;
+    game->players[PLAYER_1].is_moving = false;
+    game->players[PLAYER_1].stack_count = 0;
 
-    game->players[1].pos = (t_tuple) {0, 0};
-    game->players[1].sprite_dir = PLAYER_STANDING;
-    game->players[1].animation_phase = 0;
-    game->players[1].is_moving = false;
-    game->players[1].stack_count = 0; 
+    game->players[PLAYER_2].pos = (t_tuple) {0, 0};
+    game->players[PLAYER_2].sprite_dir = PLAYER_STANDING;
+    game->players[PLAYER_2].animation_phase = 0;
+    game->players[PLAYER_2].is_moving = false;
+    game->players[PLAYER_2].stack_count = 0;
 
     game->click_count = 0;
 
     bomb_init(&game->bomb);
 
-    scale_all_game_sprites(game->tile_size, pw, ph, 2);
+    scale_all_game_sprites(game->tile_size, pw, ph, MAX_PLAYERS);
 
     return 0;
 }
@@ -117,7 +122,7 @@ void game_state_destroy(t_game_state *game) {
 void game_state_update(t_ctx *ctx) {
     if (ctx == NULL) return;
     
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &ctx->game.players[i];
         
         update_player_movement(&ctx->game, player);
@@ -135,7 +140,7 @@ void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     if (game == NULL || game->is_paused) return;
 
-    player_t *player = &game->players[0];
+    player_t *player = &game->players[PLAYER_1];
     bool is_make = IS_MAKE_CODE(scancode);
     uint8_t key_index = MAKE_FROM_BREAK(scancode);
 
@@ -153,39 +158,27 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
 
     t_game_state *game = GAME(state);
 
-    int32_t tile = game->tile_size;
-    int32_t board_width = BOARD_COLS * tile;
-    int32_t board_height = BOARD_ROWS * tile;
-    int32_t start_x = self->abs_x + ((int32_t)self->width - board_width) / 2;
-    int32_t start_y = self->abs_y + ((int32_t)self->height - board_height) / 2;
-
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
 
             int val = game->board[y * BOARD_COLS + x];
 
-            // Get center coordinate of the tile
-            int px = start_x + (x * tile) + (tile / 2);
-            int py = start_y + (y * tile) + (tile / 2);
-
-            if (val == 0) {
+            if (val == TILE_TYPE_GRASS) {
                 int grass_type = decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
-                draw_grass(video, px, py, grass_type);
-            } else if (val == 1) {
+                draw_grass(video, GET_X(game, x), GET_Y(game, y), grass_type);
+            } else if (val == TILE_TYPE_WALL) {
                 int wall_sprite = decide_wall_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
-                draw_wall(video, px, py, wall_sprite);
-            } else if (val == 2) {
-                // Brick
-                draw_brick(video, px, py);
+                draw_wall(video, GET_X(game, x), GET_Y(game, y), wall_sprite);
+            } else if (val == TILE_TYPE_BRICK) {
+                draw_brick(video, GET_X(game, x), GET_Y(game, y));
             } else {
-                // Fallback for unknown values
-                hw_vbe_draw_rect(video, px - (tile / 2), py - (tile / 2), tile, tile, 0x000000);
+                hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 2), GET_Y(game, y) - (game->tile_size / 2), game->tile_size, game->tile_size, 0x000000);
             }
         }
     }
-    draw_bomb(video, game, start_x, start_y, tile);
+    draw_bomb(video, game);
 
-    for (int i = 0; i < 2; i++) {
-        draw_player(&game->players[i], video, start_x, start_y);
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        draw_player(&game->players[i], video, game);
     }
 }

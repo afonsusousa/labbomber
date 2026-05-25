@@ -1,18 +1,19 @@
 #include "board_generator.h"
+#include "game.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define ROWS 9
-#define COLS 15
+#define INNER_ROWS (BOARD_ROWS - 2)
+#define INNER_COLS (BOARD_COLS - 2)
 
 static int dRow[4] = {1, -1, 0, 0};
 static int dCol[4] = {0, 0, 1, -1};
 
-static bool isBoardValid(int innerBoard[ROWS][COLS]) {
-    if (innerBoard[0][0] != 0) return false;
+static bool isBoardValid(int innerBoard[INNER_ROWS][INNER_COLS]) {
+    if (innerBoard[0][0] != TILE_TYPE_GRASS) return false;
 
-    bool visited[ROWS][COLS] = {{false}};
-    int queueRow[ROWS * COLS], queueCol[ROWS * COLS];
+    bool visited[INNER_ROWS][INNER_COLS] = {{false}};
+    int queueRow[INNER_ROWS * INNER_COLS], queueCol[INNER_ROWS * INNER_COLS];
     int front = 0, back = 0;
 
     queueRow[back] = 0; 
@@ -29,9 +30,9 @@ static bool isBoardValid(int innerBoard[ROWS][COLS]) {
             int ni = i + dRow[k];
             int nj = j + dCol[k];
 
-            if (ni < 0 || nj < 0 || ni >= ROWS || nj >= COLS) continue;
+            if (ni < 0 || nj < 0 || ni >= INNER_ROWS || nj >= INNER_COLS) continue;
             if (visited[ni][nj]) continue;
-            if (innerBoard[ni][nj] != 0) continue;
+            if (innerBoard[ni][nj] != TILE_TYPE_GRASS) continue;
 
             visited[ni][nj] = true;
             queueRow[back] = ni;
@@ -40,34 +41,34 @@ static bool isBoardValid(int innerBoard[ROWS][COLS]) {
         }
     }
 
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            if (innerBoard[i][j] == 0 && !visited[i][j]) return false;
+    for (int i = 0; i < INNER_ROWS; i++) {
+        for (int j = 0; j < INNER_COLS; j++) {
+            if (innerBoard[i][j] == TILE_TYPE_GRASS && !visited[i][j]) return false;
         }
     }
 
     return true;
 }
 
-static void generateInnerBoard(int innerBoard[ROWS][COLS], int seed) {
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            if (i % 2 == 1 && j % 2 == 1) innerBoard[i][j] = 1;
-            else innerBoard[i][j] = 0;
+static void generateInnerBoard(int innerBoard[INNER_ROWS][INNER_COLS], int seed) {
+    for (int i = 0; i < INNER_ROWS; i++) {
+        for (int j = 0; j < INNER_COLS; j++) {
+            if (i % 2 == 1 && j % 2 == 1) innerBoard[i][j] = TILE_TYPE_WALL;
+            else innerBoard[i][j] = TILE_TYPE_GRASS;
         }
     }
 
     srand(seed);
 
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            if (innerBoard[i][j] != 0) continue;
+    for (int i = 0; i < INNER_ROWS; i++) {
+        for (int j = 0; j < INNER_COLS; j++) {
+            if (innerBoard[i][j] != TILE_TYPE_GRASS) continue;
 
             if ((rand() % 100) < 30) {
-                innerBoard[i][j] = 2;
+                innerBoard[i][j] = TILE_TYPE_BRICK;
 
                 if (!isBoardValid(innerBoard)) {
-                    innerBoard[i][j] = 0;
+                    innerBoard[i][j] = TILE_TYPE_GRASS;
                 }
             }
         }
@@ -75,18 +76,18 @@ static void generateInnerBoard(int innerBoard[ROWS][COLS], int seed) {
 }
 
 void generateBoard(char *board, int day, int month, int year) {
-    int innerBoard[ROWS][COLS];
+    int innerBoard[INNER_ROWS][INNER_COLS];
 
     int seed = year * 10000 + month * 100 + day;
 
     generateInnerBoard(innerBoard, seed);
 
-    for (int y = 0; y < 11; y++) {
-        for (int x = 0; x < 17; x++) {
-            if (y == 0 || y == 10 || x == 0 || x == 16) {
-                board[y * 17 + x] = 1;
+    for (int y = 0; y < BOARD_ROWS; y++) {
+        for (int x = 0; x < BOARD_COLS; x++) {
+            if (y == 0 || y == (BOARD_ROWS - 1) || x == 0 || x == (BOARD_COLS - 1)) {
+                board[y * BOARD_COLS + x] = TILE_TYPE_WALL;
             } else {
-                board[y * 17 + x] = innerBoard[y - 1][x - 1];
+                board[y * BOARD_COLS + x] = innerBoard[y - 1][x - 1];
             }
         }
     }
