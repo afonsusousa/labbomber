@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdint.h>
-#include <stdbool.h>
 
 typedef enum {
     PLAYER_STANDING = 0,
@@ -31,11 +29,16 @@ typedef struct {
     uint8_t stack_count;
 } player_t;
 
+#define BOMB_EXPLOSION_RANGE 2
+
 typedef struct {
     bool active;
     uint8_t state;
     t_tuple board_pos;
     uint32_t bomb_timer;
+    uint32_t explosion_timer;
+    uint8_t explosion_current_radius;
+    uint16_t explosion_blocked_steps;
 } bomb_t;
 
 struct s_ctx;
@@ -51,15 +54,15 @@ struct s_time;
 #endif
 
 #define GAME_TICKS_PER_SECOND 60
-#define BOMB_DURATION_SECONDS 3
-#define BOMB_DURATION_TICKS (BOMB_DURATION_SECONDS * GAME_TICKS_PER_SECOND)
-#define BOMB_BLINK_TICKS (2 * GAME_TICKS_PER_SECOND)
-#define BOMB_EXPLODE_TICKS GAME_TICKS_PER_SECOND
+#define BOMB_DURATION_TICKS ((7 * GAME_TICKS_PER_SECOND) / 2)
+#define BOMB_EXPLOSION_DURATION_TICKS (GAME_TICKS_PER_SECOND / 2)
+#define BOMB_FUSE_PHASES 8
 
 #define BOMB_INACTIVE 0
 #define BOMB_PLACED 1
 #define BOMB_BLINK 2
 #define BOMB_EXPLODE 3
+#define BOMB_FIRE 4
 
 typedef struct s_game_state {
 
@@ -99,7 +102,12 @@ void    update_player_direction(player_t *player, uint8_t scancode, bool is_make
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);
 void    bomb_reset(bomb_t *bomb);
-void    bomb_update(bomb_t *bomb);
+void    bomb_clear_explosion(bomb_t *bomb);
+void    bomb_update(t_game_state *game);
+void    bomb_begin_explosion(t_game_state *game);
+void    bomb_update_explosion(t_game_state *game);
 void    place_player_bomb(t_game_state *game, const player_t *player);
+
+bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y);
 
 #endif /* LCOM_PROJECT_GAME_H */

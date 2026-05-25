@@ -1,4 +1,5 @@
 #include "vbe.h"
+#include "../../include/macros.h"
 #include <minix/syslib.h>
 #include <minix/drivers.h>
 #include <stdlib.h>
@@ -196,6 +197,69 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x,
             dst_ptr += bpp;
         }
     }
+    return 0;
+}
+
+static void get_rotated_dimensions(const xpm_image_t *img, uint8_t rotation, uint32_t *out_width, uint32_t *out_height) {
+    if ((rotation & 1) == 0) {
+        *out_width = img->width;
+        *out_height = img->height;
+    } else {
+        *out_width = img->height;
+        *out_height = img->width;
+    }
+}
+
+static void set_rotated_pixel(uint8_t *dst_ptr, uint8_t bpp, uint32_t color) {
+    if (bpp == 4) *(uint32_t *)dst_ptr = color;
+    else if (bpp == 2) *(uint16_t *)dst_ptr = (uint16_t)color;
+    else memcpy(dst_ptr, &color, bpp);
+}
+
+int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y, uint8_t rotation) {
+    if (!video || !video->fast_buffer || !map) return 1;
+
+    uint32_t trans = xpm_transparency_color(img.type);
+    uint8_t bpp = video->bytes_per_pixel;
+    uint8_t rot = rotation & 3;
+
+    uint32_t draw_width = img.width;
+    uint32_t draw_height = img.height;
+    get_rotated_dimensions(&img, rot, &draw_width, &draw_height);
+
+    for (uint32_t sy = 0; sy < img.height; sy++) {
+        for (uint32_t sx = 0; sx < img.width; sx++) {
+            uint8_t *src_ptr = map + ((sy * img.width + sx) * bpp);
+            uint32_t color = get_pixel_color(src_ptr, bpp);
+            if (color == trans) continue;
+
+            int32_t dx = x + (int32_t)sx;
+            int32_t dy = y + (int32_t)sy;
+
+            switch (rot) {
+                case XPM_ROTATE_90:
+                    dx = x + (int32_t)(img.height - 1 - sy);
+                    dy = y + (int32_t)sx;
+                    break;
+                case XPM_ROTATE_180:
+                    dx = x + (int32_t)(img.width - 1 - sx);
+                    dy = y + (int32_t)(img.height - 1 - sy);
+                    break;
+                case XPM_ROTATE_270:
+                    dx = x + (int32_t)sy;
+                    dy = y + (int32_t)(img.width - 1 - sx);
+                    break;
+                default:
+                    break;
+            }
+
+            if (dx < 0 || dy < 0 || (uint32_t)dx >= video->screen_width || (uint32_t)dy >= video->screen_height) continue;
+
+            uint8_t *dst_ptr = video->fast_buffer + (dy * video->bytes_per_scanline) + (dx * bpp);
+            set_rotated_pixel(dst_ptr, bpp, color);
+        }
+    }
+
     return 0;
 }
 

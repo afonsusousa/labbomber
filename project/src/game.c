@@ -124,7 +124,7 @@ void game_state_update(t_ctx *ctx) {
         update_player_animation(player, ctx->game.logical_ticks);
     }
 
-    bomb_update(&ctx->game.bomb);
+    bomb_update(&ctx->game);
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
@@ -183,9 +183,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
-    int32_t bomb_x = start_x + (game->bomb.board_pos.x * tile) + (tile / 2);
-    int32_t bomb_y = start_y + (game->bomb.board_pos.y * tile) + (tile / 2);
-    draw_bomb(video, &game->bomb, bomb_x, bomb_y);
+    draw_bomb(video, game, start_x, start_y, tile);
 
     for (int i = 0; i < 2; i++) {
         draw_player(&game->players[i], video, start_x, start_y);
