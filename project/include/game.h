@@ -31,14 +31,22 @@ typedef struct {
 
 #define BOMB_EXPLOSION_RANGE 2
 
+enum {
+    EXPLOSION_DIR_RIGHT = 0,
+    EXPLOSION_DIR_LEFT = 1,
+    EXPLOSION_DIR_DOWN = 2,
+    EXPLOSION_DIR_UP = 3,
+    EXPLOSION_DIR_COUNT = 4,
+};
+
 typedef struct {
     bool active;
     uint8_t state;
     t_tuple board_pos;
     uint32_t bomb_timer;
     uint32_t explosion_timer;
-    uint8_t explosion_current_radius;
-    uint16_t explosion_blocked_steps;
+    uint8_t radius;
+    uint8_t reach[EXPLOSION_DIR_COUNT];
 } bomb_t;
 
 struct s_ctx;

@@ -94,12 +94,4 @@ static const int explosion_hand_sprites[] = {
     SPRITE_EXPLOSION_6_HAND,
 };
 
-enum {
-    EXPLOSION_DIR_RIGHT = 0,
-    EXPLOSION_DIR_LEFT = 1,
-    EXPLOSION_DIR_DOWN = 2,
-    EXPLOSION_DIR_UP = 3,
-    EXPLOSION_DIR_COUNT = 4,
-};
-
 #endif /* ASSETS_CACHE_H */
