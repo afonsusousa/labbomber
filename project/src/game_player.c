@@ -94,17 +94,13 @@ void update_player_direction(player_t *player, uint8_t key, bool is_make) {
     if (player->stack_count > 0 && !player->is_moving) {
         uint8_t top_key = player->movement_stack[player->stack_count - 1];
         
-        player->dir = (top_key == KEY_W) ? PLAYER_BACK : 
-                      (top_key == KEY_A) ? PLAYER_LEFT : 
-                      (top_key == KEY_D) ? PLAYER_RIGHT : PLAYER_STANDING;
+        player->dir = (top_key == KEY_W) ? DIR_BACK : 
+                      (top_key == KEY_A) ? DIR_LEFT : 
+                      (top_key == KEY_D) ? DIR_RIGHT : DIR_STANDING;
                       
         player->sprite_dir = player->dir; // Visual update since we start moving
         player->is_moving = true;
     }
-}
-
-bool collision(uint8_t *board, t_tuple new_pos) {
-    return board[new_pos.y * BOARD_COLS + new_pos.x] != 0;
 }
 
 void update_player_movement(t_game_state *game, player_t *player) {
@@ -113,14 +109,14 @@ void update_player_movement(t_game_state *game, player_t *player) {
     //direction cancelling
     if (player->stack_count > 0) {
         uint8_t top_key = player->movement_stack[player->stack_count - 1];
-        int next_dir = (top_key == KEY_W) ? PLAYER_BACK : 
-                       (top_key == KEY_A) ? PLAYER_LEFT : 
-                       (top_key == KEY_D) ? PLAYER_RIGHT : PLAYER_STANDING;
+        int next_dir = (top_key == KEY_W) ? DIR_BACK : 
+                       (top_key == KEY_A) ? DIR_LEFT : 
+                       (top_key == KEY_D) ? DIR_RIGHT : DIR_STANDING;
 
-        if ((player->dir == PLAYER_LEFT && next_dir == PLAYER_RIGHT) ||
-            (player->dir == PLAYER_RIGHT && next_dir == PLAYER_LEFT) ||
-            (player->dir == PLAYER_STANDING && next_dir == PLAYER_BACK) ||
-            (player->dir == PLAYER_BACK && next_dir == PLAYER_STANDING)) {
+        if ((player->dir == DIR_LEFT && next_dir == DIR_RIGHT) ||
+            (player->dir == DIR_RIGHT && next_dir == DIR_LEFT) ||
+            (player->dir == DIR_STANDING && next_dir == DIR_BACK) ||
+            (player->dir == DIR_BACK && next_dir == DIR_STANDING)) {
             
             player->dir = next_dir;
             player->sprite_dir = next_dir;
@@ -130,8 +126,8 @@ void update_player_movement(t_game_state *game, player_t *player) {
     t_tuple new_pos = player->pos;
     int tile = game->tile_size, half = tile / 2, speed = 4; 
 
-    int dx = (player->dir == PLAYER_RIGHT) - (player->dir == PLAYER_LEFT);
-    int dy = (player->dir == PLAYER_STANDING) - (player->dir == PLAYER_BACK);
+    int dx = (player->dir == DIR_RIGHT) - (player->dir == DIR_LEFT);
+    int dy = (player->dir == DIR_STANDING) - (player->dir == DIR_BACK);
 
     new_pos.x += dx * speed;
     new_pos.y += dy * speed;
@@ -174,9 +170,9 @@ void update_player_movement(t_game_state *game, player_t *player) {
             } else {
                 uint8_t top_key = player->movement_stack[player->stack_count - 1];
                 
-                player->dir = (top_key == KEY_W) ? PLAYER_BACK : 
-                              (top_key == KEY_A) ? PLAYER_LEFT : 
-                              (top_key == KEY_D) ? PLAYER_RIGHT : PLAYER_STANDING;
+                player->dir = (top_key == KEY_W) ? DIR_BACK : 
+                              (top_key == KEY_A) ? DIR_LEFT : 
+                              (top_key == KEY_D) ? DIR_RIGHT : DIR_STANDING;
                 
                 player->sprite_dir = player->dir;
             }

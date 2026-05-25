@@ -5,11 +5,11 @@
 #include <stdbool.h>
 
 typedef enum {
-    PLAYER_STANDING = 0,
-    PLAYER_LEFT,
-    PLAYER_RIGHT,
-    PLAYER_BACK
-} player_direction_t;
+    DIR_STANDING = 0,
+    DIR_LEFT,
+    DIR_RIGHT,
+    DIR_BACK
+} direction_t;
 
 typedef struct s_tuple {
     int32_t x;
@@ -19,9 +19,9 @@ typedef struct s_tuple {
 typedef struct {
     t_tuple pos;
     t_tuple board_pos;
-    player_direction_t dir;
+    direction_t dir;
 
-    player_direction_t sprite_dir;
+    direction_t sprite_dir;
     uint8_t animation_phase; // 0-3 for the 4 directional sprites
     bool is_moving;
 
@@ -32,9 +32,13 @@ typedef struct {
 typedef struct {
     t_tuple pos;
     t_tuple board_pos;
-    player_direction_t dir;
-    player_direction_t sprite_dir;
+
+    direction_t dir;
+    direction_t sprite_dir;
+
     uint8_t animation_phase;
+
+    bool is_moving;
     bool active;
 } enemy_t;
 
@@ -103,10 +107,13 @@ void    game_state_reset(t_game_state *game);
 void    game_state_destroy(t_game_state *game);
 void    game_state_update(struct s_ctx *ctx);
 void    game_state_handle_click(t_game_state *game, int32_t x, int32_t y);
-void    game_state_handle_key_press(t_game_state *gane, uint8_t scancode);
+void    game_state_handle_key_press(t_game_state *game, uint8_t scancode);
 
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
+
+// Entity helpers
+bool   collision(uint8_t *board, t_tuple pos);
 
 // Player movement helpers
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
@@ -117,6 +124,7 @@ void    update_player_direction(player_t *player, uint8_t scancode, bool is_make
 
 // Enemy helpers
 int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]); //geração determinística
+void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
 void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
 
 // Bomb helpers

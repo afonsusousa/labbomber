@@ -57,13 +57,13 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     };
 
     game->players[0].board_pos = spawnpoint;
-    game->players[0].sprite_dir = PLAYER_STANDING;
+    game->players[0].sprite_dir = DIR_STANDING;
     game->players[0].animation_phase = 0;
     game->players[0].is_moving = false;
     game->players[0].stack_count = 0;
 
     game->players[1].pos = (t_tuple) {0, 0};
-    game->players[1].sprite_dir = PLAYER_STANDING;
+    game->players[1].sprite_dir = DIR_STANDING;
     game->players[1].animation_phase = 0;
     game->players[1].is_moving = false;
     game->players[1].stack_count = 0; 
@@ -84,9 +84,10 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
         game->enemies[i].board_pos.y = spawn_out[i].y;
 
         game->enemies[i].active = true;
+        game->enemies[i].is_moving = true;
 
-        game->enemies[i].dir = PLAYER_STANDING;
-        game->enemies[i].sprite_dir = PLAYER_STANDING;
+        game->enemies[i].dir = DIR_RIGHT;
+        game->enemies[i].sprite_dir = DIR_RIGHT;
         game->enemies[i].animation_phase = 0;
     }
 
@@ -128,7 +129,10 @@ void game_state_update(t_ctx *ctx) {
     }
 
     for (int i = 0; i < ctx->game.enemy_count; i++) {
-        update_enemy_animation(&ctx->game.enemies[i], ctx->game.logical_ticks);
+        enemy_t *enemy = &ctx->game.enemies[i];
+
+        update_enemy_movement(&ctx->game, enemy);
+        update_enemy_animation(enemy, ctx->game.logical_ticks);
     }
 
     bomb_update(&ctx->game.bomb);

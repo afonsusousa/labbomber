@@ -104,10 +104,97 @@ int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t
     return 0;
 }
 
+void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
+
+    if (!enemy || !enemy->active || !enemy->is_moving) return;
+
+    t_tuple new_pos = enemy->pos;
+
+    int tile = game->tile_size;
+    int half = tile / 2;
+    int speed = 1;
+
+    int dx = (enemy->dir == DIR_RIGHT) - (enemy->dir == DIR_LEFT);
+
+    int dy = (enemy->dir == DIR_STANDING) - (enemy->dir == DIR_BACK);
+
+    new_pos.x += dx * speed;
+    new_pos.y += dy * speed;
+
+    t_tuple new_board_pos = enemy->board_pos;
+
+    int t = 0;
+
+    if (dx > 0) {
+        new_board_pos.x = (enemy->pos.x - half) / tile + 1;
+
+        t = new_board_pos.x * tile + half;
+
+        if (new_pos.x > t) new_pos.x = t;
+    }
+
+    else if (dx < 0) {
+        new_board_pos.x = (enemy->pos.x - half - 1) / tile;
+
+        t = new_board_pos.x * tile + half;
+
+        if (new_pos.x < t) new_pos.x = t;
+    }
+
+    else if (dy > 0) {
+        new_board_pos.y = (enemy->pos.y - half) / tile + 1;
+
+        t = new_board_pos.y * tile + half;
+
+        if (new_pos.y > t) new_pos.y = t;
+    }
+
+    else if (dy < 0) {
+
+        new_board_pos.y = (enemy->pos.y - half - 1) / tile;
+
+        t = new_board_pos.y * tile + half;
+
+        if (new_pos.y < t) new_pos.y = t;
+    }
+
+    if (collision(game->board, new_board_pos)) {
+        enemy->is_moving = false;
+        return;
+    }
+
+    int snap_x = ((new_pos.x - half) % tile) == 0;
+
+    int snap_y = ((new_pos.y - half) % tile) == 0;
+
+    if ((dx != 0 && snap_y) || (dy != 0 && snap_x)) {
+
+        enemy->pos = new_pos;
+
+        if (snap_x && snap_y) enemy->sprite_dir = enemy->dir;
+    }
+
+    int offset = tile / 10;
+
+    if (dx > 0) enemy->board_pos.x = (enemy->pos.x - offset) / tile;
+
+    else if (dx < 0) enemy->board_pos.x = (enemy->pos.x + offset) / tile;
+
+    else enemy->board_pos.x = enemy->pos.x / tile;
+
+    if (dy > 0) enemy->board_pos.y = (enemy->pos.y - offset) / tile;
+
+    else if (dy < 0) enemy->board_pos.y = (enemy->pos.y + offset) / tile;
+
+    else enemy->board_pos.y = enemy->pos.y / tile;
+}
+
 void update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks) {
     if (enemy == NULL) return;
 
     if (logical_ticks % 30 == 0) {
         enemy->animation_phase = (enemy->animation_phase + 1) % 4;
     }
+
+    if (!enemy->is_moving) return;
 }
