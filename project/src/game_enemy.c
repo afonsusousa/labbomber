@@ -8,9 +8,10 @@
 int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t board_start_y) {
     if (enemy == NULL || !enemy->active || !sprites_initialized) return 1;
 
+    int current_phase = enemy->animation_phase % 4;
     int current_direction = enemy->sprite_dir % 4;
-
-    int sprite_index = SPRITE_ENEMY_1_STANDING + current_direction;
+    
+    int sprite_index = SPRITE_ENEMY_1_STANDING + (current_phase * 4) + current_direction;
 
     if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL)
         return 1;
