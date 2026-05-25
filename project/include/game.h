@@ -32,6 +32,11 @@ typedef struct {
 } player_t;
 
 typedef struct {
+    t_tuple pos;
+    uint8_t animation_phase;
+} enemy_t;
+
+typedef struct {
     bool active;
     uint8_t state;
     t_tuple board_pos;
@@ -71,6 +76,9 @@ typedef struct s_game_state {
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     player_t players[2];
+
+    enemy_t enemy;
+    
     bomb_t bomb;
 
     uint32_t logical_ticks;
@@ -95,6 +103,9 @@ void    get_player_start_position(int player_id, uint32_t width, uint32_t height
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
+
+// Enemy helpers
+void update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
 
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);

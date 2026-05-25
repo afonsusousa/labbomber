@@ -13,6 +13,7 @@ void init_sprite_cache();
 
 void set_date_seed(int day, int month, int year);
 int draw_player(player_t *player, hw_video_t *video, int32_t board_start_x, int32_t board_start_y);
+int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t board_start_y);
 int draw_bomb(hw_video_t *video, const bomb_t *bomb, int32_t x, int32_t y);
 
 /* Grass and terrain drawing */

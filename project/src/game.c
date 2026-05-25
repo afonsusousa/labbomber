@@ -87,6 +87,12 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->players[1].is_moving = false;
     game->players[1].stack_count = 0; 
 
+    game->enemy.pos = (t_tuple) {
+        (1 * game->tile_size) + (game->tile_size / 2),
+        (1 * game->tile_size) + (game->tile_size / 2)
+    };
+    game->enemy.animation_phase = 0;
+
     game->click_count = 0;
 
     bomb_init(&game->bomb);
@@ -125,6 +131,8 @@ void game_state_update(t_ctx *ctx) {
     }
 
     bomb_update(&ctx->game.bomb);
+
+    update_enemy_animation(&ctx->game.enemy, ctx->game.logical_ticks);
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
@@ -190,4 +198,6 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     for (int i = 0; i < 2; i++) {
         draw_player(&game->players[i], video, start_x, start_y);
     }
+
+    draw_enemy(&game->enemy, video, start_x, start_y);
 }

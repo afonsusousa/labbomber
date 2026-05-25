@@ -2,6 +2,7 @@
 #include "assets.h"
 #include "glyphs.h"
 #include "assets_player.h"
+#include "assets_enemy.h"
 #include <lcom/xpm.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -58,6 +59,12 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)player_4_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_LEFT]);
     xpm_load((xpm_map_t)player_4_right_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_RIGHT]);
     xpm_load((xpm_map_t)player_4_back_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_4_BACK]);
+
+    xpm_load((xpm_map_t)enemy_1_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_1_STANDING]);
+    xpm_load((xpm_map_t)enemy_2_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_2_STANDING]);
+    xpm_load((xpm_map_t)enemy_3_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_3_STANDING]);
+    xpm_load((xpm_map_t)enemy_4_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_4_STANDING]);
+
     xpm_load((xpm_map_t)explosion_6_arm, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_ARM]);
     xpm_load((xpm_map_t)explosion_6_center, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_CENTER]);
     xpm_load((xpm_map_t)explosion_6_hand, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_6_HAND]);
@@ -155,5 +162,9 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
     // Players (looping all 16 states)
     for (int i = 0; i < 16; i++) {
         scale_cached_sprite(SPRITE_PLAYER_1_STANDING + i, player_w, player_h, bpp);
+    }
+    // Enemy
+    for (int i = 0; i < 4; i++) {
+        scale_cached_sprite(SPRITE_ENEMY_1_STANDING + i, player_w, player_h, bpp);
     }
 }

@@ -66,5 +66,9 @@ extern bool sprites_initialized;
 #define SPRITE_PLAYER_4_LEFT        174
 #define SPRITE_PLAYER_4_RIGHT       175
 #define SPRITE_PLAYER_4_BACK        176
+#define SPRITE_ENEMY_1_STANDING     177
+#define SPRITE_ENEMY_2_STANDING     178
+#define SPRITE_ENEMY_3_STANDING     179
+#define SPRITE_ENEMY_4_STANDING     180
 
 #endif /* ASSETS_CACHE_H */
