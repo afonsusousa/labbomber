@@ -57,11 +57,15 @@ static void bomb_apply_explosion_contact(t_game_state *game, uint8_t radius) {
     if (radius == 0) return;
 
     for (uint8_t dir = 0; dir < EXPLOSION_DIR_COUNT; dir++) {
-        int32_t x = game->bomb.board_pos.x + (DIR_X[dir] * radius);
-        int32_t y = game->bomb.board_pos.y + (DIR_Y[dir] * radius);
+        uint8_t reach = game->bomb.reach[dir];
+        
+        if (radius >= reach && reach > 0) {
+            int32_t x = game->bomb.board_pos.x + (DIR_X[dir] * reach);
+            int32_t y = game->bomb.board_pos.y + (DIR_Y[dir] * reach);
 
-        if (IN_BOUNDS(x, y) && explosion_collides(game, x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
-            game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+            if (IN_BOUNDS(x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
+                game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+            }
         }
     }
 }
@@ -157,18 +161,3 @@ int draw_bomb_explosion(hw_video_t *video, t_game_state *game) {
     return 0;
 }
 
-bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y) {
-    if (!game || !game->bomb.active || game->bomb.state != BOMB_FIRE) return false;
-
-    const bomb_t *bomb = &game->bomb;
-    int32_t dx = cell_x - bomb->board_pos.x;
-    int32_t dy = cell_y - bomb->board_pos.y;
-
-    if (dx == 0 && dy == 0) return true; // Center collision
-    if (bomb->radius == 0 || (dx != 0 && dy != 0)) return false; // Diagonal
-
-    uint8_t dir = (dx > 0) ? EXPLOSION_DIR_RIGHT : (dx < 0) ? EXPLOSION_DIR_LEFT : (dy > 0) ? EXPLOSION_DIR_DOWN : EXPLOSION_DIR_UP;
-    uint32_t dist = (dx != 0) ? (dx > 0 ? dx : -dx) : (dy > 0 ? dy : -dy);
-
-    return (dist <= bomb->radius) && (dist <= BOMB_REACH(bomb, dir));
-}
