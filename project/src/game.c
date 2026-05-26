@@ -104,8 +104,8 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
         }
 
         else {
-            enemy->dir = DIR_STANDING;
-            enemy->sprite_dir = DIR_STANDING;
+            enemy->dir = DIR_UP;
+            enemy->sprite_dir = DIR_UP;
             enemy->is_moving = false;
         }
 
