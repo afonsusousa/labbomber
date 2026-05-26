@@ -112,9 +112,9 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     }
 
     if (gui->input.hovered != NULL && gui->input.hovered->type == TEXT_INPUT) {
-        draw_text_cursor(&hw_state->mouse, &hw_state->video);
+        draw_text_cursor(&hw_state->video, &hw_state->mouse);
     } else {
-        draw_mouse(&hw_state->mouse, &hw_state->video);
+        draw_mouse(&hw_state->video, &hw_state->mouse);
     }
 
     draw_debug_overlay(&hw_state->video, gui, ctx->game);

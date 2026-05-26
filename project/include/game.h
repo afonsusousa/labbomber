@@ -1,15 +1,13 @@
 #ifndef LCOM_PROJECT_GAME_H
 #define LCOM_PROJECT_GAME_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 typedef enum {
-    DIR_STANDING = 0,
-    DIR_LEFT,
-    DIR_RIGHT,
-    DIR_BACK
+    DIR_DOWN = 0,
+    DIR_LEFT = 1,
+    DIR_RIGHT = 2,
+    DIR_UP = 3
 } direction_t;
 
 typedef struct s_tuple {
@@ -43,17 +41,29 @@ typedef struct {
     bool active;
 } enemy_t;
 
+#define BOMB_EXPLOSION_RANGE 2
+
+enum {
+    EXPLOSION_DIR_RIGHT = 0,
+    EXPLOSION_DIR_LEFT = 1,
+    EXPLOSION_DIR_DOWN = 2,
+    EXPLOSION_DIR_UP = 3,
+    EXPLOSION_DIR_COUNT = 4,
+};
+
 typedef struct {
     bool active;
     uint8_t state;
     t_tuple board_pos;
     uint32_t bomb_timer;
+    uint32_t explosion_timer;
+    uint8_t radius;
+    uint8_t reach[EXPLOSION_DIR_COUNT];
 } bomb_t;
 
 struct s_ctx;
 struct s_time;
 
-// Assuming these macros are defined in your game.h
 #ifndef BOARD_ROWS
 #define BOARD_ROWS 11
 #endif
@@ -70,15 +80,26 @@ struct s_time;
 #define MIN_DIST_FROM_PLAYER 6
 
 #define GAME_TICKS_PER_SECOND 60
-#define BOMB_DURATION_SECONDS 3
-#define BOMB_DURATION_TICKS (BOMB_DURATION_SECONDS * GAME_TICKS_PER_SECOND)
-#define BOMB_BLINK_TICKS (2 * GAME_TICKS_PER_SECOND)
-#define BOMB_EXPLODE_TICKS GAME_TICKS_PER_SECOND
+#define BOMB_DURATION_TICKS ((7 * GAME_TICKS_PER_SECOND) / 2)
+#define BOMB_EXPLOSION_DURATION_TICKS (GAME_TICKS_PER_SECOND / 2)
+#define BOMB_FUSE_PHASES 8
 
 #define BOMB_INACTIVE 0
 #define BOMB_PLACED 1
 #define BOMB_BLINK 2
 #define BOMB_EXPLODE 3
+#define BOMB_FIRE 4
+
+#define MAX_PLAYERS 2
+#define PLAYER_1 0
+#define PLAYER_2 1
+
+#define TILE_TYPE_GRASS 0
+#define TILE_TYPE_WALL 1
+#define TILE_TYPE_BRICK 2
+
+#define GET_X(game, value) ((game)->start_x + (value) * (game)->tile_size + (game)->tile_size / 2)
+#define GET_Y(game, value) ((game)->start_y + (value) * (game)->tile_size + (game)->tile_size / 2)
 
 typedef struct s_game_state {
 
@@ -87,14 +108,21 @@ typedef struct s_game_state {
 
     uint32_t tile_size;
 
+    int32_t start_x;
+    int32_t start_y;
+
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
-    player_t players[2];
+    player_t players[MAX_PLAYERS];
 
     enemy_t enemies[MAX_ENEMIES];
     uint8_t enemy_count;
     
     bomb_t bomb;
+
+    /* Cached player sprite size (pixels) used for entering/collision math */
+    uint32_t player_w;
+    uint32_t player_h;
 
     uint32_t logical_ticks;
     bool is_paused;
@@ -132,10 +160,30 @@ void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
 void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
 void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
 
+/**
+ * entering_cell - return the adjacent board cell an entity may overlap
+ * when moving in `dir` from pixel position (px,py) with size (w,h).
+ */
+t_tuple entering_cell(const t_game_state *game, direction_t dir, int32_t px, int32_t py, uint32_t w, uint32_t h);
+
+/**
+ * continuous_board_pos - compute a continuous/smoothed board cell for an
+ * entity at pixel position (px,py) moving in `dir`.
+ *
+ * Uses a small hardcoded threshold (offset = tile / 10) to bias rounding
+ * toward the movement direction.
+ */
+t_tuple continuous_board_pos(const t_game_state *game, direction_t dir, int32_t px, int32_t py);
+
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);
 void    bomb_reset(bomb_t *bomb);
-void    bomb_update(bomb_t *bomb);
+void    bomb_clear_explosion(bomb_t *bomb);
+void    bomb_update(t_game_state *game);
+void    bomb_begin_explosion(t_game_state *game);
+void    bomb_update_explosion(t_game_state *game);
 void    place_player_bomb(t_game_state *game, const player_t *player);
+
+bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y);
 
 #endif /* LCOM_PROJECT_GAME_H */

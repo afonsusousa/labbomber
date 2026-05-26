@@ -51,8 +51,12 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game) 
     draw_string(video, line, x, y, 0x000000);
 
     y += 14;
+    t_tuple entering = { .x = -1, .y = -1 };
+    if (game.tile_size > 0 && game.player_w > 0 && game.player_h > 0) {
+        entering = entering_cell(&game, game.players[0].dir, game.players[0].pos.x, game.players[0].pos.y, game.player_w, game.player_h);
+    }
 
-    snprintf(line, sizeof(line), "board pos: (%d,%d)", game.players[0].board_pos.x, game.players[0].board_pos.y);
+    snprintf(line, sizeof(line), "board pos: (%d,%d) entering: (%d,%d)", game.players[0].board_pos.x, game.players[0].board_pos.y, entering.x, entering.y);
     draw_string(video, line, x, y, 0x000000);
 
     y+=14;

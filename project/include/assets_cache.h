@@ -83,4 +83,31 @@ extern bool sprites_initialized;
 #define SPRITE_ENEMY_4_RIGHT        191
 #define SPRITE_ENEMY_4_BACK         192
 
+static const int explosion_center_sprites[] = {
+    SPRITE_EXPLOSION_1_CENTER,
+    SPRITE_EXPLOSION_2_CENTER,
+    SPRITE_EXPLOSION_3_CENTER,
+    SPRITE_EXPLOSION_4_CENTER,
+    SPRITE_EXPLOSION_5_CENTER,
+    SPRITE_EXPLOSION_6_CENTER,
+};
+
+static const int explosion_arm_sprites[] = {
+    -1,
+    -1,
+    SPRITE_EXPLOSION_3_ARM,
+    SPRITE_EXPLOSION_4_ARM,
+    SPRITE_EXPLOSION_5_ARM,
+    SPRITE_EXPLOSION_6_ARM,
+};
+
+static const int explosion_hand_sprites[] = {
+    -1,
+    -1,
+    SPRITE_EXPLOSION_3_HAND,
+    SPRITE_EXPLOSION_4_HAND,
+    SPRITE_EXPLOSION_5_HAND,
+    SPRITE_EXPLOSION_6_HAND,
+};
+
 #endif /* ASSETS_CACHE_H */

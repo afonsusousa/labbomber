@@ -12,6 +12,12 @@
 #define PLAYERS 2
 #define SPRITE_CACHE_SIZE 256
 
+// XPM rotation constants
+#define XPM_ROTATE_0     0
+#define XPM_ROTATE_90    1
+#define XPM_ROTATE_180   2
+#define XPM_ROTATE_270   3
+
 // Player animation constants
 #define ANIM_DIRECTIONS 4
 #define ANIM_PHASES 4

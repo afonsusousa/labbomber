@@ -1,4 +1,5 @@
 #include "vbe.h"
+#include "../../include/macros.h"
 #include <minix/syslib.h>
 #include <minix/drivers.h>
 #include <stdlib.h>
@@ -173,6 +174,9 @@ int hw_vbe_draw_rect(hw_video_t *video, int32_t x, int32_t y, uint16_t width, ui
 int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x, int32_t y) {
     if (!video || !video->fast_buffer || !map) return 1;
 
+    x -= img.width / 2;
+    y -= img.height / 2;
+
     uint32_t trans = xpm_transparency_color(img.type);
     uint8_t bpp = video->bytes_per_pixel;
 
@@ -196,6 +200,67 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x,
             dst_ptr += bpp;
         }
     }
+    return 0;
+}
+
+int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t center_x, int32_t center_y, uint8_t rotation) {
+    if (!video || !video->fast_buffer || !map) return 1;
+
+    if (rotation == XPM_ROTATE_0) {
+        return hw_vbe_draw_xpm(video, map, img, center_x, center_y);
+    }
+
+    uint32_t trans = xpm_transparency_color(img.type);
+    uint8_t bpp = video->bytes_per_pixel;
+    uint8_t rot = rotation & 3;
+
+    int32_t pivot_x = (int32_t)img.width / 2;
+    int32_t pivot_y = (int32_t)img.height / 2;
+
+    for (uint32_t sy = 0; sy < img.height; sy++) {
+        for (uint32_t sx = 0; sx < img.width; sx++) {
+            uint8_t *src_ptr = map + ((sy * img.width + sx) * bpp);
+            
+            uint32_t color = 0;
+            if (bpp == 4) color = *(uint32_t *)src_ptr;
+            else if (bpp == 2) color = *(uint16_t *)src_ptr;
+            else memcpy(&color, src_ptr, bpp);
+
+            if (color == trans) continue;
+
+            int32_t vx = (int32_t)sx - pivot_x;
+            int32_t vy = (int32_t)sy - pivot_y;
+            int32_t dx, dy;
+
+            // -1 because we are using EVENxEVEN sized sprite, that have no true center!!!
+            switch (rot) {
+                case XPM_ROTATE_90:  
+                    dx = center_x - vy - 1; 
+                    dy = center_y + vx; 
+                    break;
+                case XPM_ROTATE_180: 
+                    dx = center_x - vx - 1; 
+                    dy = center_y - vy - 1; 
+                    break;
+                case XPM_ROTATE_270: 
+                    dx = center_x + vy;     
+                    dy = center_y - vx - 1; 
+                    break;
+                default:             
+                    dx = center_x + vx;     
+                    dy = center_y + vy;     
+                    break;
+            }
+            if (dx < 0 || dy < 0 || (uint32_t)dx >= video->screen_width || (uint32_t)dy >= video->screen_height) continue;
+
+            uint8_t *dst_ptr = video->fast_buffer + (dy * video->bytes_per_scanline) + (dx * bpp);
+            
+            if (bpp == 4) *(uint32_t *)dst_ptr = color;
+            else if (bpp == 2) *(uint16_t *)dst_ptr = (uint16_t)color;
+            else memcpy(dst_ptr, &color, bpp);
+        }
+    }
+
     return 0;
 }
 
