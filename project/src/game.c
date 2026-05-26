@@ -56,7 +56,6 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->player_h = ph;
 
    // --- PLAYER 1 ---
-
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
 
     game->players[PLAYER_1].pos = (t_tuple) {
@@ -69,21 +68,17 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->players[PLAYER_1].animation_phase = 0;
     game->players[PLAYER_1].is_moving = false;
     game->players[PLAYER_1].stack_count = 0;
-    game->players[0].board_pos = spawnpoint;
-    game->players[0].sprite_dir = DIR_STANDING;
-    game->players[0].animation_phase = 0;
-    game->players[0].is_moving = false;
-    game->players[0].stack_count = 0;
 
-    game->players[1].pos = (t_tuple) {0, 0};
-    game->players[1].sprite_dir = DIR_STANDING;
-    game->players[1].animation_phase = 0;
-    game->players[1].is_moving = false;
-    game->players[1].stack_count = 0; 
+    // --- PLAYER 2 ---
+    game->players[PLAYER_2].pos = (t_tuple) {0, 0};
+    game->players[PLAYER_2].sprite_dir = DIR_DOWN;
+    game->players[PLAYER_2].animation_phase = 0;
+    game->players[PLAYER_2].is_moving = false;
+    game->players[PLAYER_2].stack_count = 0;
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[0].board_pos, 4, spawn_out);
+    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 4, spawn_out);
 
     for (int i = 0; i < game->enemy_count; i++) {
 
@@ -161,13 +156,6 @@ void game_state_update(t_ctx *ctx) {
         update_enemy_animation(enemy, ctx->game.logical_ticks);
     }
 
-    for (int i = 0; i < ctx->game.enemy_count; i++) {
-        enemy_t *enemy = &ctx->game.enemies[i];
-
-        update_enemy_movement(&ctx->game, enemy);
-        update_enemy_animation(enemy, ctx->game.logical_ticks);
-    }
-
     bomb_update(&ctx->game);
 }
 
@@ -215,6 +203,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
+
     draw_bomb(video, game);
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -222,10 +211,6 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     }
 
     for (int i = 0; i < game->enemy_count; i++) {
-        draw_enemy(&game->enemies[i], video, start_x, start_y);
-    }
-
-    for (int i = 0; i < game->enemy_count; i++) {
-        draw_enemy(&game->enemies[i], video, start_x, start_y);
+        draw_enemy(&game->enemies[i], video, game->start_x, game->start_y);
     }
 }

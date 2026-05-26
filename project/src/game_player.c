@@ -80,25 +80,6 @@ t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
     }
 }
 
-t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
-    const int inner_width = BOARD_COLS - 2;
-    const int inner_height = BOARD_ROWS - 2;
-
-    while (true) {
-        click_count %= (inner_width * inner_height);
-        int x = (click_count % inner_width) + 1;
-        int y = (click_count / inner_width) + 1;
-        int index = y * BOARD_COLS + x;
-        if (board[index] == 0) {
-            t_tuple result;
-            result.x = x;
-            result.y = y;
-            return result;
-        }
-        click_count++;
-    }
-}
-
 int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     if (player == NULL || !sprites_initialized) return 1;
 

@@ -2,6 +2,11 @@
 #define LCOM_PROJECT_GAME_H
 
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+struct s_ctx;
+struct s_time;
 
 typedef enum {
     DIR_DOWN = 0,
@@ -9,6 +14,50 @@ typedef enum {
     DIR_RIGHT = 2,
     DIR_UP = 3
 } direction_t;
+
+/* Aliases used by the enemy subsystem (enemy branch naming convention) */
+#define DIR_STANDING DIR_DOWN
+#define DIR_BACK     DIR_UP
+
+#ifndef BOARD_ROWS
+#define BOARD_ROWS 11
+#endif
+
+#ifndef BOARD_COLS
+#define BOARD_COLS 17
+#endif
+
+#define TOTAL_CELLS     (BOARD_ROWS * BOARD_COLS)
+#define BOARD_IDX(x, y) ((y) * BOARD_COLS + (x))
+
+#define TILE_TYPE_GRASS 0
+#define TILE_TYPE_WALL  1
+#define TILE_TYPE_BRICK 2
+
+#define GAME_TICKS_PER_SECOND 60
+
+#define MAX_PLAYERS 2
+#define PLAYER_1    0
+#define PLAYER_2    1
+
+#define MAX_ENEMIES          10
+#define MIN_DIST_FROM_PLAYER  6
+#define ENEMY_SPEED           2
+
+#define BOMB_EXPLOSION_RANGE 2
+
+#define BOMB_DURATION_TICKS           ((7 * GAME_TICKS_PER_SECOND) / 2)
+#define BOMB_EXPLOSION_DURATION_TICKS (GAME_TICKS_PER_SECOND / 2)
+#define BOMB_FUSE_PHASES              8
+
+#define BOMB_INACTIVE 0
+#define BOMB_PLACED   1
+#define BOMB_BLINK    2
+#define BOMB_EXPLODE  3
+#define BOMB_FIRE     4
+
+#define GET_X(game, value) ((game)->start_x + (value) * (game)->tile_size + (game)->tile_size / 2)
+#define GET_Y(game, value) ((game)->start_y + (value) * (game)->tile_size + (game)->tile_size / 2)
 
 typedef struct s_tuple {
     int32_t x;
@@ -41,13 +90,11 @@ typedef struct {
     bool active;
 } enemy_t;
 
-#define BOMB_EXPLOSION_RANGE 2
-
 enum {
     EXPLOSION_DIR_RIGHT = 0,
-    EXPLOSION_DIR_LEFT = 1,
-    EXPLOSION_DIR_DOWN = 2,
-    EXPLOSION_DIR_UP = 3,
+    EXPLOSION_DIR_LEFT  = 1,
+    EXPLOSION_DIR_DOWN  = 2,
+    EXPLOSION_DIR_UP    = 3,
     EXPLOSION_DIR_COUNT = 4,
 };
 
@@ -61,74 +108,27 @@ typedef struct {
     uint8_t reach[EXPLOSION_DIR_COUNT];
 } bomb_t;
 
-struct s_ctx;
-struct s_time;
-
-#ifndef BOARD_ROWS
-#define BOARD_ROWS 11
-#endif
-
-#ifndef BOARD_COLS
-#define BOARD_COLS 17
-#endif
-
-#define TOTAL_CELLS (BOARD_ROWS * BOARD_COLS)
-
-#define BOARD_IDX(x, y) ((y) * BOARD_COLS + (x))
-
-#define MAX_ENEMIES 10
-#define MIN_DIST_FROM_PLAYER 6
-
-#define GAME_TICKS_PER_SECOND 60
-#define BOMB_DURATION_TICKS ((7 * GAME_TICKS_PER_SECOND) / 2)
-#define BOMB_EXPLOSION_DURATION_TICKS (GAME_TICKS_PER_SECOND / 2)
-#define BOMB_FUSE_PHASES 8
-
-#define BOMB_INACTIVE 0
-#define BOMB_PLACED 1
-#define BOMB_BLINK 2
-#define BOMB_EXPLODE 3
-#define BOMB_FIRE 4
-
-#define MAX_PLAYERS 2
-#define PLAYER_1 0
-#define PLAYER_2 1
-
-#define TILE_TYPE_GRASS 0
-#define TILE_TYPE_WALL 1
-#define TILE_TYPE_BRICK 2
-
-#define GET_X(game, value) ((game)->start_x + (value) * (game)->tile_size + (game)->tile_size / 2)
-#define GET_Y(game, value) ((game)->start_y + (value) * (game)->tile_size + (game)->tile_size / 2)
-
 typedef struct s_game_state {
-
     uint32_t width;
     uint32_t height;
-
     uint32_t tile_size;
-
     int32_t start_x;
     int32_t start_y;
 
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     player_t players[MAX_PLAYERS];
+    uint32_t player_w; /* Cached player sprite size (pixels) used for entering/collision math */
+    uint32_t player_h;
 
     enemy_t enemies[MAX_ENEMIES];
     uint8_t enemy_count;
-    
+
     bomb_t bomb;
 
-    /* Cached player sprite size (pixels) used for entering/collision math */
-    uint32_t player_w;
-    uint32_t player_h;
-
     uint32_t logical_ticks;
-    bool is_paused;
-
     uint32_t click_count;
-
+    bool is_paused;
 } t_game_state;
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);
@@ -153,13 +153,6 @@ void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 
-// Enemy helpers
-int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]); //geração determinística
-bool    enemy_can_move(t_game_state *game ,enemy_t *enemy, direction_t dir);
-void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
-void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
-void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
-
 /**
  * entering_cell - return the adjacent board cell an entity may overlap
  * when moving in `dir` from pixel position (px,py) with size (w,h).
@@ -175,6 +168,13 @@ t_tuple entering_cell(const t_game_state *game, direction_t dir, int32_t px, int
  */
 t_tuple continuous_board_pos(const t_game_state *game, direction_t dir, int32_t px, int32_t py);
 
+// Enemy helpers
+int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]); //geração determinística
+bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
+void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
+void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
+void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
+
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);
 void    bomb_reset(bomb_t *bomb);
@@ -182,8 +182,7 @@ void    bomb_clear_explosion(bomb_t *bomb);
 void    bomb_update(t_game_state *game);
 void    bomb_begin_explosion(t_game_state *game);
 void    bomb_update_explosion(t_game_state *game);
-void    place_player_bomb(t_game_state *game, const player_t *player);
-
+void place_player_bomb(t_game_state *game, const player_t *player);
 bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y);
 
 #endif /* LCOM_PROJECT_GAME_H */

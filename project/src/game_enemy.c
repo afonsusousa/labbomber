@@ -97,8 +97,8 @@ int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t
         return 1;
 
     xpm_image_t img = scaled_sprite_cache[sprite_index];
-    int32_t draw_x = board_start_x + enemy->pos.x - (img.width / 2);
-    int32_t draw_y = board_start_y + enemy->pos.y - (img.height / 2);
+    int32_t draw_x = board_start_x + enemy->pos.x;
+    int32_t draw_y = board_start_y + enemy->pos.y;
 
     hw_vbe_draw_xpm(video, img.bytes, img, draw_x, draw_y);
     return 0;
