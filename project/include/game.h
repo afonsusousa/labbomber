@@ -5,11 +5,11 @@
 #include <stdbool.h>
 
 typedef enum {
-    PLAYER_STANDING = 0,
-    PLAYER_LEFT,
-    PLAYER_RIGHT,
-    PLAYER_BACK
-} player_direction_t;
+    DIR_DOWN = 0,
+    DIR_LEFT = 1,
+    DIR_RIGHT = 2,
+    DIR_UP = 3
+} direction_t;
 
 typedef struct s_tuple {
     int32_t x;
@@ -19,9 +19,9 @@ typedef struct s_tuple {
 typedef struct {
     t_tuple pos;
     t_tuple board_pos;
-    player_direction_t dir;
+    direction_t dir;
 
-    player_direction_t sprite_dir;
+    direction_t sprite_dir;
     uint8_t animation_phase; // 0-3 for the 4 directional sprites
     bool is_moving;
 
@@ -97,6 +97,10 @@ typedef struct s_game_state {
     player_t players[MAX_PLAYERS];
     bomb_t bomb;
 
+    /* Cached player sprite size (pixels) used for entering/collision math */
+    uint32_t player_w;
+    uint32_t player_h;
+
     uint32_t logical_ticks;
     bool is_paused;
 
@@ -119,6 +123,21 @@ void    get_player_start_position(int player_id, uint32_t width, uint32_t height
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
+
+/**
+ * entering_cell - return the adjacent board cell an entity may overlap
+ * when moving in `dir` from pixel position (px,py) with size (w,h).
+ */
+t_tuple entering_cell(const t_game_state *game, direction_t dir, int32_t px, int32_t py, uint32_t w, uint32_t h);
+
+/**
+ * continuous_board_pos - compute a continuous/smoothed board cell for an
+ * entity at pixel position (px,py) moving in `dir`.
+ *
+ * Uses a small hardcoded threshold (offset = tile / 10) to bias rounding
+ * toward the movement direction.
+ */
+t_tuple continuous_board_pos(const t_game_state *game, direction_t dir, int32_t px, int32_t py);
 
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);

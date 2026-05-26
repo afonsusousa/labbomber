@@ -71,6 +71,9 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
         ph = (img_h * pw) / img_w;
     }
 
+    game->player_w = pw;
+    game->player_h = ph;
+
    // --- PLAYER 1 ---
 
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
@@ -81,13 +84,13 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     };
 
     game->players[PLAYER_1].board_pos = spawnpoint;
-    game->players[PLAYER_1].sprite_dir = PLAYER_STANDING;
+    game->players[PLAYER_1].sprite_dir = DIR_DOWN;
     game->players[PLAYER_1].animation_phase = 0;
     game->players[PLAYER_1].is_moving = false;
     game->players[PLAYER_1].stack_count = 0;
 
     game->players[PLAYER_2].pos = (t_tuple) {0, 0};
-    game->players[PLAYER_2].sprite_dir = PLAYER_STANDING;
+    game->players[PLAYER_2].sprite_dir = DIR_DOWN;
     game->players[PLAYER_2].animation_phase = 0;
     game->players[PLAYER_2].is_moving = false;
     game->players[PLAYER_2].stack_count = 0;
