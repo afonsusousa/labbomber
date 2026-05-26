@@ -3,6 +3,7 @@
 #include "assets_cache.h"
 #include "draw.h"
 #include <stddef.h>
+#include <math.h>
 
 void bomb_init(bomb_t *bomb) {
     if (bomb == NULL) return;
@@ -51,22 +52,22 @@ void bomb_update(t_game_state *game) {
     uint32_t elapsed = BOMB_DURATION_TICKS - bomb->bomb_timer;
     uint32_t phase = (elapsed * BOMB_FUSE_PHASES) / BOMB_DURATION_TICKS;
 
-    switch (phase) {
-        case 1:
-        case 3:
-        case 5:
-            bomb->state = BOMB_BLINK;
-            break;
-        case 6:
+    if (phase >= 6) {
+        if (phase == 6) {
             bomb->state = BOMB_EXPLODE;
-            break;
-        case 7:
+        } else {
             bomb->bomb_timer = 0;
-            break;
-        default:
+        }
+    } else {
+        uint32_t blink_speed = (phase < 4) ? 15 : 8; 
+
+        if ((elapsed / blink_speed) % 2 == 0) {
             bomb->state = BOMB_PLACED;
-            break;
+        } else {
+            bomb->state = BOMB_BLINK;
+        }
     }
+
 }
 
 void place_player_bomb(t_game_state *game, const player_t *player) {

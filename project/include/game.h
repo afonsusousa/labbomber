@@ -15,10 +15,6 @@ typedef enum {
     DIR_UP = 3
 } direction_t;
 
-/* Aliases used by the enemy subsystem (enemy branch naming convention) */
-#define DIR_STANDING DIR_DOWN
-#define DIR_BACK     DIR_UP
-
 #ifndef BOARD_ROWS
 #define BOARD_ROWS 11
 #endif
