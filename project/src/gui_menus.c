@@ -233,7 +233,7 @@ static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = GUI(state);
-    game_state_reset(GAME(state));
+    game_state_reset(GAME(state), CTX(state)->real_time);
     GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }

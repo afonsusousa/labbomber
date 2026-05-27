@@ -38,12 +38,7 @@
 #define KB_EXT_PREFIX 0xE0
 
 // Colors
-#define COL_TEAL       0x0410
-#define COL_GRAY       0xC618
-#define COL_LIGHT_GRAY 0xDEFB
-#define COL_DARK_GRAY  0x8410
-#define COL_WHITE      0xFFFF
-#define COL_BLACK      0x0000
+// (Moved to include/widget.h)
 
 // =============================================================================
 // Callback Helper Macros - Clean extraction of context pointers

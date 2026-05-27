@@ -170,9 +170,9 @@ t_widget* widget_first_focusable(t_widget *root) {
 
 void draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, bool sunken) {
     uint32_t tl_outer = sunken ? W95_DARK_GRAY : W95_WHITE;
-    uint32_t tl_inner = sunken ? W95_BLACK : W95_LIGHT_GRAY;
+    uint32_t tl_inner = sunken ? W95_BLACK : W95_GRAY;
     uint32_t br_outer = sunken ? W95_WHITE : W95_BLACK;
-    uint32_t br_inner = sunken ? W95_LIGHT_GRAY : W95_DARK_GRAY;
+    uint32_t br_inner = sunken ? W95_GRAY : W95_DARK_GRAY;
 
     // Outer Top & Left
     hw_vbe_draw_hline(video, x, y, w, tl_outer);

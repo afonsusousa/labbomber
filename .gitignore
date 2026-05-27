@@ -27,3 +27,5 @@ project/.zed/
 project/.vscode/
 project/.minix-src/include/
 project/.idea/
+project/.clangd
+project/compile_commands.json

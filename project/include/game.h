@@ -128,7 +128,7 @@ typedef struct s_game_state {
 } t_game_state;
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);
-void    game_state_reset(t_game_state *game);
+void    game_state_reset(t_game_state *game, struct s_time time);
 void    game_state_destroy(t_game_state *game);
 void    game_state_update(struct s_ctx *ctx);
 void    game_state_handle_click(t_game_state *game, int32_t x, int32_t y);

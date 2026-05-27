@@ -6,22 +6,26 @@
 #include "../lib/vbe/vbe.h"
 
 // Forward declaration
-// Win95 16-bit RGB 5:6:5 Color Palette
-#define W95_TEAL       0x0410 
-#define W95_GRAY       0xC618 
-#define W95_LIGHT_GRAY 0xDEFB 
-#define W95_DARK_GRAY  0x8410 
-#define W95_WHITE      0xFFFF 
-#define W95_BLACK      0x0000 
+// Classic Windows 95 16-bit RGB 5:6:5 Color Palette
+#define W95_GRAY        0xC618  // #C0C0C0
+#define W95_WHITE       0xFFFF  // #FFFFFF
+#define W95_DARK_GRAY   0x8410  // #808080
+#define W95_LIGHT_GRAY  0xDEFB  // #DCDCDC
+#define W95_BLACK       0x0000  // #000000
+#define W95_BLUE        0x0010  // #000080 (Classic Title Bar)
 
-// UI theme palette
+// Simplified UI theme palette
 #define UI_BG_COLOR         W95_DARK_GRAY
 #define UI_PANEL_COLOR      W95_GRAY
-#define UI_PANEL_HOVER      W95_LIGHT_GRAY
-#define UI_PANEL_PRESSED    W95_DARK_GRAY
-#define UI_ACCENT_COLOR     0x0011
-#define UI_TEXT_COLOR       W95_WHITE
-#define UI_TITLE_BAR_COLOR  0x0011
+#define UI_PANEL_HOVER      W95_GRAY
+#define UI_PANEL_PRESSED    W95_GRAY
+#define UI_PANEL_FLASH      W95_LIGHT_GRAY
+#define UI_ACCENT_COLOR     W95_BLUE
+#define UI_TEXT_COLOR       W95_BLACK
+#define UI_TITLE_BAR_COLOR  W95_BLUE
+#define UI_BORDER_LIGHT     W95_WHITE
+#define UI_BORDER_DARK      W95_BLACK
+#define UI_CURSOR_COLOR     W95_BLACK
 
 typedef enum {
     ALIGN_START,
@@ -93,11 +97,11 @@ typedef struct s_widget {
             int32_t     action_delay_timer;
             void        (*on_click_action)(struct s_widget*, void*);
         } button;
-        
+
         struct {
             char        *text;
         } text_display;
-        
+
         struct {
             char        *buffer;
             uint32_t    max_length;
@@ -106,6 +110,8 @@ typedef struct s_widget {
             int32_t     selection_start; // -1 if no selection
             bool        cursor_visible;
             uint32_t    blink_timer;
+            uint32_t    flash_timer;
+            bool        was_focused;
         } text_input;
 
         struct {

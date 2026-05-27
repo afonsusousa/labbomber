@@ -13,53 +13,19 @@
 
 // FUNÇÕES QUE VÃO CONDUZIR O JOGO
 
-// todo: tirar o "struct"
-int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
-    if (game == NULL || width == 0 || height == 0) return 1;
-
-    game_state_destroy(game);
-
-    game->width = width;
-    game->height = height;
+static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
     game->is_paused = false;
-
-    // Cache pre-computed tile size and map draw offsets
-    int32_t max_tile_w = (int32_t)width / BOARD_COLS;
-    int32_t max_tile_h = (int32_t)height / BOARD_ROWS;
-    int32_t tile = max_tile_w < max_tile_h ? max_tile_w : max_tile_h;
-    tile = (tile / BOARD_BASE_TILE_SIZE) * BOARD_BASE_TILE_SIZE;
-    if (tile < BOARD_BASE_TILE_SIZE)
-        tile = BOARD_BASE_TILE_SIZE;
-
-    game->tile_size = tile;
-
-    int32_t board_width = BOARD_COLS * tile;
-    int32_t board_height = BOARD_ROWS * tile;
-    game->start_x = (width - board_width) / 2;
-    game->start_y = (height - board_height) / 2;
+    game->click_count = 0;
 
     generateBoard((char *)game->board, time.day, time.month, time.year);
     set_date_seed(time.day, time.month, time.year);
-
-    // Cache player sizes and animation offsets
-    uint32_t pw = (tile * 8) / 12;
-    uint32_t ph = pw;
-
-    if (sprites_initialized && sprite_cache[SPRITE_PLAYER_1_STANDING].bytes != NULL) {
-        uint32_t img_w = sprite_cache[SPRITE_PLAYER_1_STANDING].width;
-        uint32_t img_h = sprite_cache[SPRITE_PLAYER_1_STANDING].height;
-        ph = (img_h * pw) / img_w;
-    }
-
-    game->player_w = pw;
-    game->player_h = ph;
 
    // --- PLAYER 1 ---
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
 
     game->players[PLAYER_1].pos = (t_tuple) {
-        (spawnpoint.x * game->tile_size) + (game->tile_size / 2), 
+        (spawnpoint.x * game->tile_size) + (game->tile_size / 2),
         (spawnpoint.y * game->tile_size) + (game->tile_size / 2)
     };
 
@@ -112,22 +78,56 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
         enemy->animation_phase = 0;
     }
 
-    game->click_count = 0;
-
     bomb_init(&game->bomb);
+}
+
+int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
+    if (game == NULL || width == 0 || height == 0) return 1;
+
+    game_state_destroy(game);
+
+    game->width = width;
+    game->height = height;
+
+    // Cache pre-computed tile size and map draw offsets
+    int32_t max_tile_w = (int32_t)width / BOARD_COLS;
+    int32_t max_tile_h = (int32_t)height / BOARD_ROWS;
+    int32_t tile = max_tile_w < max_tile_h ? max_tile_w : max_tile_h;
+    tile = (tile / BOARD_BASE_TILE_SIZE) * BOARD_BASE_TILE_SIZE;
+    if (tile < BOARD_BASE_TILE_SIZE)
+        tile = BOARD_BASE_TILE_SIZE;
+
+    game->tile_size = tile;
+
+    int32_t board_width = BOARD_COLS * tile;
+    int32_t board_height = BOARD_ROWS * tile;
+    game->start_x = (width - board_width) / 2;
+    game->start_y = (height - board_height) / 2;
+
+    // Cache player sizes and animation offsets
+    uint32_t pw = (tile * 8) / 12;
+    uint32_t ph = pw;
+
+    if (sprites_initialized && sprite_cache[SPRITE_PLAYER_1_STANDING].bytes != NULL) {
+        uint32_t img_w = sprite_cache[SPRITE_PLAYER_1_STANDING].width;
+        uint32_t img_h = sprite_cache[SPRITE_PLAYER_1_STANDING].height;
+        ph = (img_h * pw) / img_w;
+    }
+
+    game->player_w = pw;
+    game->player_h = ph;
+
+    _game_state_prepare_match(game, time);
 
     scale_all_game_sprites(game->tile_size, pw, ph, MAX_PLAYERS);
 
     return 0;
 }
 
-void game_state_reset(t_game_state *game)
+void game_state_reset(t_game_state *game, t_time time)
 {
     if (game == NULL) return;
-
-    game->logical_ticks = 0;
-    game->is_paused = false;
-    bomb_reset(&game->bomb);
+    _game_state_prepare_match(game, time);
 }
 
 void game_state_destroy(t_game_state *game) {
@@ -141,10 +141,10 @@ void game_state_destroy(t_game_state *game) {
 
 void game_state_update(t_ctx *ctx) {
     if (ctx == NULL) return;
-    
+
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &ctx->game.players[i];
-        
+
         update_player_movement(&ctx->game, player);
         update_player_animation(player, ctx->game.logical_ticks);
     }

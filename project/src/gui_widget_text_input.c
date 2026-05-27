@@ -193,12 +193,32 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
 
 static void _callback_text_input_on_tick(struct s_widget *self, void *state) {
     (void)state;
+    if (WIDGET_IS_CLICKED(self)) {
+        self->data.text_input.flash_timer = 2; // Keep it active while pressed
+    }
+    if (self->data.text_input.flash_timer > 0) {
+        self->data.text_input.flash_timer--;
+    }
     if (WIDGET_IS_FOCUSED(self)) {
+        if (!self->data.text_input.was_focused) {
+            if (self->data.text_input.buffer != NULL) {
+                self->data.text_input.len = strlen(self->data.text_input.buffer);
+            }
+            self->data.text_input.selection_start = 0;
+            self->data.text_input.cursor_pos = self->data.text_input.len;
+            self->data.text_input.cursor_visible = true;
+            self->data.text_input.blink_timer = 0;
+            self->data.text_input.was_focused = true;
+        }
         if (++self->data.text_input.blink_timer >= 45) {
             self->data.text_input.cursor_visible = !self->data.text_input.cursor_visible;
             self->data.text_input.blink_timer = 0;
         }
     } else {
+        if (self->data.text_input.was_focused) {
+            self->data.text_input.selection_start = -1;
+            self->data.text_input.was_focused = false;
+        }
         self->data.text_input.cursor_visible = false;
         self->data.text_input.blink_timer = 0;
     }
@@ -213,6 +233,7 @@ static void _callback_text_input_on_quit(struct s_widget *self, void *state) {
 static void _callback_text_input_on_press(struct s_widget *self, void *state) {
     t_gui *gui = GUI(state);
 
+    self->data.text_input.flash_timer = 5;
     self->data.text_input.cursor_pos = get_pos_from_mouse(self, gui);
     self->data.text_input.selection_start = self->data.text_input.cursor_pos;
     gui_begin_drag(gui, self, gui->input.mouse_x, gui->input.mouse_y);
@@ -234,15 +255,17 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
     uint32_t y = self->abs_y;
 
     uint32_t base_color = UI_PANEL_COLOR;
-    if (WIDGET_IS_CLICKED(self) || WIDGET_IS_FOCUSED(self)) {
-        base_color = UI_PANEL_HOVER;
+    if (self->data.text_input.flash_timer > 0) {
+        base_color = UI_PANEL_FLASH;
+    } else if (WIDGET_IS_FOCUSED(self)) {
+        base_color = UI_PANEL_COLOR;
     } else if (WIDGET_IS_HOVERED(self)) {
         base_color = UI_PANEL_HOVER;
     }
     hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);
     draw_win95_border(video, x, y, self->width, self->height, true);
     if (WIDGET_IS_FOCUSED(self) || WIDGET_IS_HOVERED(self)) {
-        draw_focus_outline(video, x, y, self->width, self->height, UI_ACCENT_COLOR);
+        draw_focus_outline(video, x + 2, y + 2, self->width - 4, self->height - 4, UI_ACCENT_COLOR);
     }
 
     char *buf = self->data.text_input.buffer;
@@ -276,8 +299,8 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
         if (visible && WIDGET_IS_FOCUSED(self)) {
             uint32_t cur_x = x + (cursor * 11);
 
-            hw_vbe_draw_vline(video, cur_x, y, 11, W95_BLACK);
-            hw_vbe_draw_vline(video, cur_x + 1, y, 11, W95_BLACK);
+            hw_vbe_draw_vline(video, cur_x, y, 11, UI_CURSOR_COLOR);
+            hw_vbe_draw_vline(video, cur_x + 1, y, 11, UI_CURSOR_COLOR);
         }
     }
 }
@@ -296,6 +319,8 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
     self->data.text_input.selection_start = -1;
     self->data.text_input.cursor_visible = false;
     self->data.text_input.blink_timer = 0;
+    self->data.text_input.flash_timer = 0;
+    self->data.text_input.was_focused = false;
 
     self->on_click = on_click;
     self->on_press = _callback_text_input_on_press;
