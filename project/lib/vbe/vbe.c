@@ -6,14 +6,6 @@
 #include <string.h>
 #include <sys/mman.h>
 
-// Inline helper to resolve color endianness and alignment instantly
-static inline uint32_t get_pixel_color(uint8_t *src, uint8_t bpp) {
-    if (bpp == 4) return *(uint32_t *)src;
-    if (bpp == 2) return *(uint16_t *)src;
-    // 24-bit fallback (ensures correct byte order)
-    return src[0] | (src[1] << 8) | (src[2] << 16);
-}
-
 static int map_video_memory(hw_video_t *video, uint16_t mode) {
     vbe_mode_info_t vmi;
     struct minix_mem_range mr;
@@ -82,11 +74,7 @@ int hw_vbe_draw_pixel(hw_video_t *video, int32_t x, int32_t y, uint32_t color) {
     if (x < 0 || y < 0 || (uint32_t)x >= video->screen_width || (uint32_t)y >= video->screen_height) return 0;
 
     uint8_t *pixel_ptr = video->fast_buffer + (y * video->bytes_per_scanline) + (x * video->bytes_per_pixel);
-
-    if (video->bytes_per_pixel == 4) *(uint32_t *)pixel_ptr = color;
-    else if (video->bytes_per_pixel == 2) *(uint16_t *)pixel_ptr = (uint16_t)color;
-    else memcpy(pixel_ptr, &color, video->bytes_per_pixel);
-
+    vbe_set_pixel_color(pixel_ptr, color, video->bytes_per_pixel);
     return 0;
 }
 
@@ -111,7 +99,7 @@ int hw_vbe_draw_hline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, 
         while (draw_len--) *p++ = (uint16_t)color;
     } else {
         while (draw_len--) {
-            memcpy(dst, &color, video->bytes_per_pixel);
+            vbe_set_pixel_color(dst, color, video->bytes_per_pixel);
             dst += video->bytes_per_pixel;
         }
     }
@@ -137,7 +125,7 @@ int hw_vbe_draw_vline(hw_video_t *video, int32_t x, int32_t y, uint16_t length, 
     } else if (video->bytes_per_pixel == 2) {
         while (count--) { *(uint16_t *)pixel_ptr = (uint16_t)color; pixel_ptr += stride; }
     } else {
-        while (count--) { memcpy(pixel_ptr, &color, video->bytes_per_pixel); pixel_ptr += stride; }
+        while (count--) { vbe_set_pixel_color(pixel_ptr, color, video->bytes_per_pixel); pixel_ptr += stride; }
     }
     return 0;
 }
@@ -190,11 +178,9 @@ int hw_vbe_draw_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int32_t x,
         uint8_t *dst_ptr = video->fast_buffer + ((y + i) * video->bytes_per_scanline) + ((x + x0) * bpp);
 
         for (int32_t j = x0; j < x1; j++) {
-            uint32_t color = get_pixel_color(src_ptr, bpp);
+            uint32_t color = vbe_get_pixel_color(src_ptr, bpp);
             if (color != trans) {
-                if (bpp == 4) *(uint32_t *)dst_ptr = color;
-                else if (bpp == 2) *(uint16_t *)dst_ptr = (uint16_t)color;
-                else memcpy(dst_ptr, &color, bpp);
+                vbe_set_pixel_color(dst_ptr, color, bpp);
             }
             src_ptr += bpp;
             dst_ptr += bpp;
@@ -220,11 +206,7 @@ int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, in
     for (uint32_t sy = 0; sy < img.height; sy++) {
         for (uint32_t sx = 0; sx < img.width; sx++) {
             uint8_t *src_ptr = map + ((sy * img.width + sx) * bpp);
-            
-            uint32_t color = 0;
-            if (bpp == 4) color = *(uint32_t *)src_ptr;
-            else if (bpp == 2) color = *(uint16_t *)src_ptr;
-            else memcpy(&color, src_ptr, bpp);
+            uint32_t color = vbe_get_pixel_color(src_ptr, bpp);
 
             if (color == trans) continue;
 
@@ -254,10 +236,7 @@ int hw_vbe_draw_rotated_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, in
             if (dx < 0 || dy < 0 || (uint32_t)dx >= video->screen_width || (uint32_t)dy >= video->screen_height) continue;
 
             uint8_t *dst_ptr = video->fast_buffer + (dy * video->bytes_per_scanline) + (dx * bpp);
-            
-            if (bpp == 4) *(uint32_t *)dst_ptr = color;
-            else if (bpp == 2) *(uint16_t *)dst_ptr = (uint16_t)color;
-            else memcpy(dst_ptr, &color, bpp);
+            vbe_set_pixel_color(dst_ptr, color, bpp);
         }
     }
 
@@ -283,14 +262,29 @@ int hw_vbe_draw_scaled_xpm(hw_video_t *video, uint8_t *map, xpm_image_t img, int
         for (int32_t sx = x_start; sx < x_end; sx++) {
             uint32_t src_x = (sx * img.width) / target_width;
             uint8_t *src_ptr = src_row + (src_x * bpp);
-            uint32_t color = get_pixel_color(src_ptr, bpp);
+            uint32_t color = vbe_get_pixel_color(src_ptr, bpp);
 
             if (color != trans) {
                 uint8_t *dst_ptr = dst_row + (sx * bpp);
-                if (bpp == 4) *(uint32_t *)dst_ptr = color;
-                else if (bpp == 2) *(uint16_t *)dst_ptr = (uint16_t)color;
-                else memcpy(dst_ptr, &color, bpp);
+                vbe_set_pixel_color(dst_ptr, color, bpp);
             }
+        }
+    }
+    return 0;
+}
+
+int vbe_scale_img(uint8_t *src, uint8_t *dst, uint32_t src_w, uint32_t src_h, uint32_t dst_w, uint32_t dst_h, uint8_t bpp) {
+    if (!src || !dst || dst_w == 0 || dst_h == 0) return 1;
+
+    for (uint32_t dy = 0; dy < dst_h; dy++) {
+        uint32_t sy = (dy * src_h) / dst_h;
+        uint8_t *src_row = src + (sy * src_w * bpp);
+        uint8_t *dst_row = dst + (dy * dst_w * bpp);
+
+        for (uint32_t dx = 0; dx < dst_w; dx++) {
+            uint32_t sx = (dx * src_w) / dst_w;
+            uint32_t color = vbe_get_pixel_color(src_row + (sx * bpp), bpp);
+            vbe_set_pixel_color(dst_row + (dx * bpp), color, bpp);
         }
     }
     return 0;

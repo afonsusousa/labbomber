@@ -3,6 +3,7 @@
 #include "glyphs.h"
 #include "assets_player.h"
 #include "assets_enemy.h"
+#include "../lib/vbe/vbe.h"
 #include <lcom/xpm.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -41,7 +42,7 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)explosion_5_arm, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_5_ARM]);
     xpm_load((xpm_map_t)explosion_5_center, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_5_CENTER]);
     xpm_load((xpm_map_t)explosion_5_hand, XPM_5_6_5, &sprite_cache[SPRITE_EXPLOSION_5_HAND]);
-    
+
     /* Load player assets */
     xpm_load((xpm_map_t)player_1_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_1_STANDING]);
     xpm_load((xpm_map_t)player_1_left_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_1_LEFT]);
@@ -98,30 +99,14 @@ void init_sprite_cache() {
     sprites_initialized = true;
 }
 
-static uint32_t get_pixel_color(uint8_t *ptr, uint8_t bpp) {
-    if (bpp == 2) return *(uint16_t *)ptr;
-    if (bpp == 4) return *(uint32_t *)ptr;
-    uint32_t color = 0;
-    for (int i = 0; i < bpp; i++) color |= (ptr[i] << (i * 8));
-    return color;
-}
-
-static void set_pixel_color(uint8_t *ptr, uint8_t bpp, uint32_t color) {
-    if (bpp == 2) *(uint16_t *)ptr = (uint16_t)color;
-    else if (bpp == 4) *(uint32_t *)ptr = color;
-    else {
-        for (int i = 0; i < bpp; i++) ptr[i] = (color >> (i * 8)) & 0xFF;
-    }
-}
-
 void scale_cached_sprite(int index, uint32_t target_w, uint32_t target_h, uint8_t bpp) {
     if (index < 0 || index >= SPRITE_CACHE_SIZE || sprite_cache[index].bytes == NULL) return;
-    
+
     // Free previously scaled image if present
     if (scaled_sprite_cache[index].bytes != NULL && scaled_sprite_cache[index].bytes != sprite_cache[index].bytes) {
         free(scaled_sprite_cache[index].bytes);
     }
-    
+
     // If no scaling needed
     if (target_w == sprite_cache[index].width && target_h == sprite_cache[index].height) {
         scaled_sprite_cache[index] = sprite_cache[index]; // Note: bytes pointer points to original, shouldn't be freed
@@ -132,22 +117,10 @@ void scale_cached_sprite(int index, uint32_t target_w, uint32_t target_h, uint8_
     xpm_image_t scaled = orig;
     scaled.width = target_w;
     scaled.height = target_h;
-    
+
     scaled.bytes = malloc(target_w * target_h * bpp);
     if (!scaled.bytes) return;
-
-    for (uint32_t y = 0; y < target_h; y++) {
-        uint32_t src_y = (y * orig.height) / target_h;
-        uint8_t *src_row = orig.bytes + (src_y * orig.width * bpp);
-        uint8_t *dst_row = scaled.bytes + (y * target_w * bpp);
-
-        for (uint32_t x = 0; x < target_w; x++) {
-            uint32_t src_x = (x * orig.width) / target_w;
-            uint32_t color = get_pixel_color(src_row + (src_x * bpp), bpp);
-            set_pixel_color(dst_row + (x * bpp), bpp, color);
-        }
-    }
-    
+    vbe_scale_img(orig.bytes, scaled.bytes, orig.width, orig.height, target_w, target_h, bpp);
     scaled_sprite_cache[index] = scaled;
 }
 
