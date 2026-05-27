@@ -832,3 +832,29 @@ static char *wall3[] = {
 "OX. ........ ...",
 "X.. ......... .."
 };
+
+/* Heart */
+static char *heart[] = {
+"15 15 6 1 ",
+"  c None",
+". c #000000",
+"X c #AB0B0B",
+"o c #DA0505",
+"O c #D50909",
+"+ c #FFFFFF",
+"   ...   ...   ",
+"  .OOO. .OOO.  ",
+" .OOOOO.OOOOO. ",
+" .OO+OOOOOOOO. ",
+".OO+OOOOOOOOOO.",
+".O+OOOOOOOOOOO.",
+".oOOOOOOOOOOOO.",
+" .XOOOOOOOOOX. ",
+" .XXOOOOOOOXX. ",
+"  .XXOOOOOXX.  ",
+"   .XXOOOXX.   ",
+"    .XXOXX.    ",
+"     .XXX.     ",
+"      .X.      ",
+"       .       "
+};
