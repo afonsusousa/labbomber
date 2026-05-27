@@ -110,3 +110,29 @@ t_tuple continuous_board_pos(const t_game_state *game, direction_t dir, int32_t 
 
     return out;
 }
+
+bool entity_overlaps(t_tuple pos_a, uint32_t w_a, uint32_t h_a, t_tuple pos_b, uint32_t w_b, uint32_t h_b) {
+    int32_t a_left   = pos_a.x - (int32_t)(w_a / 2);
+    int32_t a_right  = pos_a.x + (int32_t)(w_a / 2);
+    int32_t a_top    = pos_a.y - (int32_t)(h_a / 2);
+    int32_t a_bottom = pos_a.y + (int32_t)(h_a / 2);
+
+    int32_t b_left   = pos_b.x - (int32_t)(w_b / 2);
+    int32_t b_right  = pos_b.x + (int32_t)(w_b / 2);
+    int32_t b_top    = pos_b.y - (int32_t)(h_b / 2);
+    int32_t b_bottom = pos_b.y + (int32_t)(h_b / 2);
+
+    return !(a_right < b_left || b_right < a_left || a_bottom < b_top || b_bottom < a_top);
+}
+
+bool player_collides_with_enemy(const t_game_state *game, const player_t *player) {
+    if (game == NULL || player == NULL) return false;
+
+    for (int i = 0; i < game->enemy_count; i++) {
+        const enemy_t *enemy = &game->enemies[i];
+        if (!enemy->active) continue;
+
+        if (entity_overlaps(player->pos, game->player_w, game->player_h, enemy->pos,  game->player_w, game->player_h)) return true;
+    }
+    return false;
+}

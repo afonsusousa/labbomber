@@ -16,13 +16,15 @@
 static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
     game->is_paused = false;
-    game->click_count = 0;
-
+    //game->click_count = 0; tem de estar depois escolher as coords do player
+    game->debug_mode = false;
     generateBoard((char *)game->board, time.day, time.month, time.year);
     set_date_seed(time.day, time.month, time.year);
 
    // --- PLAYER 1 ---
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
+
+   game->click_count = 0; // aqui
 
     game->players[PLAYER_1].pos = (t_tuple) {
         (spawnpoint.x * game->tile_size) + (game->tile_size / 2),
@@ -141,6 +143,12 @@ void game_state_destroy(t_game_state *game) {
 
 void game_state_update(t_ctx *ctx) {
     if (ctx == NULL) return;
+
+    if (player_collides_with_enemy(&ctx->game, &ctx->game.players[0])) {
+        ctx->game.debug_mode = true;
+    } else {
+        ctx->game.debug_mode = false;
+    }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &ctx->game.players[i];

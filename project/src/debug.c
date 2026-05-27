@@ -63,4 +63,9 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game) 
 
     snprintf(line, sizeof(line), "Click Count: (%d)", game.click_count);
     draw_string(video, line, x, y, 0x000000);
+
+    y+=14;
+
+    snprintf(line, sizeof(line), "Collide: (%c)", game.debug_mode ? 'D' : 'N');
+    draw_string(video, line, x, y, 0x000000);
 }

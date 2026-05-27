@@ -124,6 +124,7 @@ typedef struct s_game_state {
 
     uint32_t logical_ticks;
     uint32_t click_count;
+    bool debug_mode;
     bool is_paused;
 } t_game_state;
 
@@ -138,9 +139,12 @@ void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
 // Entity helpers
-bool   collision(uint8_t *board, t_tuple pos);
+bool    collision(uint8_t *board, t_tuple pos);
 direction_t opposite_dir(direction_t dir);
-int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]);
+int     get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]);
+bool    entity_overlaps(t_tuple pos_a, uint32_t w_a, uint32_t h_a, t_tuple pos_b, uint32_t w_b, uint32_t h_b);
+bool    player_collides_with_enemy(const t_game_state *game, const player_t *player);
+
 
 // Player movement helpers
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
@@ -178,7 +182,7 @@ void    bomb_clear_explosion(bomb_t *bomb);
 void    bomb_update(t_game_state *game);
 void    bomb_begin_explosion(t_game_state *game);
 void    bomb_update_explosion(t_game_state *game);
-void place_player_bomb(t_game_state *game, const player_t *player);
-bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y);
+void    place_player_bomb(t_game_state *game, const player_t *player);
+bool    explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y);
 
 #endif /* LCOM_PROJECT_GAME_H */
