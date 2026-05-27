@@ -20,9 +20,9 @@ static void _callback_dialog_on_drag(t_widget *self, void *state);
 
 void draw_text(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, W95_LIGHT_GRAY);
+    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, UI_PANEL_COLOR);
     if (self->data.text_display.text != NULL) {
-        draw_string(video, self->data.text_display.text, self->abs_x + 4, self->abs_y + 4, W95_LIGHT_GRAY);
+        draw_string(video, self->data.text_display.text, self->abs_x + 4, self->abs_y + 4, UI_PANEL_COLOR);
     }
 }
 
@@ -70,12 +70,22 @@ void draw_button(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
     uint32_t abs_x = self->abs_x;
     uint32_t abs_y = self->abs_y;
-    
-    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
+
+    bool pressed = WIDGET_IS_CLICKED(self);
+    bool hovered = WIDGET_IS_HOVERED(self);
+
+    uint32_t fill = UI_PANEL_COLOR;
+    if (pressed) {
+        fill = UI_PANEL_PRESSED;
+    } else if (hovered) {
+        fill = UI_PANEL_HOVER;
+    }
+
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, fill);
     draw_win95_border(video, 
         abs_x, abs_y,
         self->width, self->height, 
-        WIDGET_IS_CLICKED(self) && WIDGET_IS_FOCUSED(self)
+        pressed
     );
 
     if (self->data.button.label != NULL) {
@@ -84,17 +94,11 @@ void draw_button(t_widget *self, hw_video_t *video, void *state) {
         int text_y = abs_y + (self->height - 11) / 2;
 
         if (WIDGET_IS_CLICKED(self)) { text_x += 1; text_y += 1;}
-        draw_string(video, self->data.button.label, text_x, text_y, W95_GRAY);
-        if (WIDGET_IS_FOCUSED(self) && self->focus_cue) {
-            int focus_x = text_x - 4;
-            int focus_y = text_y - 4;
-            int focus_w = text_w + 4;
-            int focus_h = 11 + 4;
-            hw_vbe_draw_hline(video, focus_x, focus_y, focus_w, W95_BLACK);
-            hw_vbe_draw_hline(video, focus_x, focus_y + focus_h - 1, focus_w, W95_BLACK);
-            hw_vbe_draw_vline(video, focus_x, focus_y, focus_h, W95_BLACK);
-            hw_vbe_draw_vline(video, focus_x + focus_w - 1, focus_y, focus_h, W95_BLACK);
-        }
+        draw_string(video, self->data.button.label, text_x, text_y, fill);
+    }
+
+    if (hovered || WIDGET_IS_FOCUSED(self)) {
+        draw_focus_outline(video, abs_x, abs_y, self->width, self->height, UI_ACCENT_COLOR);
     }
 }
 
@@ -121,7 +125,7 @@ t_widget* widget_add_button(t_widget *parent, int32_t x, int32_t y, uint32_t w, 
 
 void draw_canvas(t_widget *self, hw_video_t *video, void *state) {
     (void)state;
-    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, 0x000000);
+    hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, UI_BG_COLOR);
 }
 
 /* 
@@ -158,14 +162,14 @@ void draw_dialog(t_widget *self, hw_video_t *video, void *state) {
     uint32_t abs_x = self->abs_x;
     uint32_t abs_y = self->abs_y;
     
-    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, W95_GRAY);
+    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, UI_PANEL_COLOR);
     
     // dialog windows are always raised
     draw_win95_border(video, abs_x, abs_y, self->width, self->height, false);
 
     if (self->data.dialog.title != NULL) {
-        hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, 0x000080); // Title bar background
-        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, 0x000080);
+        hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, UI_TITLE_BAR_COLOR); // Title bar background
+        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, UI_TEXT_COLOR);
     }
 }
 

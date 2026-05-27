@@ -40,7 +40,6 @@ typedef struct s_state {
 
     hw_rtc_t *rtc;
     hw_video_t *video;
-    bool show_focus_cues;
 
 } t_gui;
 

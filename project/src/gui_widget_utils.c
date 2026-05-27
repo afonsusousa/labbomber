@@ -193,6 +193,15 @@ void draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint
     }
 }
 
+void draw_focus_outline(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, uint32_t color) {
+    if (w < 4 || h < 4) return;
+
+    hw_vbe_draw_hline(video, x + 1, y + 1, (uint16_t)(w - 2), color);
+    hw_vbe_draw_hline(video, x + 1, y + (int32_t)h - 2, (uint16_t)(w - 2), color);
+    hw_vbe_draw_vline(video, x + 1, y + 1, (uint16_t)(h - 2), color);
+    hw_vbe_draw_vline(video, x + (int32_t)w - 2, y + 1, (uint16_t)(h - 2), color);
+}
+
 void widget_draw(t_widget *widget, hw_video_t *video, void *state) {
     if (widget == NULL || !WIDGET_IS_ACTIVE(widget)) return;
 
@@ -236,6 +245,7 @@ void widget_layout(t_widget *container, uint32_t spacing, uint32_t padding, bool
         total_children_h += (child_count - 1) * spacing;
 
     uint32_t current_y = (container->height > total_children_h) ? (container->height - total_children_h) / 2 : padding;
+    if (current_y < padding) current_y = padding;
 
     child = container->children;
     while (child) {

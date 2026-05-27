@@ -186,7 +186,6 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
             if (target) {
                 WIDGET_SET_CLICKED(target, true);
                 if (WIDGET_CAN_RECEIVE_FOCUS(target)) {
-                    if (gui->input.focused) gui->input.focused->focus_cue = 0; 
                     gui_set_focus(gui, target);
                 }
                 if (target->on_press) target->on_press(target, ctx);

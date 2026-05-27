@@ -14,6 +14,15 @@
 #define W95_WHITE      0xFFFF 
 #define W95_BLACK      0x0000 
 
+// UI theme palette
+#define UI_BG_COLOR         W95_DARK_GRAY
+#define UI_PANEL_COLOR      W95_GRAY
+#define UI_PANEL_HOVER      W95_LIGHT_GRAY
+#define UI_PANEL_PRESSED    W95_DARK_GRAY
+#define UI_ACCENT_COLOR     0x0011
+#define UI_TEXT_COLOR       W95_WHITE
+#define UI_TITLE_BAR_COLOR  0x0011
+
 typedef enum {
     ALIGN_START,
     ALIGN_CENTER,
@@ -78,7 +87,6 @@ typedef struct s_widget {
     struct s_widget *prev;
 
     uint32_t        flags;
-    uint8_t         focus_cue; // 0 false; 1 true; 2 ongoing;
     union {
         struct {
             char        *label;
@@ -98,7 +106,6 @@ typedef struct s_widget {
             int32_t     selection_start; // -1 if no selection
             bool        cursor_visible;
             uint32_t    blink_timer;
-            uint32_t    focus_timer;
         } text_input;
 
         struct {
@@ -130,6 +137,7 @@ t_widget*   widget_find_by_name(t_widget *root, const char *name);
 void        widget_update_abs_coords(t_widget *widget);
 
 void        draw_win95_border(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, bool sunken);
+void        draw_focus_outline(hw_video_t *video, int32_t x, int32_t y, uint16_t w, uint16_t h, uint32_t color);
 
 void        widget_draw(t_widget *widget, hw_video_t *video, void *state);
 void        widget_tick(t_widget *widget, void *state);

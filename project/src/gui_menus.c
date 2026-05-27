@@ -146,7 +146,7 @@ void gui_show_start_menu(struct s_ctx *ctx) {
     widget_add_button(menu, 0, 0, 300, 50, "QUIT", _callback_quit, "start_scoreboard_button");
     menu->on_quit = _callback_quit;
 
-    widget_layout(menu, 30, 100, true);
+    widget_layout(menu, 24, 80, true);
     gui_push_view(gui, menu);
 }
 
@@ -208,7 +208,7 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
 
     widget_add_button(dlg_prompt, 0, 0, 150, 40, "Start", _callback_start_game, "start_game_button");
 
-    widget_layout(dlg_prompt, 20, 40, true);
+    widget_layout(dlg_prompt, 16, 48, true);
     gui_push_overlay(gui, overlay);
 }
 
@@ -262,7 +262,7 @@ void gui_show_pause_menu(struct s_ctx *ctx) {
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "pause_reset_button");
     widget_add_button(pause_dialog, 0, 0, 220, 40, "Main Menu", _callback_return_to_main_menu, "pause_menu_button");
 
-    widget_layout(pause_dialog, 0, 25, true);
+    widget_layout(pause_dialog, 12, 32, true);
     gui_push_overlay(gui, overlay);
 }
 
@@ -292,6 +292,6 @@ void gui_show_scoreboard(struct s_ctx *ctx) {
 
     widget_add_button(scoreboard, 0, 0, 150, 40, "Close", _callback_close_scoreboard, "scoreboard_close_button");
 
-    widget_layout(scoreboard, 16, 48, true);
+    widget_layout(scoreboard, 12, 40, true);
     gui_push_overlay(gui, overlay);
 }

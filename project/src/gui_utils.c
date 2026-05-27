@@ -105,11 +105,6 @@ void gui_handle_tab_navigation(t_gui *gui, bool shift_down) {
         return;
     }
 
-    if (gui->input.focused->focus_cue == 0) {
-        gui->input.focused->focus_cue = 1;
-        return;
-    }
-
     t_widget *next_focus = shift_down
         ? widget_get_prev_focusable_sibling(gui->input.focused)
         : widget_get_next_focusable_sibling(gui->input.focused);
@@ -119,15 +114,11 @@ void gui_handle_tab_navigation(t_gui *gui, bool shift_down) {
     }
 
     gui_set_focus(gui, next_focus);
-    if (next_focus != NULL) {
-        next_focus->focus_cue = 1;
-    }
 }
 
 void gui_push_view(t_gui *gui, t_widget *view) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
-    gui->show_focus_cues = false;
     gui_set_focus(gui, NULL);
     gui->views.view_stack[gui->views.view_count] = view;
     gui->views.is_overlay[gui->views.view_count] = false;
@@ -139,7 +130,6 @@ void gui_push_view(t_gui *gui, t_widget *view) {
 void gui_push_overlay(t_gui *gui, t_widget *overlay) {
     if (gui->views.view_count >= MAX_VIEWS) return;
 
-    gui->show_focus_cues = false;
     gui_set_focus(gui, NULL);
     gui->views.view_stack[gui->views.view_count] = overlay;
     gui->views.is_overlay[gui->views.view_count] = true;

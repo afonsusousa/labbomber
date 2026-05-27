@@ -119,10 +119,8 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
 
     if (scancode == KB_ENTER) {
         t_widget *next_focus = widget_get_next_focusable_sibling(self);
-        self->focus_cue = 0;
         if (next_focus != NULL) {
             gui_set_focus(gui, next_focus);
-            next_focus->focus_cue = 1; // Trigger the flash animation on the new box!
         } else
             gui_set_focus(gui, NULL);
         return;
@@ -235,25 +233,17 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
     uint32_t x = self->abs_x;
     uint32_t y = self->abs_y;
 
-    if (self->focus_cue == 1) {
-        self->focus_cue = 2;
-        self->data.text_input.focus_timer = 15;
-        self->data.text_input.selection_start = 0;
-        self->data.text_input.cursor_pos = self->data.text_input.len;
+    uint32_t base_color = UI_PANEL_COLOR;
+    if (WIDGET_IS_CLICKED(self) || WIDGET_IS_FOCUSED(self)) {
+        base_color = UI_PANEL_HOVER;
+    } else if (WIDGET_IS_HOVERED(self)) {
+        base_color = UI_PANEL_HOVER;
     }
-
-    if (self->data.text_input.focus_timer > 0) {
-        self->data.text_input.focus_timer--;
-    }
-
-    if (!WIDGET_IS_FOCUSED(self)) {
-        self->focus_cue = 0;
-        self->data.text_input.focus_timer = 0;
-    }
-
-    uint32_t base_color = WIDGET_IS_CLICKED(self) || (self->data.text_input.focus_timer > 0) ? W95_LIGHT_GRAY : W95_GRAY;
     hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);
     draw_win95_border(video, x, y, self->width, self->height, true);
+    if (WIDGET_IS_FOCUSED(self) || WIDGET_IS_HOVERED(self)) {
+        draw_focus_outline(video, x, y, self->width, self->height, UI_ACCENT_COLOR);
+    }
 
     char *buf = self->data.text_input.buffer;
 
@@ -272,14 +262,14 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
         if (has_sel) {
             min_s = MIN(anchor, cursor);
             max_s = MIN(MAX(anchor, cursor), strlen(buf));
-            hw_vbe_draw_rect(video, x + (min_s * 11), y, (max_s - min_s) * 11, 11, W95_TEAL);
+            hw_vbe_draw_rect(video, x + (min_s * 11), y, (max_s - min_s) * 11, 11, UI_ACCENT_COLOR);
         }
 
         //characters
         for (uint32_t i = 0; buf[i] != '\0'; i++) {
             bool in_sel = has_sel && (i >= min_s) && (i < max_s);
             char c[2] = { buf[i], '\0' };
-            draw_string(video, c, x + (i * 11), y, in_sel ? W95_TEAL : base_color);
+            draw_string(video, c, x + (i * 11), y, in_sel ? UI_ACCENT_COLOR : base_color);
         }
 
         //Blinking Cursor
@@ -306,7 +296,6 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
     self->data.text_input.selection_start = -1;
     self->data.text_input.cursor_visible = false;
     self->data.text_input.blink_timer = 0;
-    self->data.text_input.focus_timer = 0;
 
     self->on_click = on_click;
     self->on_press = _callback_text_input_on_press;

@@ -33,6 +33,14 @@ CFLAGS += -I${.CURDIR}/lib/vbe
 DPADD += ${LIBLCF}
 LDADD += -llcf
 
+OBJ_PROG = ${.OBJDIR}/${PROG}
+ROOT_PROG = ${.CURDIR}/${PROG}
+
+.END:
+	@if [ -f ${OBJ_PROG} ]; then \
+		cp ${OBJ_PROG} ${ROOT_PROG}; \
+	fi
+
 re: clean all
 
 # Include LCOM's framework
