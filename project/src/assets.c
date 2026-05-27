@@ -1,6 +1,7 @@
 #include "assets_cache.h"
 #include "assets.h"
 #include "glyphs.h"
+#include "assets_background.h"
 #include "assets_player.h"
 #include "assets_enemy.h"
 #include "../lib/vbe/vbe.h"
@@ -95,6 +96,8 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)wall1, XPM_5_6_5, &sprite_cache[SPRITE_WALL1]);
     xpm_load((xpm_map_t)wall2, XPM_5_6_5, &sprite_cache[SPRITE_WALL2]);
     xpm_load((xpm_map_t)wall3, XPM_5_6_5, &sprite_cache[SPRITE_WALL3]);
+
+    xpm_load((xpm_map_t)menu_background_xpm, XPM_5_6_5, &sprite_cache[SPRITE_MENU_BACKGROUND]);
 
     sprites_initialized = true;
 }
