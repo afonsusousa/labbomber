@@ -90,7 +90,7 @@ int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t
 
     int current_phase = enemy->animation_phase % 4;
     int current_direction = enemy->sprite_dir % 4;
-    
+
     int sprite_index = SPRITE_ENEMY_1_STANDING + (current_phase * 4) + current_direction;
 
     if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL)
@@ -162,62 +162,54 @@ void choose_enemy_direction(t_game_state *game, enemy_t *enemy) {
     enemy->dir = valid_dirs[rand() % count];
 }
 
-void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
+static void enemy_on_snap(t_game_state *game, entity_t *enemy) {
+    choose_enemy_direction(game, enemy);
+    enemy->sprite_dir = enemy->dir;
+}
 
-    if (!enemy || !enemy->active || !enemy->is_moving) return;
-    t_tuple new_pos = enemy->pos;
-    int tile = game->tile_size;
-    int half = tile / 2;
-    int speed = 1;
+void enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint) {
+    if (!game || !enemy) return;
 
-    int dx = (enemy->dir == DIR_RIGHT) - (enemy->dir == DIR_LEFT);
-    int dy = (enemy->dir == DIR_DOWN) - (enemy->dir == DIR_UP);
+    enemy->pos.x = (spawnpoint.x * game->tile_size) + (game->tile_size / 2);
+    enemy->pos.y = (spawnpoint.y * game->tile_size) + (game->tile_size / 2);
 
-    new_pos.x += dx * speed;
-    new_pos.y += dy * speed;
+    uint32_t ew = (game->tile_size * 8) / 12;
+    uint32_t eh = ew;
 
-    t_tuple new_board_pos = enemy->board_pos;
-
-    int t = 0;
-
-    if (dx > 0) {
-        new_board_pos.x = (enemy->pos.x - half) / tile + 1;
-        t = new_board_pos.x * tile + half;
-        if (new_pos.x > t) new_pos.x = t;
-    }
-    else if (dx < 0) {
-        new_board_pos.x = (enemy->pos.x - half - 1) / tile;
-        t = new_board_pos.x * tile + half;
-        if (new_pos.x < t) new_pos.x = t;
-    }
-    else if (dy > 0) {
-        new_board_pos.y = (enemy->pos.y - half) / tile + 1;
-        t = new_board_pos.y * tile + half;
-        if (new_pos.y > t) new_pos.y = t;
-    }
-    else if (dy < 0) {
-        new_board_pos.y = (enemy->pos.y - half - 1) / tile;
-        t = new_board_pos.y * tile + half;
-        if (new_pos.y < t) new_pos.y = t;
+    if (sprites_initialized && sprite_cache[SPRITE_ENEMY_1_STANDING].bytes != NULL) {
+        uint32_t img_w = sprite_cache[SPRITE_ENEMY_1_STANDING].width;
+        uint32_t img_h = sprite_cache[SPRITE_ENEMY_1_STANDING].height;
+        eh = (img_h * ew) / img_w;
     }
 
-    if (collision(game->board, new_board_pos)) {
+    enemy->w = ew;
+    enemy->h = eh;
+
+    enemy->board_pos = spawnpoint;
+    enemy->active = true;
+    enemy->is_moving = true;
+
+    direction_t valid_dirs[4];
+    int count = get_valid_directions(game->board, enemy->board_pos, valid_dirs);
+
+    if (count > 0) {
+        direction_t dir = valid_dirs[rand() % count];
+        enemy->dir = dir;
+        enemy->sprite_dir = dir;
+    } else {
+        enemy->dir = DIR_UP;
+        enemy->sprite_dir = DIR_UP;
         enemy->is_moving = false;
-        return;
     }
 
-    int snap_x = ((new_pos.x - half) % tile) == 0;
-    int snap_y = ((new_pos.y - half) % tile) == 0;
+    enemy->animation_phase = 0;
+    enemy->speed = 1;
+    enemy->on_snap = enemy_on_snap;
+}
 
-    if ((dx != 0 && snap_y) || (dy != 0 && snap_x)) {
-        enemy->pos = new_pos;
-        if (snap_x && snap_y) {
-            choose_enemy_direction(game, enemy);
-            enemy->sprite_dir = enemy->dir;
-        }
-    }
-
-    enemy->board_pos = continuous_board_pos(game, enemy->dir, enemy->pos.x, enemy->pos.y);
+void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
+    if (!enemy || !enemy->active || !enemy->is_moving) return;
+    update_entity_movement(game, enemy);
 }
 
 void update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks) {

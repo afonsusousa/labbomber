@@ -60,31 +60,26 @@ typedef struct s_tuple {
     int32_t y;
 } t_tuple;
 
-typedef struct {
-    t_tuple pos;
-    t_tuple board_pos;
-    direction_t dir;
+struct s_game_state;
 
-    direction_t sprite_dir;
-    uint8_t animation_phase; // 0-3 for the 4 directional sprites
-    bool is_moving;
-
-    uint8_t movement_stack[4];
-    uint8_t stack_count;
-} player_t;
-
-typedef struct {
-    t_tuple pos;
-    t_tuple board_pos;
-
+typedef struct s_entity {
+    t_tuple     pos;
+    t_tuple     board_pos;
     direction_t dir;
     direction_t sprite_dir;
+    uint8_t     animation_phase;
+    bool        is_moving;
+    bool        active;
+    uint8_t     movement_stack[4];
+    uint8_t     stack_count;
+    uint8_t     speed;
+    uint32_t    w;
+    uint32_t    h;
+    void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
+} entity_t;
 
-    uint8_t animation_phase;
-
-    bool is_moving;
-    bool active;
-} enemy_t;
+typedef entity_t player_t;
+typedef entity_t enemy_t;
 
 enum {
     EXPLOSION_DIR_RIGHT = 0,
@@ -114,8 +109,6 @@ typedef struct s_game_state {
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     player_t players[MAX_PLAYERS];
-    uint32_t player_w; /* Cached player sprite size (pixels) used for entering/collision math */
-    uint32_t player_h;
 
     enemy_t enemies[MAX_ENEMIES];
     uint8_t enemy_count;
@@ -145,26 +138,28 @@ int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]);
 // Player movement helpers
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
 void    get_player_start_position(int player_id, uint32_t width, uint32_t height, int32_t *out_x, int32_t *out_y);
+void    player_init(t_game_state *game, player_t *player, t_tuple spawnpoint);
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 
 /**
- * entering_cell - return the adjacent board cell an entity may overlap
- * when moving in `dir` from pixel position (px,py) with size (w,h).
+ * get_entering_cell - return the adjacent board cell an entity may overlap
+ * when moving.
  */
-t_tuple entering_cell(const t_game_state *game, direction_t dir, int32_t px, int32_t py, uint32_t w, uint32_t h);
+t_tuple get_entering_cell(const t_game_state *game, const entity_t *entity);
 
 /**
- * continuous_board_pos - compute a continuous/smoothed board cell for an
- * entity at pixel position (px,py) moving in `dir`.
+ * get_board_pos - compute a continuous/smoothed board cell for an entity.
  *
  * Uses a small hardcoded threshold (offset = tile / 10) to bias rounding
  * toward the movement direction.
  */
-t_tuple continuous_board_pos(const t_game_state *game, direction_t dir, int32_t px, int32_t py);
+t_tuple get_board_pos(const t_game_state *game, const entity_t *entity);
+void update_entity_movement(t_game_state *game, entity_t *entity);
 
 // Enemy helpers
+void    enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint);
 int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]); //geração determinística
 bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
 void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
