@@ -23,3 +23,7 @@ bin/
 *~
 
 project/proj/
+project/.zed/
+project/.vscode/
+project/.minix-src/include/
+project/.idea/
