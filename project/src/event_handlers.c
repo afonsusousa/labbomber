@@ -182,17 +182,14 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     if (is_pressed) {
         if (!*clicked) {
             ctx->game.click_count++;
-            *clicked = target;
+            WIDGET_SET_CLICKED(gui, target);
             if (target) {
-                WIDGET_SET_CLICKED(target, true);
                 if (WIDGET_CAN_RECEIVE_FOCUS(target)) {
                     gui_set_focus(gui, target);
                 }
                 if (target->on_press) target->on_press(target, ctx);
             }
         } else {
-            WIDGET_SET_CLICKED(*clicked, true);
-
             t_widget *active_drag = gui->drag.dragged_widget;
             if (active_drag != NULL && active_drag->on_drag != NULL) {
                 active_drag->on_drag(active_drag, ctx);
@@ -200,20 +197,16 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
         }
     } else {
         if (*clicked) {
-            WIDGET_SET_CLICKED(*clicked, false);
-            
             if (*clicked == target && (*clicked)->on_click) {
                 (*clicked)->on_click(*clicked, ctx);
             }
-            *clicked = NULL;
+            WIDGET_SET_CLICKED(gui, NULL);
         }
 
         gui_end_drag(gui);
     }
 
     if (gui->drag.dragged_widget == NULL && *hovered != target) {
-        if (*hovered) WIDGET_SET_HOVERED(*hovered, false);
-        *hovered = target;
-        if (*hovered) WIDGET_SET_HOVERED(*hovered, true);
+        WIDGET_SET_HOVERED(gui, target);
     }
 }

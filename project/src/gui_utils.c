@@ -20,18 +20,15 @@ static void gui_clear_widget_refs(t_gui *gui, t_widget *root) {
     if (gui == NULL || root == NULL) return;
 
     if (widget_is_descendant_of(gui->input.focused, root)) {
-        WIDGET_SET_FOCUSED(gui->input.focused, false);
-        gui->input.focused = NULL;
+        WIDGET_SET_FOCUSED(gui, NULL);
     }
 
     if (widget_is_descendant_of(gui->input.clicked_widget, root)) {
-        WIDGET_SET_CLICKED(gui->input.clicked_widget, false);
-        gui->input.clicked_widget = NULL;
+        WIDGET_SET_CLICKED(gui, NULL);
     }
 
     if (widget_is_descendant_of(gui->input.hovered, root)) {
-        WIDGET_SET_HOVERED(gui->input.hovered, false);
-        gui->input.hovered = NULL;
+        WIDGET_SET_HOVERED(gui, NULL);
     }
 
     if (widget_is_descendant_of(gui->drag.dragged_widget, root)) {
@@ -75,16 +72,9 @@ t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
 }
 
 void gui_set_focus(t_gui *gui, t_widget *widget) {
-    if (gui == NULL || gui->input.focused == widget) return;
+    if (gui == NULL || WIDGET_IS_FOCUSED(gui, widget)) return;
 
-    if (gui->input.focused != NULL) {
-        WIDGET_SET_FOCUSED(gui->input.focused, false);
-    }
-
-    gui->input.focused = widget;
-    if (gui->input.focused != NULL) {
-        WIDGET_SET_FOCUSED(gui->input.focused, true);
-    }
+    WIDGET_SET_FOCUSED(gui, widget);
 }
 
 static t_widget* gui_get_initial_focus(t_widget *root) {

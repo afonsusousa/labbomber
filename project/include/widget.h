@@ -45,9 +45,6 @@ typedef enum {
 
 typedef enum {
     WIDGET_FLAG_ACTIVE  = 1u << 0,
-    WIDGET_FLAG_CLICKED = 1u << 1,
-    WIDGET_FLAG_HOVERED = 1u << 2,
-    WIDGET_FLAG_FOCUSED = 1u << 4,
     WIDGET_FLAG_NO_LAYOUT = 1u << 5,
     WIDGET_FLAG_NO_FOCUS = 1u << 6,
 } e_widget_flag;
@@ -61,14 +58,13 @@ typedef enum {
 #define WIDGET_IS_ACTIVE(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_ACTIVE)
 #define WIDGET_SET_ACTIVE(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_ACTIVE, (value))
 
-#define WIDGET_IS_CLICKED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_CLICKED)
-#define WIDGET_SET_CLICKED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_CLICKED, (value))
+#define WIDGET_IS_FOCUSED(gui, widget) ((gui)->input.focused == (widget))
+#define WIDGET_IS_HOVERED(gui, widget) ((gui)->input.hovered == (widget))
+#define WIDGET_IS_CLICKED(gui, widget) ((gui)->input.clicked_widget == (widget))
 
-#define WIDGET_IS_HOVERED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_HOVERED)
-#define WIDGET_SET_HOVERED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_HOVERED, (value))
-
-#define WIDGET_IS_FOCUSED(widget) WIDGET_HAS_FLAG((widget), WIDGET_FLAG_FOCUSED)
-#define WIDGET_SET_FOCUSED(widget, value) WIDGET_ASSIGN_FLAG((widget), WIDGET_FLAG_FOCUSED, (value))
+#define WIDGET_SET_FOCUSED(gui, widget) ((gui)->input.focused = (widget))
+#define WIDGET_SET_HOVERED(gui, widget) ((gui)->input.hovered = (widget))
+#define WIDGET_SET_CLICKED(gui, widget) ((gui)->input.clicked_widget = (widget))
 
 #define WIDGET_CAN_RECEIVE_FOCUS(widget) \
     ((widget) != NULL && !(WIDGET_HAS_FLAG((widget), WIDGET_FLAG_NO_FOCUS)) && ((widget)->type == BUTTON || (widget)->type == TEXT_INPUT))

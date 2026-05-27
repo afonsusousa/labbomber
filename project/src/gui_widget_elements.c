@@ -55,24 +55,26 @@ static void _callback_button_internal_on_click(t_widget *self, void *state) {
 }
 
 static void _callback_button_on_key_press(t_widget *self, uint8_t scancode, void *state) {
+    t_gui *gui = GUI(state);
     if (scancode == 0x1C) {
-        WIDGET_SET_CLICKED(self, true);
+        WIDGET_SET_CLICKED(gui, self);
     } 
     else if (scancode == 0x9C) {
-        if (WIDGET_IS_CLICKED(self)) {
-            WIDGET_SET_CLICKED(self, false);
+        if (WIDGET_IS_CLICKED(gui, self)) {
+            WIDGET_SET_CLICKED(gui, NULL);
             _callback_button_internal_on_click(self, state);
         }
     }
 }
 
 void draw_button(t_widget *self, hw_video_t *video, void *state) {
-    (void)state;
+    t_gui *gui = GUI(state);
     uint32_t abs_x = self->abs_x;
     uint32_t abs_y = self->abs_y;
 
-    bool pressed = WIDGET_IS_CLICKED(self);
-    bool hovered = WIDGET_IS_HOVERED(self);
+    bool pressed = WIDGET_IS_CLICKED(gui, self);
+    bool hovered = WIDGET_IS_HOVERED(gui, self);
+    bool focused = WIDGET_IS_FOCUSED(gui, self);
 
     uint32_t fill = UI_PANEL_COLOR;
     if (pressed) {
@@ -93,11 +95,11 @@ void draw_button(t_widget *self, hw_video_t *video, void *state) {
         int text_x = abs_x + (self->width - text_w) / 2;
         int text_y = abs_y + (self->height - 11) / 2;
 
-        if (WIDGET_IS_CLICKED(self)) { text_x += 1; text_y += 1;}
+        if (pressed) { text_x += 1; text_y += 1;}
         draw_string(video, self->data.button.label, text_x, text_y, fill);
     }
 
-    if (hovered || WIDGET_IS_FOCUSED(self)) {
+    if (hovered || focused) {
         draw_focus_outline(video, abs_x, abs_y, self->width, self->height, UI_ACCENT_COLOR);
     }
 }

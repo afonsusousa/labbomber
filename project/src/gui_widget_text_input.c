@@ -109,9 +109,9 @@ static uint32_t word_end_offset(const char *buffer, uint32_t cursor_pos) {
 }
 
 static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
-    if (!WIDGET_IS_FOCUSED(self)) return;
-
     t_gui *gui = GUI(state);
+    if (!WIDGET_IS_FOCUSED(gui, self)) return;
+
     if (!IS_MAKE_CODE(scancode)) return;
 
     bool is_shift = gui->input.shift_down;
@@ -192,14 +192,14 @@ static void _callback_text_input_on_key_press(struct s_widget *self, uint8_t sca
 }
 
 static void _callback_text_input_on_tick(struct s_widget *self, void *state) {
-    (void)state;
-    if (WIDGET_IS_CLICKED(self)) {
+    t_gui *gui = GUI(state);
+    if (WIDGET_IS_CLICKED(gui, self)) {
         self->data.text_input.flash_timer = 2; // Keep it active while pressed
     }
     if (self->data.text_input.flash_timer > 0) {
         self->data.text_input.flash_timer--;
     }
-    if (WIDGET_IS_FOCUSED(self)) {
+    if (WIDGET_IS_FOCUSED(gui, self)) {
         if (!self->data.text_input.was_focused) {
             if (self->data.text_input.buffer != NULL) {
                 self->data.text_input.len = strlen(self->data.text_input.buffer);
@@ -250,21 +250,25 @@ static void _callback_text_input_on_drag(struct s_widget *self, void *state) {
 }
 
 void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
-    (void)state;
+    t_gui *gui = GUI(state);
     uint32_t x = self->abs_x;
     uint32_t y = self->abs_y;
+
+    bool focused = WIDGET_IS_FOCUSED(gui, self);
+    bool hovered = WIDGET_IS_HOVERED(gui, self);
+    bool pressed = WIDGET_IS_CLICKED(gui, self);
 
     uint32_t base_color = UI_PANEL_COLOR;
     if (self->data.text_input.flash_timer > 0) {
         base_color = UI_PANEL_FLASH;
-    } else if (WIDGET_IS_FOCUSED(self)) {
+    } else if (focused) {
         base_color = UI_PANEL_COLOR;
-    } else if (WIDGET_IS_HOVERED(self)) {
+    } else if (hovered) {
         base_color = UI_PANEL_HOVER;
     }
     hw_vbe_draw_rect(video, x, y, self->width, self->height, base_color);
     draw_win95_border(video, x, y, self->width, self->height, true);
-    if (WIDGET_IS_FOCUSED(self) || WIDGET_IS_HOVERED(self)) {
+    if (focused || hovered) {
         draw_focus_outline(video, x + 2, y + 2, self->width - 4, self->height - 4, UI_ACCENT_COLOR);
     }
 
@@ -278,7 +282,7 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
         x += 4;
         y += (self->height - 11) / 2;
 
-        bool has_sel = (WIDGET_IS_FOCUSED(self) || WIDGET_IS_CLICKED(self)) && has_selection(self);
+        bool has_sel = (focused || pressed) && has_selection(self);
         uint32_t min_s = 0, max_s = 0;
 
         //Selection Highlight Background
@@ -296,7 +300,7 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
         }
 
         //Blinking Cursor
-        if (visible && WIDGET_IS_FOCUSED(self)) {
+        if (visible && focused) {
             uint32_t cur_x = x + (cursor * 11);
 
             hw_vbe_draw_vline(video, cur_x, y, 11, UI_CURSOR_COLOR);
