@@ -201,3 +201,7 @@ void update_player_animation(player_t *player, uint32_t logical_ticks) {
         }
     }
 }
+
+void update_player_lives(player_t *player, int change) {
+    // Implement life changes later
+}

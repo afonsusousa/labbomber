@@ -96,6 +96,7 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)wall1, XPM_5_6_5, &sprite_cache[SPRITE_WALL1]);
     xpm_load((xpm_map_t)wall2, XPM_5_6_5, &sprite_cache[SPRITE_WALL2]);
     xpm_load((xpm_map_t)wall3, XPM_5_6_5, &sprite_cache[SPRITE_WALL3]);
+    xpm_load((xpm_map_t)heart, XPM_5_6_5, &sprite_cache[SPRITE_HEART]);
 
     xpm_load((xpm_map_t)menu_background_xpm, XPM_5_6_5, &sprite_cache[SPRITE_MENU_BACKGROUND]);
 
@@ -161,6 +162,9 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
     scale_cached_sprite(SPRITE_WALL1, tile_size, tile_size, bpp);
     scale_cached_sprite(SPRITE_WALL2, tile_size, tile_size, bpp);
     scale_cached_sprite(SPRITE_WALL3, tile_size, tile_size, bpp);
+    
+    // hearts
+    scale_cached_sprite(SPRITE_HEART, tile_size, tile_size, bpp);
 
     // Players (looping all 16 states)
     for (int i = 0; i < 16; i++) {

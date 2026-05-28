@@ -4,6 +4,7 @@
 #include "widget.h"
 #include "gui.h"
 #include "draw.h"
+#include "game.h"
 #include "assets_cache.h"
 #include "../lib/keyboard/i8042.h"
 #include <stdio.h>
@@ -24,9 +25,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
    // --- PLAYER 1 ---
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
    player_init(game, &game->players[PLAYER_1], spawnpoint);
+    game->players[PLAYER_1].lives = 3;
 
     // --- PLAYER 2 ---
     player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
+    game->players[PLAYER_2].lives = 3;
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
@@ -129,6 +132,38 @@ void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     update_player_direction(player, key_index, is_make);
 }
 
+void draw_game_lives(hw_video_t *video, t_game_state *game) {
+    if (video == NULL || game == NULL) return;
+    
+    const int base_x = 400;
+    const int base_y = 100;
+    const int spacing = 4;
+    const int max_hearts = 3;
+
+    int lives = game->players[PLAYER_1].lives; // Assuming player 1 for now~
+    if (lives <= 0) return;
+
+    xpm_image_t heart = sprite_cache[SPRITE_HEART];
+    if (heart.bytes == NULL) return;
+    scale_cached_sprite(SPRITE_HEART, 45, 45, 2);  // 2 bytes per pixel para 16-bit color
+    heart = scaled_sprite_cache[SPRITE_HEART];
+
+    int visible = lives;
+    if (visible > max_hearts) visible = max_hearts;
+        
+    for (int i = 0; i < visible; i++) {
+        int32_t x = base_x + i * (heart.width + spacing);
+        int32_t y = base_y;
+        hw_vbe_draw_xpm(video, heart.bytes, heart, x, y);
+    }
+
+    if (lives > max_hearts) {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "x%d", lives);
+        draw_string(video, buffer, base_x + visible * (heart.width + spacing), base_y, 0xFFFFFF);
+    }
+}
+
 void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     if (self == NULL || state == NULL) {
         return;
@@ -164,4 +199,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     for (int i = 0; i < game->enemy_count; i++) {
         draw_enemy(&game->enemies[i], video, game->start_x, game->start_y);
     }
+
+    draw_game_lives(video, game);
 }
+

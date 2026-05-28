@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "../lib/vbe/vbe.h"
 
 struct s_ctx;
 struct s_time;
+struct s_game_state;
 
 typedef enum {
     DIR_DOWN = 0,
@@ -60,8 +62,6 @@ typedef struct s_tuple {
     int32_t y;
 } t_tuple;
 
-struct s_game_state;
-
 typedef struct s_entity {
     t_tuple     pos;
     t_tuple     board_pos;
@@ -75,6 +75,7 @@ typedef struct s_entity {
     uint8_t     speed;
     uint32_t    w;
     uint32_t    h;
+    uint8_t     lives;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
