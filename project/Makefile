@@ -31,4 +31,9 @@ LDADD += -llcf
 
 re: clean all
 
+.END:
+	@if [ -f ${.OBJDIR}/${PROG} ]; then \
+		cp ${.OBJDIR}/${PROG} ${.CURDIR}/${PROG}; \
+	fi
+
 .include <minix.lcom.mk>

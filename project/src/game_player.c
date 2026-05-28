@@ -8,8 +8,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-
-
 static int seed = 0;
 
 void set_date_seed(int day, int month, int year) {
@@ -38,8 +36,8 @@ t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
 int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     if (player == NULL || !sprites_initialized) return 1;
 
-    int current_phase = player->animation_phase % 4; 
-    int current_direction = player->sprite_dir % 4; 
+    int current_phase = player->animation_phase % 4;
+    int current_direction = player->sprite_dir % 4;
 
     int sprite_index = SPRITE_PLAYER_1_STANDING + (current_phase * 4) + current_direction;
 
@@ -72,10 +70,10 @@ static void remove_movement_key(player_t *player, uint8_t key_index) {
     for (int i = 0; i < player->stack_count; i++) {
         if (player->movement_stack[i] == key_index) {
             size_t items_to_move = player->stack_count - 1 - i;
-            
+
             if (items_to_move > 0) {
-                memmove(&player->movement_stack[i], 
-                        &player->movement_stack[i + 1], 
+                memmove(&player->movement_stack[i],
+                        &player->movement_stack[i + 1],
                         items_to_move * sizeof(uint8_t));
             }
             player->stack_count--;
@@ -86,7 +84,7 @@ static void remove_movement_key(player_t *player, uint8_t key_index) {
 
 static void push_movement_key(player_t *player, uint8_t key_index) {
     remove_movement_key(player, key_index);
-    
+
     if (player->stack_count < 4) {
         player->movement_stack[player->stack_count] = key_index;
         player->stack_count++;
@@ -100,14 +98,59 @@ void update_player_direction(player_t *player, uint8_t key, bool is_make) {
 
     if (player->stack_count > 0 && !player->is_moving) {
         uint8_t top_key = player->movement_stack[player->stack_count - 1];
-        
-        player->dir = (top_key == KEY_W) ? DIR_UP : 
-                  (top_key == KEY_A) ? DIR_LEFT : 
+
+        player->dir = (top_key == KEY_W) ? DIR_UP :
+                  (top_key == KEY_A) ? DIR_LEFT :
                   (top_key == KEY_D) ? DIR_RIGHT : DIR_DOWN;
-                      
+
         player->sprite_dir = player->dir; // Visual update since we start moving
         player->is_moving = true;
     }
+}
+
+static void player_on_snap(t_game_state *game, entity_t *player) {
+    (void)game; // Unused
+    if (player->stack_count == 0) {
+        player->is_moving = false;
+    } else {
+        uint8_t top_key = player->movement_stack[player->stack_count - 1];
+
+        player->dir = (top_key == KEY_W) ? DIR_UP :
+                      (top_key == KEY_A) ? DIR_LEFT :
+                      (top_key == KEY_D) ? DIR_RIGHT : DIR_DOWN;
+
+        player->sprite_dir = player->dir;
+    }
+}
+
+void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
+    if (!game || !player) return;
+
+    player->pos = (t_tuple) {
+        (spawnpoint.x * game->tile_size) + (game->tile_size / 2),
+        (spawnpoint.y * game->tile_size) + (game->tile_size / 2)
+    };
+
+    uint32_t pw = (game->tile_size * 8) / 12;
+    uint32_t ph = pw;
+
+    if (sprites_initialized && sprite_cache[SPRITE_PLAYER_1_STANDING].bytes != NULL) {
+        uint32_t img_w = sprite_cache[SPRITE_PLAYER_1_STANDING].width;
+        uint32_t img_h = sprite_cache[SPRITE_PLAYER_1_STANDING].height;
+        ph = (img_h * pw) / img_w;
+    }
+
+    player->w = pw;
+    player->h = ph;
+
+    player->board_pos = spawnpoint;
+    player->sprite_dir = DIR_DOWN;
+    player->dir = DIR_DOWN;
+    player->animation_phase = 0;
+    player->is_moving = false;
+    player->stack_count = 0;
+    player->speed = 4;
+    player->on_snap = player_on_snap;
 }
 
 void update_player_movement(t_game_state *game, player_t *player) {
@@ -116,76 +159,21 @@ void update_player_movement(t_game_state *game, player_t *player) {
     //direction cancelling
     if (player->stack_count > 0) {
         uint8_t top_key = player->movement_stack[player->stack_count - 1];
-        int next_dir = (top_key == KEY_W) ? DIR_UP : 
-                       (top_key == KEY_A) ? DIR_LEFT : 
+        int next_dir = (top_key == KEY_W) ? DIR_UP :
+                       (top_key == KEY_A) ? DIR_LEFT :
                        (top_key == KEY_D) ? DIR_RIGHT : DIR_DOWN;
 
         if ((player->dir == DIR_LEFT && next_dir == DIR_RIGHT) ||
             (player->dir == DIR_RIGHT && next_dir == DIR_LEFT) ||
             (player->dir == DIR_DOWN && next_dir == DIR_UP) ||
             (player->dir == DIR_UP && next_dir == DIR_DOWN)) {
-            
+
             player->dir = next_dir;
             player->sprite_dir = next_dir;
         }
     }
 
-    t_tuple new_pos = player->pos;
-    int tile = game->tile_size, half = tile / 2, speed = 4; 
-
-    int dx = (player->dir == DIR_RIGHT) - (player->dir == DIR_LEFT);
-    int dy = (player->dir == DIR_DOWN) - (player->dir == DIR_UP);
-
-    new_pos.x += dx * speed;
-    new_pos.y += dy * speed;
-
-    t_tuple new_board_pos = player->board_pos;
-    int t = 0;
-
-    if (dx > 0) {
-        new_board_pos.x = (player->pos.x - half) / tile + 1;
-        t = new_board_pos.x * tile + half;
-        if (new_pos.x > t) new_pos.x = t;
-    } else if (dx < 0) {
-        new_board_pos.x = (player->pos.x - half - 1) / tile;
-        t = new_board_pos.x * tile + half;
-        if (new_pos.x < t) new_pos.x = t;
-    } else if (dy > 0) {
-        new_board_pos.y = (player->pos.y - half) / tile + 1;
-        t = new_board_pos.y * tile + half;
-        if (new_pos.y > t) new_pos.y = t;
-    } else if (dy < 0) {
-        new_board_pos.y = (player->pos.y - half - 1) / tile;
-        t = new_board_pos.y * tile + half;
-        if (new_pos.y < t) new_pos.y = t;
-    }
-
-    if (collision(game->board, new_board_pos)){
-        player->is_moving = false;
-        return;
-    }
-
-    int snap_x = ((new_pos.x - half) % tile) == 0;
-    int snap_y = ((new_pos.y - half) % tile) == 0;
-
-    if ((dx != 0 && snap_y) || (dy != 0 && snap_x)) {
-        player->pos = new_pos;
-        if (snap_x && snap_y) {
-            
-            if (player->stack_count == 0) {
-                player->is_moving = false; 
-            } else {
-                uint8_t top_key = player->movement_stack[player->stack_count - 1];
-                
-                player->dir = (top_key == KEY_W) ? DIR_UP : 
-                              (top_key == KEY_A) ? DIR_LEFT : 
-                              (top_key == KEY_D) ? DIR_RIGHT : DIR_DOWN;
-                
-                player->sprite_dir = player->dir;
-            }
-        }
-    }
-    player->board_pos = continuous_board_pos(game, player->dir, player->pos.x, player->pos.y);
+    update_entity_movement(game, player);
 }
 
 void update_player_animation(player_t *player, uint32_t logical_ticks) {

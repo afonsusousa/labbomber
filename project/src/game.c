@@ -23,61 +23,17 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
 
    // --- PLAYER 1 ---
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
-
-   game->click_count = 0; // aqui
-
-    game->players[PLAYER_1].pos = (t_tuple) {
-        (spawnpoint.x * game->tile_size) + (game->tile_size / 2),
-        (spawnpoint.y * game->tile_size) + (game->tile_size / 2)
-    };
-
-    game->players[PLAYER_1].board_pos = spawnpoint;
-    game->players[PLAYER_1].sprite_dir = DIR_DOWN;
-    game->players[PLAYER_1].animation_phase = 0;
-    game->players[PLAYER_1].is_moving = false;
-    game->players[PLAYER_1].stack_count = 0;
+   player_init(game, &game->players[PLAYER_1], spawnpoint);
 
     // --- PLAYER 2 ---
-    game->players[PLAYER_2].pos = (t_tuple) {0, 0};
-    game->players[PLAYER_2].sprite_dir = DIR_DOWN;
-    game->players[PLAYER_2].animation_phase = 0;
-    game->players[PLAYER_2].is_moving = false;
-    game->players[PLAYER_2].stack_count = 0;
+    player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
     game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 4, spawn_out);
 
     for (int i = 0; i < game->enemy_count; i++) {
-
-        enemy_t *enemy = &game->enemies[i];
-
-        enemy->pos.x = (spawn_out[i].x * game->tile_size) + (game->tile_size / 2);
-        enemy->pos.y = (spawn_out[i].y * game->tile_size) + (game->tile_size / 2);
-
-        enemy->board_pos.x = spawn_out[i].x;
-        enemy->board_pos.y = spawn_out[i].y;
-
-        enemy->active = true;
-        enemy->is_moving = true;
-
-        direction_t valid_dirs[4];
-
-        int count = get_valid_directions(game->board, enemy->board_pos, valid_dirs);
-
-        if (count > 0) {
-            direction_t dir = valid_dirs[rand() % count];
-            enemy->dir = dir;
-            enemy->sprite_dir = dir;
-        }
-
-        else {
-            enemy->dir = DIR_UP;
-            enemy->sprite_dir = DIR_UP;
-            enemy->is_moving = false;
-        }
-
-        enemy->animation_phase = 0;
+        enemy_init(game, &game->enemies[i], spawn_out[i]);
     }
 
     bomb_init(&game->bomb);
@@ -106,22 +62,9 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->start_x = (width - board_width) / 2;
     game->start_y = (height - board_height) / 2;
 
-    // Cache player sizes and animation offsets
-    uint32_t pw = (tile * 8) / 12;
-    uint32_t ph = pw;
-
-    if (sprites_initialized && sprite_cache[SPRITE_PLAYER_1_STANDING].bytes != NULL) {
-        uint32_t img_w = sprite_cache[SPRITE_PLAYER_1_STANDING].width;
-        uint32_t img_h = sprite_cache[SPRITE_PLAYER_1_STANDING].height;
-        ph = (img_h * pw) / img_w;
-    }
-
-    game->player_w = pw;
-    game->player_h = ph;
-
     _game_state_prepare_match(game, time);
 
-    scale_all_game_sprites(game->tile_size, pw, ph, MAX_PLAYERS);
+    scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].w, game->players[PLAYER_1].h, MAX_PLAYERS);
 
     return 0;
 }
