@@ -8,6 +8,7 @@
 
 struct s_ctx;
 struct s_time;
+struct s_game_state;
 
 typedef enum {
     DIR_DOWN = 0,
@@ -61,20 +62,6 @@ typedef struct s_tuple {
     int32_t y;
 } t_tuple;
 
-typedef struct {
-    t_tuple pos;
-    t_tuple board_pos;
-    direction_t dir;
-
-    direction_t sprite_dir;
-    uint8_t animation_phase; // 0-3 for the 4 directional sprites
-    bool is_moving;
-
-    uint8_t movement_stack[4];
-    uint8_t stack_count;
-    uint8_t lives;
-} player_t;
-
 typedef struct s_entity {
     t_tuple     pos;
     t_tuple     board_pos;
@@ -88,6 +75,7 @@ typedef struct s_entity {
     uint8_t     speed;
     uint32_t    w;
     uint32_t    h;
+    uint8_t     lives;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
