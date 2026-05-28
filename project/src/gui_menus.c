@@ -1,4 +1,6 @@
 #include "gui.h"
+#include "assets_cache.h"
+#include <lcom/xpm.h>
 #include "game.h"
 #include "application.h"
 #include <stdio.h>
@@ -135,10 +137,24 @@ static void _callback_show_scoreboard(t_widget *self, void *state) {
     gui_show_scoreboard(CTX(state));
 }
 
+static void _draw_start_menu(t_widget *self, hw_video_t *video, void *state) {
+    (void)state;
+    if (sprites_initialized && sprite_cache[SPRITE_MENU_BACKGROUND].bytes != NULL) {
+        xpm_image_t bg = sprite_cache[SPRITE_MENU_BACKGROUND];
+        hw_vbe_draw_xpm(video, bg.bytes, bg,
+            self->abs_x + (int32_t)(bg.width / 2),
+            self->abs_y + (int32_t)(bg.height / 2));
+    } else {
+        hw_vbe_draw_rect(video, self->abs_x, self->abs_y, self->width, self->height, UI_BG_COLOR);
+    }
+}
+
 void gui_show_start_menu(struct s_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     t_widget *menu = widget_create(CANVAS, 0, 0, gui->width, gui->height, "start_menu_view");
     if (menu == NULL) return;
+
+    menu->draw = _draw_start_menu;
 
     widget_add_button(menu, 0, 0, 300, 50, "Singleplayer", _callback_show_singleplayer_name_menu, "start_single_button");
     widget_add_button(menu, 0, 0, 300, 50, "Multiplayer", _callback_show_multiplayer_name_menu, "start_multi_button");

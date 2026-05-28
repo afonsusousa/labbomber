@@ -82,6 +82,7 @@ extern bool sprites_initialized;
 #define SPRITE_ENEMY_4_LEFT         190
 #define SPRITE_ENEMY_4_RIGHT        191
 #define SPRITE_ENEMY_4_BACK         192
+#define SPRITE_MENU_BACKGROUND      193
 
 static const int explosion_center_sprites[] = {
     SPRITE_EXPLOSION_1_CENTER,
