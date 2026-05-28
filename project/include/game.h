@@ -139,9 +139,6 @@ void    game_state_handle_key_press(t_game_state *game, uint8_t scancode);
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
-// Drawing lives
-void    draw_game_lives(hw_video_t *video, t_game_state *game);
-
 // Entity helpers
 bool   collision(uint8_t *board, t_tuple pos);
 direction_t opposite_dir(direction_t dir);

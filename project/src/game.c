@@ -194,6 +194,8 @@ void draw_game_lives(hw_video_t *video, t_game_state *game) {
 
     xpm_image_t heart = sprite_cache[SPRITE_HEART];
     if (heart.bytes == NULL) return;
+    scale_cached_sprite(SPRITE_HEART, 45, 45, 2);  // 2 bytes per pixel para 16-bit color
+    heart = scaled_sprite_cache[SPRITE_HEART];
 
     int visible = lives;
     if (visible > max_hearts) visible = max_hearts;
