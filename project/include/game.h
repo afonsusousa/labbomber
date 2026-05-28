@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "../lib/vbe/vbe.h"
 
 struct s_ctx;
 struct s_time;
@@ -71,6 +72,7 @@ typedef struct {
 
     uint8_t movement_stack[4];
     uint8_t stack_count;
+    uint8_t lives;
 } player_t;
 
 typedef struct {
@@ -136,6 +138,9 @@ void    game_state_handle_key_press(t_game_state *game, uint8_t scancode);
 
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
+
+// Drawing lives
+void    draw_game_lives(hw_video_t *video, t_game_state *game);
 
 // Entity helpers
 bool   collision(uint8_t *board, t_tuple pos);
