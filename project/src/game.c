@@ -184,8 +184,8 @@ void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
 void draw_game_lives(hw_video_t *video, t_game_state *game) {
     if (video == NULL || game == NULL) return;
     
-    const int base_x = 160;
-    const int base_y = 80;
+    const int base_x = 400;
+    const int base_y = 100;
     const int spacing = 4;
     const int max_hearts = 3;
 
