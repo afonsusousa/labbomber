@@ -52,8 +52,8 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game) 
 
     y += 14;
     t_tuple entering = { .x = -1, .y = -1 };
-    if (game.tile_size > 0 && game.player_w > 0 && game.player_h > 0) {
-        entering = entering_cell(&game, game.players[0].dir, game.players[0].pos.x, game.players[0].pos.y, game.player_w, game.player_h);
+    if (game.tile_size > 0 && game.players[0].w > 0 && game.players[0].h > 0) {
+        entering = get_entering_cell(&game, &game.players[0]);
     }
 
     snprintf(line, sizeof(line), "board pos: (%d,%d) entering: (%d,%d)", game.players[0].board_pos.x, game.players[0].board_pos.y, entering.x, entering.y);
@@ -62,5 +62,10 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game) 
     y+=14;
 
     snprintf(line, sizeof(line), "Click Count: (%d)", game.click_count);
+    draw_string(video, line, x, y, 0x000000);
+
+    y+=14;
+
+    snprintf(line, sizeof(line), "Collide: (%c)", game.debug_mode ? 'D' : 'N');
     draw_string(video, line, x, y, 0x000000);
 }
