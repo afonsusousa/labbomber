@@ -33,6 +33,7 @@ typedef enum {
 #define TILE_TYPE_BRICK 2
 
 #define GAME_TICKS_PER_SECOND 60
+#define INVINCIBILITY_TICKS (GAME_TICKS_PER_SECOND * 3)
 
 #define MAX_PLAYERS 2
 #define PLAYER_1    0
@@ -76,6 +77,7 @@ typedef struct s_entity {
     uint32_t    w;
     uint32_t    h;
     uint8_t     lives;
+    uint32_t    invincibility_ticks;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
@@ -100,6 +102,13 @@ typedef struct {
     uint8_t reach[EXPLOSION_DIR_COUNT];
 } bomb_t;
 
+typedef enum {
+    GAME_PHASE_PLAYING = 0,
+    GAME_PHASE_PAUSED,
+    GAME_PHASE_GAME_OVER,
+    GAME_PHASE_VICTORY
+} game_phase_t;
+
 typedef struct s_game_state {
     uint32_t width;
     uint32_t height;
@@ -120,7 +129,14 @@ typedef struct s_game_state {
     uint32_t click_count;
     bool debug_mode;
     bool is_paused;
+    game_phase_t phase;
 } t_game_state;
+
+#define GAME_IS_FROZEN(game) \
+    ((game)->phase == GAME_PHASE_PAUSED    || \
+     (game)->phase == GAME_PHASE_GAME_OVER || \
+     (game)->phase == GAME_PHASE_VICTORY)
+
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);
 void    game_state_reset(t_game_state *game, struct s_time time);

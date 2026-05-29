@@ -67,7 +67,8 @@ void gui_show_start_menu(struct s_ctx *ctx);
 void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer);
 void gui_show_pause_menu(struct s_ctx *ctx);
 void gui_show_scoreboard(struct s_ctx *ctx);
-void gui_reset_game(struct s_ctx *ctx);
+void gui_show_game_view(struct s_ctx *ctx);
+void gui_reset_game_view(struct s_ctx *ctx);
 void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message);
 void gui_show_confirm_dialog(
     struct s_ctx *ctx,

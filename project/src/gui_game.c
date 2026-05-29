@@ -11,6 +11,7 @@ static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t sca
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
 static void _callback_status_bar_on_tick(t_widget *self, void *state);
 static void _callback_game_view_on_quit(t_widget *self, void *state);
+static void _callback_game_view_on_tick(t_widget *self, void *state);
 static void _callback_text_label_on_destroy(t_widget *self);
 
 // Forward declarations for helpers
@@ -31,8 +32,31 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
         gui->input.focused->on_quit(gui->input.focused, state);
         return;
     }
-    ctx->game.is_paused = true;
-    gui_show_pause_menu(ctx);
+    
+    if (ctx->game.phase == GAME_PHASE_PLAYING) {
+        game_set_phase(&ctx->game, GAME_PHASE_PAUSED);
+        app_set_state(ctx, APP_STATE_MENU_PAUSE);
+        gui_show_pause_menu(ctx);
+    }
+}
+
+static void _callback_game_view_on_tick(t_widget *self, void *state)
+{
+    (void)self;
+    t_ctx *ctx = CTX(state);
+    t_game_state *game = &ctx->game;
+
+    static game_phase_t last_phase;
+
+    if (game->phase != last_phase)
+    {
+        if (game->phase == GAME_PHASE_GAME_OVER)
+            gui_show_info_dialog(ctx, "GAME OVER", "You have no lives left!");
+        else if (game->phase == GAME_PHASE_VICTORY)
+            gui_show_info_dialog(ctx, "YOU WIN!", "All enemies defeated!");
+    }
+
+    last_phase = game->phase;
 }
 
 static void _callback_game_board_on_press(t_widget *self, void *state) {
@@ -90,7 +114,16 @@ void gui_show_game_view(t_ctx *ctx) {
     widget_add_child(view, game_canvas);
     view->on_quit = _callback_game_view_on_quit;
     view->on_key_press = _callback_game_view_on_key_press;
+    view->on_tick  = _callback_game_view_on_tick;
     gui_push_view(gui, view);
+}
+
+void gui_reset_game_view(t_ctx *ctx) {
+    t_gui *gui = &ctx->gui;
+    game_state_reset(&ctx->game, ctx->real_time);
+    game_set_phase(&ctx->game, GAME_PHASE_PLAYING);
+    app_set_state(ctx, APP_STATE_GAME);
+    gui_pop_until_widget_found(gui, "game_view");
 }
 
 // -------------------------------------------------------------------------

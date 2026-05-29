@@ -37,7 +37,8 @@ void gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_height) 
     memset(&ctx->gui, 0, sizeof(ctx->gui));
     ctx->gui.width = screen_width;
     ctx->gui.height = screen_height;
-
+    
+    app_set_state(ctx, APP_STATE_MENU_MAIN);
     gui_show_start_menu(ctx);
     ctx->gui.is_running = true;
 }
@@ -124,16 +125,19 @@ static void _callback_quit(t_widget *self, void *state) {
 
 static void _callback_show_singleplayer_name_menu(t_widget *self, void *state) {
     (void)self;
+    app_set_state(CTX(state), APP_STATE_MENU_NAME);
     gui_show_name_menu(CTX(state), false);
 }
 
 static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     (void)self;
+    app_set_state(CTX(state), APP_STATE_MENU_NAME);
     gui_show_name_menu(CTX(state), true);
 }
 
 static void _callback_show_scoreboard(t_widget *self, void *state) {
     (void)self;
+    app_set_state(CTX(state), APP_STATE_MENU_SCOREBOARD);
     gui_show_scoreboard(CTX(state));
 }
 
@@ -203,6 +207,7 @@ static void _callback_start_game(t_widget *self, void *state) {
     }
 
     gui_pop_view(gui);
+    app_set_state(CTX(state), APP_STATE_GAME);
     gui_show_game_view(CTX(state));
 }
 
@@ -234,23 +239,29 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
 
 static void _callback_resume_game(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
-    GAME(state)->is_paused = false;
+    game_set_phase(GAME(state), GAME_PHASE_PLAYING);
+    app_set_state(ctx, APP_STATE_GAME);
     gui_pop_view(gui);
 }
 
 static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
-    GAME(state)->is_paused = false;
+    game_set_phase(GAME(state), GAME_PHASE_PAUSED);
+    app_set_state(ctx, APP_STATE_MENU_MAIN);
     gui_pop_until_widget_found(gui, "start_menu_view");
 }
 
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
     game_state_reset(GAME(state), CTX(state)->real_time);
-    GAME(state)->is_paused = false;
+    game_set_phase(GAME(state), GAME_PHASE_PLAYING);
+    app_set_state(ctx, APP_STATE_GAME);
     gui_pop_until_widget_found(gui, "game_view");
 }
 
@@ -288,6 +299,7 @@ void gui_show_pause_menu(struct s_ctx *ctx) {
 
 static void _callback_close_scoreboard(t_widget *self, void *state) {
     (void)self;
+    app_set_state(CTX(state), APP_STATE_MENU_MAIN);
     gui_pop_view(GUI(state));
 }
 

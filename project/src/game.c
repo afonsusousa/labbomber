@@ -16,7 +16,9 @@
 
 static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
-    game->is_paused = false;
+    game->players[PLAYER_1].invincibility_ticks = 0;
+    game->players[PLAYER_2].invincibility_ticks = 0;
+    game->phase         = GAME_PHASE_PLAYING;
     //game->click_count = 0; tem de estar depois escolher as coords do player
     game->debug_mode = false;
     generateBoard((char *)game->board, time.day, time.month, time.year);
@@ -84,17 +86,13 @@ void game_state_destroy(t_game_state *game) {
     game->width = 0;
     game->height = 0;
     game->tile_size = 0;
-    game->is_paused = true;
+    game->phase = GAME_PHASE_PAUSED;
 }
 
 void game_state_update(t_ctx *ctx) {
     if (ctx == NULL) return;
 
-    if (player_collides_with_enemy(&ctx->game, &ctx->game.players[0])) {
-        ctx->game.debug_mode = true;
-    } else {
-        ctx->game.debug_mode = false;
-    }
+    ctx->game.debug_mode = player_collides_with_enemy(&ctx->game, &ctx->game.players[0]);
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &ctx->game.players[i];
@@ -119,7 +117,7 @@ void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
 }
 
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
-    if (game == NULL || game->is_paused) return;
+    if (game == NULL || game->phase != GAME_PHASE_PLAYING) return;
 
     player_t *player = &game->players[PLAYER_1];
     bool is_make = IS_MAKE_CODE(scancode);
