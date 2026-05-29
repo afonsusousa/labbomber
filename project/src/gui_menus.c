@@ -70,6 +70,14 @@ static bool is_blank_string(const char *s) {
 // Shared Dialogs
 // =============================================================================
 
+static void _callback_game_over_ok(t_widget *self, void *state) {
+    (void)self;
+    t_ctx *ctx = CTX(state);
+    t_gui *gui = GUI(state);
+    app_set_state(ctx, APP_STATE_MENU_MAIN);
+    gui_pop_until_widget_found(gui, "start_menu_view");
+}
+
 void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "info_overlay");
@@ -80,7 +88,7 @@ void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *mess
 
     widget_add_text(info_dialog, 0, 40, 320, 24, message, "info_message");
 
-    t_widget *btn_ok = widget_add_button(info_dialog, 0, 86, 120, 36, "OK", _callback_pop_view, "info_ok_button");
+    t_widget *btn_ok = widget_add_button(info_dialog, 0, 86, 120, 36, "OK", _callback_game_over_ok, "info_ok_button");
 
     int32_t btn_row_x = ((int32_t)info_dialog->width - (int32_t)btn_ok->width) / 2;
     widget_set_position(btn_ok, btn_row_x, 120);
