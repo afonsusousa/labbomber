@@ -141,7 +141,7 @@ void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
 // Entity helpers
-bool    collision(struct s_game_state *game, t_tuple pos);
+bool    collision(struct s_game_state *game, const struct s_entity *entity, t_tuple pos);
 direction_t opposite_dir(direction_t dir);
 int     get_valid_directions(struct s_game_state *game, t_tuple pos, direction_t out[4]);
 bool    entity_overlaps(t_tuple pos_a, t_tuple size_a, t_tuple pos_b, t_tuple size_b);

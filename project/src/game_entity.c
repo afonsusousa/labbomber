@@ -1,6 +1,6 @@
 #include "game.h"
 
-bool collision(t_game_state *game, t_tuple pos) {
+bool collision(t_game_state *game, const entity_t *entity, t_tuple pos) {
 
     if (game == NULL) return true;
     if (pos.x < 0 || pos.y < 0 || pos.x >= BOARD_COLS || pos.y >= BOARD_ROWS) return true;
@@ -10,7 +10,14 @@ bool collision(t_game_state *game, t_tuple pos) {
     for (int i = 0; i < MAX_BOMBS; i++) {
         const bomb_t *bomb = &game->bomb[i];
         if (!bomb->active || bomb->state == BOMB_FIRE) continue;
-        if (bomb->board_pos.x == pos.x && bomb->board_pos.y == pos.y) return true;
+        if (bomb->board_pos.x == pos.x && bomb->board_pos.y == pos.y) {
+            if (entity &&
+                entity->board_pos.x == pos.x &&
+                entity->board_pos.y == pos.y) {
+                continue;
+            }
+            return true;
+        }
     }
 
     return false;
@@ -39,7 +46,7 @@ int get_valid_directions(t_game_state *game, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.x--;
 
-    if (!collision(game, next)) {
+    if (!collision(game, NULL, next)) {
         out[count] = DIR_LEFT;
         count++;
     }
@@ -48,7 +55,7 @@ int get_valid_directions(t_game_state *game, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.x++;
 
-    if (!collision(game, next)) {
+    if (!collision(game, NULL, next)) {
         out[count] = DIR_RIGHT;
         count++;
     }
@@ -57,7 +64,7 @@ int get_valid_directions(t_game_state *game, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.y--;
 
-    if (!collision(game, next)) {
+    if (!collision(game, NULL, next)) {
         out[count] = DIR_UP;
         count++;
     }
@@ -66,7 +73,7 @@ int get_valid_directions(t_game_state *game, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.y++;
 
-    if (!collision(game, next)) {
+    if (!collision(game, NULL, next)) {
         out[count] = DIR_DOWN;
         count++;
     }
@@ -77,20 +84,11 @@ int get_valid_directions(t_game_state *game, t_tuple pos, direction_t out[4]) {
 t_tuple get_board_pos(const t_game_state *game, const entity_t *entity) {
     if (game == NULL || entity == NULL) return (t_tuple){0,0};
 
-    int dx = (entity->dir == DIR_RIGHT) - (entity->dir == DIR_LEFT);
-    int dy = (entity->dir == DIR_DOWN) - (entity->dir == DIR_UP);
-
     int tile = game->tile_size;
-    int offset = tile / 10;
     t_tuple out;
 
-    if (dx > 0) out.x = (entity->pos.x - offset) / tile;
-    else if (dx < 0) out.x = (entity->pos.x + offset) / tile;
-    else out.x = entity->pos.x / tile;
-
-    if (dy > 0) out.y = (entity->pos.y - offset) / tile;
-    else if (dy < 0) out.y = (entity->pos.y + offset) / tile;
-    else out.y = entity->pos.y / tile;
+    out.x = entity->pos.x / tile;
+    out.y = entity->pos.y / tile;
 
     return out;
 }
@@ -155,8 +153,11 @@ void update_entity_movement(t_game_state *game, entity_t *entity) {
         if (new_pos.y < t) new_pos.y = t;
     }
 
-    if (collision(game, new_board_pos)){
+    if (collision(game, entity, new_board_pos)){
         entity->is_moving = false;
+        entity->pos.x = (entity->board_pos.x * tile) + half;
+        entity->pos.y = (entity->board_pos.y * tile) + half;
+        if (entity->on_snap) entity->on_snap(game, entity);
         return;
     }
 

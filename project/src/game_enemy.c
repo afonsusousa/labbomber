@@ -119,7 +119,7 @@ bool enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir) {
     else if (dir == DIR_UP) next.y--;
     else next.y++;
 
-    return !collision(game, next);
+    return !collision(game, enemy, next);
 }
 
 // enemies tentam andar sempre em frente ou virar em curvas com chance igual, mas tem 5% de chance de inverter a direção (para evitar que fiquem presos em loops pequenos)
