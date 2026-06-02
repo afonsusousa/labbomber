@@ -88,6 +88,11 @@ int spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES
 int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t board_start_y) {
     if (enemy == NULL || !enemy->active || !sprites_initialized) return 1;
 
+    // Blink if invincible or dying
+    if (enemy->invincibility_timer > 0 && (enemy->invincibility_timer / 5) % 2 == 0) {
+        return 0;
+    }
+
     int current_phase = enemy->animation_phase % 4;
     int current_direction = enemy->sprite_dir % 4;
 
@@ -203,17 +208,47 @@ void enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint) {
     }
 
     enemy->animation_phase = 0;
-    enemy->speed = 1;
+    enemy->speed = ENEMY_SPEED;
     enemy->on_snap = enemy_on_snap;
+    enemy->invincibility_timer = 0;
+    enemy->lives = 1;
+}
+
+void update_enemy_lives(t_game_state *game, enemy_t *enemy, int change) {
+    if (enemy == NULL || !enemy->active || enemy->lives == 0) return;
+
+    if (change < 0) {
+        if (enemy->invincibility_timer > 0) return;
+        enemy->invincibility_timer = GAME_TICKS_PER_SECOND / 2;
+    }
+
+    int new_lives = (int)enemy->lives + change;
+    if (new_lives < 0) new_lives = 0;
+    enemy->lives = (uint8_t)new_lives;
+
+    if (enemy->lives == 0) {
+        enemy->invincibility_timer = GAME_TICKS_PER_SECOND; // 1 second blink before death
+        if (game) game->score += 100;
+    }
 }
 
 void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
-    if (!enemy || !enemy->active || !enemy->is_moving) return;
+    if (!enemy || !enemy->active || !enemy->is_moving || enemy->lives == 0) return;
     update_entity_movement(game, enemy);
 }
 
 void update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks) {
-    if (enemy == NULL) return;
+    if (enemy == NULL || !enemy->active) return;
+
+    if (enemy->invincibility_timer > 0) {
+        enemy->invincibility_timer--;
+        
+        if (enemy->lives == 0 && enemy->invincibility_timer == 0) {
+            enemy->active = false;
+        }
+    }
+
+    if (enemy->lives == 0) return; // Stop animation if dying
 
     if (logical_ticks % 30 == 0) {
         enemy->animation_phase = (enemy->animation_phase + 1) % 4;

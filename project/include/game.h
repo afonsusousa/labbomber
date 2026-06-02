@@ -75,6 +75,7 @@ typedef struct s_entity {
     uint8_t     speed;
     t_tuple     size;
     uint8_t     lives;
+    uint32_t    invincibility_timer;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
@@ -115,6 +116,7 @@ typedef struct s_game_state {
 
     bomb_t bomb;
 
+    uint32_t score;
     uint32_t logical_ticks;
     uint32_t click_count;
     bool debug_mode;
@@ -163,6 +165,8 @@ bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
 void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
 void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
 void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
+void    update_enemy_lives(t_game_state *game, enemy_t *enemy, int change);
+void    update_player_lives(player_t *player, int change);
 
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);
@@ -172,6 +176,5 @@ void    bomb_update(t_game_state *game);
 void    bomb_begin_explosion(t_game_state *game);
 void    bomb_update_explosion(t_game_state *game);
 void    place_player_bomb(t_game_state *game, const player_t *player);
-bool    explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y);
 
 #endif /* LCOM_PROJECT_GAME_H */

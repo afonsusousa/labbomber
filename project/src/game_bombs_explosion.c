@@ -53,18 +53,41 @@ static void bomb_compute_reach(t_game_state *game) {
     }
 }
 
+static void damage_entities_at(t_game_state *game, int32_t cx, int32_t cy) {
+    int32_t tile = (int32_t)game->tile_size;
+    t_tuple exp_pos = { cx * tile + tile / 2, cy * tile + tile / 2 };
+    t_tuple exp_size = { tile - 2, tile - 2 };
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        player_t *p = &game->players[i];
+        if (p->active && entity_overlaps(p->pos, p->size, exp_pos, exp_size))
+            update_player_lives(p, -1);
+    }
+    for (int i = 0; i < game->enemy_count; i++) {
+        enemy_t *e = &game->enemies[i];
+        if (e->active && entity_overlaps(e->pos, e->size, exp_pos, exp_size))
+            update_enemy_lives(game, e, -1);
+    }
+}
+
 static void bomb_apply_explosion_contact(t_game_state *game, uint8_t radius) {
-    if (radius == 0) return;
+    bomb_t *bomb = &game->bomb;
+
+    // Damage at center
+    damage_entities_at(game, bomb->board_pos.x, bomb->board_pos.y);
 
     for (uint8_t dir = 0; dir < EXPLOSION_DIR_COUNT; dir++) {
-        uint8_t reach = game->bomb.reach[dir];
-        
-        if (radius >= reach && reach > 0) {
-            int32_t x = game->bomb.board_pos.x + (DIR_X[dir] * reach);
-            int32_t y = game->bomb.board_pos.y + (DIR_Y[dir] * reach);
+        uint8_t reach = BOMB_REACH(bomb, dir);
+        for (uint8_t dist = 1; dist <= reach; dist++) {
+            int32_t x = bomb->board_pos.x + (DIR_X[dir] * dist);
+            int32_t y = bomb->board_pos.y + (DIR_Y[dir] * dist);
+            
+            damage_entities_at(game, x, y);
 
-            if (IN_BOUNDS(x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
-                game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+            if (dist == reach && radius >= reach && reach > 0) {
+                if (IN_BOUNDS(x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
+                    game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+                }
             }
         }
     }
@@ -159,27 +182,4 @@ int draw_bomb_explosion(hw_video_t *video, t_game_state *game) {
     }
     
     return 0;
-}
-
-bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y) {
-    if (!game) return false;
-
-    t_tuple explosion_pos = { GET_X(game, cell_x), GET_Y(game, cell_y) };
-    t_tuple explosion_size = { (int32_t)game->tile_size, (int32_t)game->tile_size };
-
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        const player_t *p = &game->players[i];
-        if (!p->active) continue;
-
-        if (entity_overlaps(p->pos, p->size, explosion_pos, explosion_size)) return true;
-    }
-
-    for (int i = 0; i < game->enemy_count; i++) {
-        const enemy_t *e = &game->enemies[i];
-        if (!e->active) continue;
-
-        if (entity_overlaps(e->pos, e->size, explosion_pos, explosion_size)) return true;
-    }
-
-    return false;
 }
