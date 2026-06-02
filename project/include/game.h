@@ -42,10 +42,12 @@ typedef enum {
 #define MIN_DIST_FROM_PLAYER  6
 #define ENEMY_SPEED           2
 
+#define MAX_BOMBS 4
+
 #define BOMB_EXPLOSION_RANGE 2
 
-#define BOMB_DURATION_TICKS           ((7 * GAME_TICKS_PER_SECOND) / 2)
-#define BOMB_EXPLOSION_DURATION_TICKS (GAME_TICKS_PER_SECOND / 2)
+#define BOMB_DURATION_TICKS           ((5 * GAME_TICKS_PER_SECOND) / 2)
+#define BOMB_EXPLOSION_DURATION_TICKS ((2 * GAME_TICKS_PER_SECOND) / 5)
 #define BOMB_FUSE_PHASES              8
 
 #define BOMB_INACTIVE 0
@@ -63,6 +65,7 @@ typedef struct s_tuple {
 } t_tuple;
 
 typedef struct s_entity {
+    char        name[32];
     t_tuple     pos;
     t_tuple     board_pos;
     direction_t dir;
@@ -75,6 +78,8 @@ typedef struct s_entity {
     uint8_t     speed;
     t_tuple     size;
     uint8_t     lives;
+    uint8_t     bomb_max;
+    uint8_t     bomb_available;
     uint32_t    invincibility_timer;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
@@ -93,6 +98,7 @@ enum {
 typedef struct {
     bool active;
     uint8_t state;
+    uint8_t player_id;
     t_tuple board_pos;
     uint32_t bomb_timer;
     uint32_t explosion_timer;
@@ -110,11 +116,12 @@ typedef struct s_game_state {
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     player_t players[MAX_PLAYERS];
+    uint8_t current_player;
 
     enemy_t enemies[MAX_ENEMIES];
     uint8_t enemy_count;
 
-    bomb_t bomb;
+    bomb_t bomb[MAX_BOMBS];
 
     uint32_t score;
     uint32_t logical_ticks;
@@ -134,9 +141,9 @@ void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
 // Entity helpers
-bool    collision(uint8_t *board, t_tuple pos);
+bool    collision(struct s_game_state *game, t_tuple pos);
 direction_t opposite_dir(direction_t dir);
-int     get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]);
+int     get_valid_directions(struct s_game_state *game, t_tuple pos, direction_t out[4]);
 bool    entity_overlaps(t_tuple pos_a, t_tuple size_a, t_tuple pos_b, t_tuple size_b);
 bool    player_collides_with_enemy(const t_game_state *game, const player_t *player);
 
@@ -148,6 +155,7 @@ void    player_init(t_game_state *game, player_t *player, t_tuple spawnpoint);
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
+void    player_bomb_count(t_game_state *game);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.
@@ -172,9 +180,9 @@ void    update_player_lives(player_t *player, int change);
 void    bomb_init(bomb_t *bomb);
 void    bomb_reset(bomb_t *bomb);
 void    bomb_clear_explosion(bomb_t *bomb);
-void    bomb_update(t_game_state *game);
-void    bomb_begin_explosion(t_game_state *game);
-void    bomb_update_explosion(t_game_state *game);
-void    place_player_bomb(t_game_state *game, const player_t *player);
+void    bomb_update(t_game_state *game, bomb_t *bomb);
+void    bomb_begin_explosion(t_game_state *game, bomb_t *bomb);
+void    bomb_update_explosion(t_game_state *game, bomb_t *bomb);
+void    place_player_bomb(t_game_state *game, player_t *player);
 
 #endif /* LCOM_PROJECT_GAME_H */

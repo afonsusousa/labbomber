@@ -25,6 +25,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
    player_init(game, &game->players[PLAYER_1], spawnpoint);
     game->players[PLAYER_1].lives = 3;
+    game->current_player = PLAYER_1;
 
     // --- PLAYER 2 ---
     player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
@@ -39,7 +40,9 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
         enemy_init(game, &game->enemies[i], spawn_out[i]);
     }
 
-    bomb_init(&game->bomb);
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_init(&game->bomb[i]);
+    }
 }
 
 int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
@@ -121,7 +124,10 @@ void game_state_update(t_ctx *ctx) {
         update_enemy_animation(enemy, game->logical_ticks);
     }
 
-    bomb_update(game);
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_update(game, &game->bomb[i]);
+    }
+    player_bomb_count(game);
 
     game->logical_ticks++;
 }
@@ -138,7 +144,8 @@ void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     bool is_make = !(scancode & 0x80);
     uint8_t key_index = scancode & 0x7F;
 
-    player_t *player = &game->players[PLAYER_1];
+    if (game->current_player >= MAX_PLAYERS) return;
+    player_t *player = &game->players[game->current_player];
 
     if (is_make && key_index == KEY_E) {
         place_player_bomb(game, player);
@@ -147,43 +154,29 @@ void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     update_player_direction(player, key_index, is_make);
 }
 
-void draw_game_score(hw_video_t *video, t_game_state *game) {
-    if (video == NULL || game == NULL) return;
-    
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "Score: %u", game->score);
-    draw_string(video, buffer, 850, 10, 0xFFFFFF);
-}
+void draw_player_hearts(hw_video_t *video, t_game_state *game) {
+    if (game == NULL || !sprites_initialized) return;
 
-void draw_game_lives(hw_video_t *video, t_game_state *game) {
-    if (video == NULL || game == NULL) return;
-    
-    const int base_x = 20;
-    const int base_y = 10;
-    const int spacing = 4;
-    const int max_hearts = 3;
+    const int heart_size = 24;
+    const int heart_spacing = 4;
+    scale_cached_sprite(SPRITE_HEART, heart_size, heart_size, 2);
+    xpm_image_t heart = scaled_sprite_cache[SPRITE_HEART];
 
-    int lives = game->players[PLAYER_1].lives;
-    if (lives <= 0 && !game->players[PLAYER_1].active) return;
-
-    xpm_image_t heart = sprite_cache[SPRITE_HEART];
-    if (heart.bytes == NULL) return;
-    scale_cached_sprite(SPRITE_HEART, 24, 24, 2);
-    heart = scaled_sprite_cache[SPRITE_HEART];
-
-    int visible = lives;
-    if (visible > max_hearts) visible = max_hearts;
-        
-    for (int i = 0; i < visible; i++) {
-        int32_t x = base_x + i * (heart.width + spacing);
-        int32_t y = base_y;
-        hw_vbe_draw_xpm(video, heart.bytes, heart, x, y);
+    if (game->players[PLAYER_1].active) {
+        for (int i = 0; i < game->players[PLAYER_1].lives && i < 5; i++) {
+            int32_t hx = 20 + i * (heart_size + heart_spacing);
+            int32_t hy = 20;
+            hw_vbe_draw_xpm(video, heart.bytes, heart, hx + heart_size/2, hy + heart_size/2);
+        }
     }
 
-    if (lives > max_hearts) {
-        char buffer[16];
-        snprintf(buffer, sizeof(buffer), "x%d", lives);
-        draw_string(video, buffer, base_x + visible * (heart.width + spacing), base_y, 0xFFFFFF);
+    if (game->players[PLAYER_2].active) {
+        uint32_t screen_w = video->screen_width;
+        for (int i = 0; i < game->players[PLAYER_2].lives && i < 5; i++) {
+            int32_t hx = screen_w - 20 - heart_size - i * (heart_size + heart_spacing);
+            int32_t hy = 20;
+            hw_vbe_draw_xpm(video, heart.bytes, heart, hx + heart_size/2, hy + heart_size/2);
+        }
     }
 }
 
@@ -211,7 +204,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             }
         }
     }
-    
+
     draw_bomb(video, game);
 
     for (int i = 0; i < game->enemy_count; i++) {
@@ -221,7 +214,5 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
         draw_player(&game->players[i], video, game);
     }
-
-    draw_game_lives(video, game);
-    draw_game_score(video, game);
+    draw_player_hearts(video, game);
 }

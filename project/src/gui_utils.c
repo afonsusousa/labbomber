@@ -59,13 +59,24 @@ t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name) {
 
     while (gui->views.view_count > 0) {
         t_widget *top_view = gui->views.view_stack[gui->views.view_count - 1];
-        t_widget *found = widget_find_by_name(top_view, widget_name);
+        t_widget *found = widget_get_child_by_name(top_view, widget_name);
 
         if (found != NULL) {
             return found;
         }
 
         gui_pop_view(gui);
+    }
+
+    return NULL;
+}
+
+t_widget* widget_find_by_name(t_gui *gui, const char *name) {
+    if (gui == NULL || name == NULL) return NULL;
+
+    for (int i = gui->views.view_count - 1; i >= 0; i--) {
+        t_widget *found = widget_get_child_by_name(gui->views.view_stack[i], name);
+        if (found != NULL) return found;
     }
 
     return NULL;

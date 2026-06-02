@@ -1,10 +1,19 @@
 #include "game.h"
 
-bool collision(uint8_t *board, t_tuple pos) {
+bool collision(t_game_state *game, t_tuple pos) {
 
+    if (game == NULL) return true;
     if (pos.x < 0 || pos.y < 0 || pos.x >= BOARD_COLS || pos.y >= BOARD_ROWS) return true;
 
-    return board[BOARD_IDX(pos.x, pos.y)] != TILE_TYPE_GRASS;
+    if (game->board[BOARD_IDX(pos.x, pos.y)] != TILE_TYPE_GRASS) return true;
+
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        const bomb_t *bomb = &game->bomb[i];
+        if (!bomb->active || bomb->state == BOMB_FIRE) continue;
+        if (bomb->board_pos.x == pos.x && bomb->board_pos.y == pos.y) return true;
+    }
+
+    return false;
 }
 
 direction_t opposite_dir(direction_t dir) {
@@ -18,9 +27,9 @@ direction_t opposite_dir(direction_t dir) {
     return DIR_UP;
 }
 
-int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]) {
+int get_valid_directions(t_game_state *game, t_tuple pos, direction_t out[4]) {
 
-    if (board == NULL || out == NULL) return 0;
+    if (game == NULL || out == NULL) return 0;
 
     int count = 0;
 
@@ -30,7 +39,7 @@ int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.x--;
 
-    if (!collision(board, next)) {
+    if (!collision(game, next)) {
         out[count] = DIR_LEFT;
         count++;
     }
@@ -39,7 +48,7 @@ int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.x++;
 
-    if (!collision(board, next)) {
+    if (!collision(game, next)) {
         out[count] = DIR_RIGHT;
         count++;
     }
@@ -48,7 +57,7 @@ int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.y--;
 
-    if (!collision(board, next)) {
+    if (!collision(game, next)) {
         out[count] = DIR_UP;
         count++;
     }
@@ -57,7 +66,7 @@ int get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]) {
     next = pos;
     next.y++;
 
-    if (!collision(board, next)) {
+    if (!collision(game, next)) {
         out[count] = DIR_DOWN;
         count++;
     }
@@ -146,7 +155,7 @@ void update_entity_movement(t_game_state *game, entity_t *entity) {
         if (new_pos.y < t) new_pos.y = t;
     }
 
-    if (collision(game->board, new_board_pos)){
+    if (collision(game, new_board_pos)){
         entity->is_moving = false;
         return;
     }

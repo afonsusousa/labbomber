@@ -100,7 +100,7 @@ t_widget* widget_set_position(t_widget *widget, int32_t x, int32_t y) {
     return widget;
 }
 
-t_widget* widget_find_by_name(t_widget *root, const char *name) {
+t_widget* widget_get_child_by_name(t_widget *root, const char *name) {
     if (root == NULL || name == NULL)
         return NULL;
 
@@ -110,7 +110,7 @@ t_widget* widget_find_by_name(t_widget *root, const char *name) {
 
     t_widget *child = root->children;
     while (child != NULL) {
-        t_widget *match = widget_find_by_name(child, name);
+        t_widget *match = widget_get_child_by_name(child, name);
         if (match != NULL)
             return match;
         child = child->next;

@@ -154,6 +154,8 @@ void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
     player->is_moving = false;
     player->stack_count = 0;
     player->speed = 4;
+    player->bomb_max = 1;
+    player->bomb_available = 1;
     player->on_snap = player_on_snap;
     player->invincibility_timer = 0;
     player->active = true;
@@ -209,6 +211,30 @@ void update_player_animation(player_t *player, uint32_t logical_ticks) {
             else
                 player->animation_phase = 2;
         }
+    }
+}
+
+void player_bomb_count(t_game_state *game) {
+    if (game == NULL) return;
+
+    uint8_t active_counts[MAX_PLAYERS] = {0};
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        const bomb_t *bomb = &game->bomb[i];
+        if (!bomb->active) continue;
+        if (bomb->player_id < MAX_PLAYERS) {
+            active_counts[bomb->player_id]++;
+        }
+    }
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        player_t *player = &game->players[i];
+        if (!player->active) {
+            player->bomb_available = 0;
+            continue;
+        }
+        player->bomb_available = (player->bomb_max > active_counts[i])
+            ? (player->bomb_max - active_counts[i])
+            : 0;
     }
 }
 

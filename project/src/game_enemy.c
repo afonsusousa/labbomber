@@ -119,7 +119,7 @@ bool enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir) {
     else if (dir == DIR_UP) next.y--;
     else next.y++;
 
-    return !collision(game->board, next);
+    return !collision(game, next);
 }
 
 // enemies tentam andar sempre em frente ou virar em curvas com chance igual, mas tem 5% de chance de inverter a direção (para evitar que fiquem presos em loops pequenos)
@@ -193,9 +193,11 @@ void enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint) {
     enemy->board_pos = spawnpoint;
     enemy->active = true;
     enemy->is_moving = true;
+    enemy->bomb_max = 0;
+    enemy->bomb_available = 0;
 
     direction_t valid_dirs[4];
-    int count = get_valid_directions(game->board, enemy->board_pos, valid_dirs);
+    int count = get_valid_directions(game, enemy->board_pos, valid_dirs);
 
     if (count > 0) {
         direction_t dir = valid_dirs[rand() % count];

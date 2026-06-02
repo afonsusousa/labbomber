@@ -174,9 +174,8 @@ static void _callback_start_game(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = GUI(state);
 
-    t_widget *top_view = gui_get_top_view(gui);
-    t_widget *player1_input = widget_find_by_name(top_view, "player1_input");
-    t_widget *player2_input = widget_find_by_name(top_view, "player2_input");
+    t_widget *player1_input = widget_find_by_name(gui, "player1_input");
+    t_widget *player2_input = widget_find_by_name(gui, "player2_input");
 
     if (player1_input == NULL || player1_input->data.text_input.buffer == NULL) {
         gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
