@@ -93,11 +93,6 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         app_tick_real_time(ctx);
     }
     
-    if (!ctx->game.is_paused) {
-        ctx->game.logical_ticks++;
-        game_state_update(ctx);
-    }
-    
     hw_vbe_clear_screen(&hw_state->video, 0x0);
 
     if (gui->views.view_count > 0) {

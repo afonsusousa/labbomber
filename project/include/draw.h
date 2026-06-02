@@ -15,7 +15,7 @@ void set_date_seed(int day, int month, int year);
 int draw_player(player_t *player, hw_video_t *video, t_game_state *game);
 int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t board_start_y);
 int draw_bomb(hw_video_t *video, t_game_state *game);
-int draw_bomb_explosion(hw_video_t *video, t_game_state *game);
+int draw_bomb_explosion(hw_video_t *video, t_game_state *game, const bomb_t *bomb);
 
 /* Grass and terrain drawing */
 void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index);

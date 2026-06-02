@@ -10,6 +10,7 @@ void bomb_init(bomb_t *bomb) {
 
     bomb->active = false;
     bomb->state = BOMB_INACTIVE;
+    bomb->player_id = PLAYER_1;
     bomb->board_pos = (t_tuple) {0, 0};
     bomb->bomb_timer = 0;
     bomb->explosion_timer = 0;
@@ -22,30 +23,29 @@ void bomb_reset(bomb_t *bomb) {
     bomb->active = false;
     bomb->state = BOMB_INACTIVE;
     bomb->bomb_timer = 0;
+    bomb->player_id = PLAYER_1;
     bomb_clear_explosion(bomb);
 }
 
-void bomb_update(t_game_state *game) {
-    if (!game) return;
-
-    bomb_t *bomb = &game->bomb;
+void bomb_update(t_game_state *game, bomb_t *bomb) {
+    if (!game || !bomb) return;
 
     if (!bomb->active) return;
 
     if (bomb->state == BOMB_FIRE) {
-        bomb_update_explosion(game);
+        bomb_update_explosion(game, bomb);
         return;
     }
 
     if (bomb->bomb_timer == 0) {
-        bomb_begin_explosion(game);
+        bomb_begin_explosion(game, bomb);
         return;
     }
 
     bomb->bomb_timer--;
 
     if (bomb->bomb_timer == 0) {
-        bomb_begin_explosion(game);
+        bomb_begin_explosion(game, bomb);
         return;
     }
 
@@ -70,14 +70,31 @@ void bomb_update(t_game_state *game) {
 
 }
 
-void place_player_bomb(t_game_state *game, const player_t *player) {
-    if (!game || !player || game->bomb.active) return;
+void place_player_bomb(t_game_state *game, player_t *player) {
+    if (!game || !player) return;
 
-    game->bomb.active = true;
-    game->bomb.state = BOMB_PLACED;
-    game->bomb.board_pos = player->board_pos;
-    game->bomb.bomb_timer = BOMB_DURATION_TICKS;
-    bomb_clear_explosion(&game->bomb);
+    if (game->current_player >= MAX_PLAYERS) return;
+    if (player->bomb_available == 0) return;
+
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_t *bomb = &game->bomb[i];
+        if (!bomb->active) continue;
+        if (bomb->board_pos.x == player->board_pos.x && bomb->board_pos.y == player->board_pos.y) return;
+    }
+
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_t *bomb = &game->bomb[i];
+        if (bomb->active) continue;
+
+        bomb->active = true;
+        bomb->state = BOMB_PLACED;
+        bomb->player_id = game->current_player;
+        bomb->board_pos = player->board_pos;
+        bomb->bomb_timer = BOMB_DURATION_TICKS;
+        bomb_clear_explosion(bomb);
+        if (player->bomb_available > 0) player->bomb_available--;
+        return;
+    }
 }
 
 static int get_bomb_sprite_index(const bomb_t *bomb) {
@@ -95,26 +112,31 @@ static int get_bomb_sprite_index(const bomb_t *bomb) {
 int draw_bomb(hw_video_t *video, t_game_state *game) {
     if (game == NULL || !sprites_initialized) return 1;
 
-    bomb_t *bomb = &game->bomb;
-    if (!bomb->active) return 1;
+    int status = 0;
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_t *bomb = &game->bomb[i];
+        if (!bomb->active) continue;
 
-    if (bomb->state == BOMB_FIRE) {
-        return draw_bomb_explosion(video, game);
+        if (bomb->state == BOMB_FIRE) {
+            if (draw_bomb_explosion(video, game, bomb) != 0) status = 1;
+            continue;
+        }
+
+        int sprite_index = get_bomb_sprite_index(bomb);
+        if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL) {
+            status = 1;
+            continue;
+        }
+
+        xpm_image_t img = scaled_sprite_cache[sprite_index];
+
+        hw_vbe_draw_xpm(
+            video,
+            img.bytes,
+            img,
+            GET_X(game, bomb->board_pos.x),
+            GET_Y(game, bomb->board_pos.y)
+        );
     }
-
-    int sprite_index = get_bomb_sprite_index(bomb);
-    if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL) {
-        return 1;
-    }
-
-    xpm_image_t img = scaled_sprite_cache[sprite_index];
-
-    hw_vbe_draw_xpm(
-        video,
-        img.bytes,
-        img,
-        GET_X(game, game->bomb.board_pos.x),
-        GET_Y(game, game->bomb.board_pos.y)
-    );
-    return 0;
+    return status;
 }

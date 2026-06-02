@@ -4,7 +4,6 @@
 #include "widget.h"
 #include "gui.h"
 #include "draw.h"
-#include "game.h"
 #include "assets_cache.h"
 #include "../lib/keyboard/i8042.h"
 #include <stdio.h>
@@ -26,10 +25,12 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
    player_init(game, &game->players[PLAYER_1], spawnpoint);
     game->players[PLAYER_1].lives = 3;
+    game->current_player = PLAYER_1;
 
     // --- PLAYER 2 ---
     player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
     game->players[PLAYER_2].lives = 3;
+    game->players[PLAYER_2].active = false; // Only one player for now
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
@@ -39,7 +40,9 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
         enemy_init(game, &game->enemies[i], spawn_out[i]);
     }
 
-    bomb_init(&game->bomb);
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_init(&game->bomb[i]);
+    }
 }
 
 int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
@@ -66,8 +69,9 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->start_y = (height - board_height) / 2;
 
     _game_state_prepare_match(game, time);
+    game->score = 0;
 
-    scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].w, game->players[PLAYER_1].h, MAX_PLAYERS);
+    scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
 
     return 0;
 }
@@ -76,6 +80,7 @@ void game_state_reset(t_game_state *game, t_time time)
 {
     if (game == NULL) return;
     _game_state_prepare_match(game, time);
+    game->score = 0;
 }
 
 void game_state_destroy(t_game_state *game) {
@@ -90,40 +95,57 @@ void game_state_destroy(t_game_state *game) {
 void game_state_update(t_ctx *ctx) {
     if (ctx == NULL) return;
 
-    if (player_collides_with_enemy(&ctx->game, &ctx->game.players[0])) {
-        ctx->game.debug_mode = true;
-    } else {
-        ctx->game.debug_mode = false;
+    t_game_state *game = &ctx->game;
+
+    if (game->is_paused) return;
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        player_t *player = &game->players[i];
+        if (!player->active) continue;
+
+        if (player_collides_with_enemy(game, player)) {
+            update_player_lives(player, -1);
+        }
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
-        player_t *player = &ctx->game.players[i];
+        player_t *player = &game->players[i];
+        if (!player->active) continue;
 
-        update_player_movement(&ctx->game, player);
-        update_player_animation(player, ctx->game.logical_ticks);
+        update_player_movement(game, player);
+        update_player_animation(player, game->logical_ticks);
     }
 
-    for (int i = 0; i < ctx->game.enemy_count; i++) {
-        enemy_t *enemy = &ctx->game.enemies[i];
+    for (int i = 0; i < game->enemy_count; i++) {
+        enemy_t *enemy = &game->enemies[i];
+        if (!enemy->active) continue;
 
-        update_enemy_movement(&ctx->game, enemy);
-        update_enemy_animation(enemy, ctx->game.logical_ticks);
+        update_enemy_movement(game, enemy);
+        update_enemy_animation(enemy, game->logical_ticks);
     }
 
-    bomb_update(&ctx->game);
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_update(game, &game->bomb[i]);
+    }
+    player_bomb_count(game);
+
+    game->logical_ticks++;
 }
 
-void game_state_handle_click(t_game_state *game, int32_t x, int32_t y)
-{
-    // Clicks do jogo AQUI
+void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
+    (void)game; (void)x; (void)y;
 }
+
+#define KEY_E 0x12
 
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
-    if (game == NULL || game->is_paused) return;
+    if (game == NULL) return;
 
-    player_t *player = &game->players[PLAYER_1];
-    bool is_make = IS_MAKE_CODE(scancode);
-    uint8_t key_index = MAKE_FROM_BREAK(scancode);
+    bool is_make = !(scancode & 0x80);
+    uint8_t key_index = scancode & 0x7F;
+
+    if (game->current_player >= MAX_PLAYERS) return;
+    player_t *player = &game->players[game->current_player];
 
     if (is_make && key_index == KEY_E) {
         place_player_bomb(game, player);
@@ -132,35 +154,29 @@ void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     update_player_direction(player, key_index, is_make);
 }
 
-void draw_game_lives(hw_video_t *video, t_game_state *game) {
-    if (video == NULL || game == NULL) return;
-    
-    const int base_x = 400;
-    const int base_y = 100;
-    const int spacing = 4;
-    const int max_hearts = 3;
+void draw_player_hearts(hw_video_t *video, t_game_state *game) {
+    if (game == NULL || !sprites_initialized) return;
 
-    int lives = game->players[PLAYER_1].lives; // Assuming player 1 for now~
-    if (lives <= 0) return;
+    const int heart_size = 24;
+    const int heart_spacing = 4;
+    scale_cached_sprite(SPRITE_HEART, heart_size, heart_size, 2);
+    xpm_image_t heart = scaled_sprite_cache[SPRITE_HEART];
 
-    xpm_image_t heart = sprite_cache[SPRITE_HEART];
-    if (heart.bytes == NULL) return;
-    scale_cached_sprite(SPRITE_HEART, 45, 45, 2);  // 2 bytes per pixel para 16-bit color
-    heart = scaled_sprite_cache[SPRITE_HEART];
-
-    int visible = lives;
-    if (visible > max_hearts) visible = max_hearts;
-        
-    for (int i = 0; i < visible; i++) {
-        int32_t x = base_x + i * (heart.width + spacing);
-        int32_t y = base_y;
-        hw_vbe_draw_xpm(video, heart.bytes, heart, x, y);
+    if (game->players[PLAYER_1].active) {
+        for (int i = 0; i < game->players[PLAYER_1].lives && i < 5; i++) {
+            int32_t hx = 20 + i * (heart_size + heart_spacing);
+            int32_t hy = 20;
+            hw_vbe_draw_xpm(video, heart.bytes, heart, hx + heart_size/2, hy + heart_size/2);
+        }
     }
 
-    if (lives > max_hearts) {
-        char buffer[16];
-        snprintf(buffer, sizeof(buffer), "x%d", lives);
-        draw_string(video, buffer, base_x + visible * (heart.width + spacing), base_y, 0xFFFFFF);
+    if (game->players[PLAYER_2].active) {
+        uint32_t screen_w = video->screen_width;
+        for (int i = 0; i < game->players[PLAYER_2].lives && i < 5; i++) {
+            int32_t hx = screen_w - 20 - heart_size - i * (heart_size + heart_spacing);
+            int32_t hy = 20;
+            hw_vbe_draw_xpm(video, heart.bytes, heart, hx + heart_size/2, hy + heart_size/2);
+        }
     }
 }
 
@@ -170,12 +186,11 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     }
 
     t_game_state *game = GAME(state);
-
+    
+    // Draw Map
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
-
             int val = game->board[y * BOARD_COLS + x];
-
             if (val == TILE_TYPE_GRASS) {
                 int grass_type = decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
                 draw_grass(video, GET_X(game, x), GET_Y(game, y), grass_type);
@@ -192,14 +207,12 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
 
     draw_bomb(video, game);
 
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        draw_player(&game->players[i], video, game);
-    }
-
     for (int i = 0; i < game->enemy_count; i++) {
         draw_enemy(&game->enemies[i], video, game->start_x, game->start_y);
     }
 
-    draw_game_lives(video, game);
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        draw_player(&game->players[i], video, game);
+    }
+    draw_player_hearts(video, game);
 }
-
