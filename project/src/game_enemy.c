@@ -182,8 +182,8 @@ void enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint) {
         eh = (img_h * ew) / img_w;
     }
 
-    enemy->w = ew;
-    enemy->h = eh;
+    enemy->size.x = ew;
+    enemy->size.y = eh;
 
     enemy->board_pos = spawnpoint;
     enemy->active = true;

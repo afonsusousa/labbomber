@@ -161,3 +161,25 @@ int draw_bomb_explosion(hw_video_t *video, t_game_state *game) {
     return 0;
 }
 
+bool explosion_collides(const t_game_state *game, int32_t cell_x, int32_t cell_y) {
+    if (!game) return false;
+
+    t_tuple explosion_pos = { GET_X(game, cell_x), GET_Y(game, cell_y) };
+    t_tuple explosion_size = { (int32_t)game->tile_size, (int32_t)game->tile_size };
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        const player_t *p = &game->players[i];
+        if (!p->active) continue;
+
+        if (entity_overlaps(p->pos, p->size, explosion_pos, explosion_size)) return true;
+    }
+
+    for (int i = 0; i < game->enemy_count; i++) {
+        const enemy_t *e = &game->enemies[i];
+        if (!e->active) continue;
+
+        if (entity_overlaps(e->pos, e->size, explosion_pos, explosion_size)) return true;
+    }
+
+    return false;
+}

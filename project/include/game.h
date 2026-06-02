@@ -73,8 +73,7 @@ typedef struct s_entity {
     uint8_t     movement_stack[4];
     uint8_t     stack_count;
     uint8_t     speed;
-    uint32_t    w;
-    uint32_t    h;
+    t_tuple     size;
     uint8_t     lives;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
@@ -136,7 +135,7 @@ void    gui_reset_game_view(struct s_ctx *ctx);
 bool    collision(uint8_t *board, t_tuple pos);
 direction_t opposite_dir(direction_t dir);
 int     get_valid_directions(uint8_t *board, t_tuple pos, direction_t out[4]);
-bool    entity_overlaps(const entity_t *a, const entity_t *b);
+bool    entity_overlaps(t_tuple pos_a, t_tuple size_a, t_tuple pos_b, t_tuple size_b);
 bool    player_collides_with_enemy(const t_game_state *game, const player_t *player);
 
 
@@ -147,12 +146,6 @@ void    player_init(t_game_state *game, player_t *player, t_tuple spawnpoint);
 void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
-
-/**
- * get_entering_cell - return the adjacent board cell an entity may overlap
- * when moving.
- */
-t_tuple get_entering_cell(const t_game_state *game, const entity_t *entity);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.

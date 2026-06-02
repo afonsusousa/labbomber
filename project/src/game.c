@@ -67,7 +67,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     _game_state_prepare_match(game, time);
 
-    scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].w, game->players[PLAYER_1].h, MAX_PLAYERS);
+    scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
 
     return 0;
 }

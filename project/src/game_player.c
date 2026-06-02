@@ -140,8 +140,8 @@ void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
         ph = (img_h * pw) / img_w;
     }
 
-    player->w = pw;
-    player->h = ph;
+    player->size.x = pw;
+    player->size.y = ph;
 
     player->board_pos = spawnpoint;
     player->sprite_dir = DIR_DOWN;
