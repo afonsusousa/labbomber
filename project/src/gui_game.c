@@ -25,7 +25,7 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
         gui->input.focused->on_quit(gui->input.focused, state);
         return;
     }
-    
+
     ctx->game.is_paused = true;
     gui_show_pause_menu(ctx);
 }
@@ -36,9 +36,13 @@ static void _callback_game_view_on_tick(t_widget *self, void *state)
     t_ctx *ctx = CTX(state);
     t_game_state *game = &ctx->game;
 
-    // Simplistic win/loss check since phases are gone
+    if (!ctx->game.is_paused) {
+        ctx->game.logical_ticks++;
+        game_state_update(ctx);
+    }
+
     bool p1_dead = (game->players[PLAYER_1].active && game->players[PLAYER_1].lives == 0);
-    
+
     int enemies_alive = 0;
     for (int i = 0; i < game->enemy_count; i++) {
         if (game->enemies[i].active) enemies_alive++;
@@ -56,7 +60,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state)
 static void _callback_game_board_on_press(t_widget *self, void *state) {
     t_gui *gui = GUI(state);
     t_game_state *game = GAME(state);
-   
+
     game_state_handle_click(
         game,
         gui->input.mouse_x - self->abs_x,
