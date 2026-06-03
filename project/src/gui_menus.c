@@ -260,7 +260,7 @@ static void _callback_resume_game(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
-    ctx->game.is_frozen = false;
+    ctx->game.match_state = MATCH_RUNNING;
     gui_pop_view(gui);
 }
 
@@ -275,7 +275,7 @@ static void _callback_confirm_reset_game(t_widget *self, void *state) {
     t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
     game_state_reset(GAME(state), ctx->real_time);
-    ctx->game.is_frozen = false;
+    ctx->game.match_state = MATCH_RUNNING;
     gui_pop_until_widget_found(gui, "game_view");
 }
 

@@ -26,9 +26,9 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
         return;
     }   
 
-    if (!ctx->game.is_frozen) {
-    ctx->game.is_frozen = true;
-    gui_show_pause_menu(ctx); 
+    if (ctx->game.match_state == MATCH_RUNNING) {
+        ctx->game.match_state = MATCH_PAUSED;
+        gui_show_pause_menu(ctx); 
     }
 }
 
@@ -37,7 +37,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     t_ctx *ctx = CTX(state);
     t_game_state *game = &ctx->game;
     
-    if (game->is_frozen) return;
+    if (game->match_state != MATCH_RUNNING) return;
     
     game->logical_ticks++;
     game_state_update(ctx);
@@ -133,6 +133,6 @@ void gui_show_game_view(t_ctx *ctx) {
 void gui_reset_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     game_state_reset(&ctx->game, ctx->real_time);
-    ctx->game.is_frozen = false;
+    ctx->game.match_state = MATCH_RUNNING;
     gui_pop_until_widget_found(gui, "game_view");
 }

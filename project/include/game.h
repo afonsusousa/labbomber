@@ -110,6 +110,7 @@ typedef struct {
 
 typedef enum {
     MATCH_RUNNING,
+    MATCH_PAUSED,
     MATCH_WON,
     MATCH_LOST
 } match_state_t;
