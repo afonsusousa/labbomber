@@ -34,7 +34,12 @@ t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
 }
 
 int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
-    if (player == NULL || !sprites_initialized) return 1;
+    if (player == NULL || !sprites_initialized || !player->active) return 1;
+
+    // Blink if invincible
+    if (player->invincibility_timer > 0 && (player->invincibility_timer / 5) % 2 == 0) {
+        return 0;
+    }
 
     int current_phase = player->animation_phase % 4;
     int current_direction = player->sprite_dir % 4;
@@ -48,12 +53,11 @@ int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     xpm_image_t img = scaled_sprite_cache[sprite_index];
 
     int32_t draw_y = game->start_y + player->pos.y;
-
-    // --- THE SNEAK OFFSET ---
-    if (current_phase == 1) {
+    
+    // Sneak animation
+    if (!player->is_moving && player->animation_phase == 1) {
         uint32_t sneak_amount = img.height / 20;
-        if (sneak_amount == 0) sneak_amount = 1;
-        draw_y += sneak_amount;
+        draw_y += (int32_t)sneak_amount;
     }
 
     hw_vbe_draw_xpm(
@@ -124,7 +128,7 @@ static void player_on_snap(t_game_state *game, entity_t *player) {
 }
 
 void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
-    if (!game || !player) return;
+    if (game == NULL || player == NULL) return;
 
     player->pos = (t_tuple) {
         (spawnpoint.x * game->tile_size) + (game->tile_size / 2),
@@ -140,8 +144,8 @@ void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
         ph = (img_h * pw) / img_w;
     }
 
-    player->w = pw;
-    player->h = ph;
+    player->size.x = pw;
+    player->size.y = ph;
 
     player->board_pos = spawnpoint;
     player->sprite_dir = DIR_DOWN;
@@ -150,7 +154,11 @@ void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
     player->is_moving = false;
     player->stack_count = 0;
     player->speed = 4;
+    player->bomb_max = 1;
+    player->bomb_available = 1;
     player->on_snap = player_on_snap;
+    player->invincibility_timer = 0;
+    player->active = true;
 }
 
 void update_player_movement(t_game_state *game, player_t *player) {
@@ -177,7 +185,11 @@ void update_player_movement(t_game_state *game, player_t *player) {
 }
 
 void update_player_animation(player_t *player, uint32_t logical_ticks) {
-    if (player == NULL) return;
+    if (player == NULL || !player->active) return;
+
+    if (player->invincibility_timer > 0) {
+        player->invincibility_timer--;
+    }
 
     if (!player->is_moving) {
         if (player->animation_phase > 1)
@@ -202,6 +214,43 @@ void update_player_animation(player_t *player, uint32_t logical_ticks) {
     }
 }
 
+void player_bomb_count(t_game_state *game) {
+    if (game == NULL) return;
+
+    uint8_t active_counts[MAX_PLAYERS] = {0};
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        const bomb_t *bomb = &game->bomb[i];
+        if (!bomb->active) continue;
+        if (bomb->player_id < MAX_PLAYERS) {
+            active_counts[bomb->player_id]++;
+        }
+    }
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        player_t *player = &game->players[i];
+        if (!player->active) {
+            player->bomb_available = 0;
+            continue;
+        }
+        player->bomb_available = (player->bomb_max > active_counts[i])
+            ? (player->bomb_max - active_counts[i])
+            : 0;
+    }
+}
+
 void update_player_lives(player_t *player, int change) {
-    // Implement life changes later
+    if (player == NULL || !player->active) return;
+    
+    if (change < 0) {
+        if (player->invincibility_timer > 0) return;
+        player->invincibility_timer = GAME_TICKS_PER_SECOND * 2; // 2 seconds of invincibility
+    }
+
+    int new_lives = (int)player->lives + change;
+    if (new_lives < 0) new_lives = 0;
+    player->lives = (uint8_t)new_lives;
+
+    if (player->lives == 0) {
+        player->active = false;
+    }
 }

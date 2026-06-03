@@ -33,8 +33,7 @@ uint8_t bomb_explosion_frame(const bomb_t *bomb) {
     return (uint8_t)(step <= max_frame ? step : (2 * max_frame) - step);
 }
 
-static void bomb_compute_reach(t_game_state *game) {
-    bomb_t *bomb = &game->bomb;
+static void bomb_compute_reach(t_game_state *game, bomb_t *bomb) {
     memset(bomb->reach, 0, sizeof(bomb->reach));
 
     for (uint8_t dir = 0; dir < EXPLOSION_DIR_COUNT; dir++) {
@@ -53,40 +52,59 @@ static void bomb_compute_reach(t_game_state *game) {
     }
 }
 
-static void bomb_apply_explosion_contact(t_game_state *game, uint8_t radius) {
-    if (radius == 0) return;
+static void damage_entities_at(t_game_state *game, int32_t cx, int32_t cy) {
+    int32_t tile = (int32_t)game->tile_size;
+    t_tuple exp_pos = { cx * tile + tile / 2, cy * tile + tile / 2 };
+    t_tuple exp_size = { tile - 2, tile - 2 };
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        player_t *p = &game->players[i];
+        if (p->active && entity_overlaps(p->pos, p->size, exp_pos, exp_size))
+            update_player_lives(p, -1);
+    }
+    for (int i = 0; i < game->enemy_count; i++) {
+        enemy_t *e = &game->enemies[i];
+        if (e->active && entity_overlaps(e->pos, e->size, exp_pos, exp_size))
+            update_enemy_lives(game, e, -1);
+    }
+}
+
+static void bomb_apply_explosion_contact(t_game_state *game, bomb_t *bomb, uint8_t radius) {
+
+    // Damage at center
+    damage_entities_at(game, bomb->board_pos.x, bomb->board_pos.y);
 
     for (uint8_t dir = 0; dir < EXPLOSION_DIR_COUNT; dir++) {
-        uint8_t reach = game->bomb.reach[dir];
-        
-        if (radius >= reach && reach > 0) {
-            int32_t x = game->bomb.board_pos.x + (DIR_X[dir] * reach);
-            int32_t y = game->bomb.board_pos.y + (DIR_Y[dir] * reach);
+        uint8_t reach = BOMB_REACH(bomb, dir);
+        for (uint8_t dist = 1; dist <= reach; dist++) {
+            int32_t x = bomb->board_pos.x + (DIR_X[dir] * dist);
+            int32_t y = bomb->board_pos.y + (DIR_Y[dir] * dist);
+            
+            damage_entities_at(game, x, y);
 
-            if (IN_BOUNDS(x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
-                game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+            if (dist == reach && radius >= reach && reach > 0) {
+                if (IN_BOUNDS(x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
+                    game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+                }
             }
         }
     }
 }
 
-void bomb_begin_explosion(t_game_state *game) {
-    if (!game) return;
-
-    bomb_t *bomb = &game->bomb;
+void bomb_begin_explosion(t_game_state *game, bomb_t *bomb) {
+    if (!game || !bomb) return;
     bomb_clear_explosion(bomb);
 
     bomb->active = true;
     bomb->state = BOMB_FIRE;
     bomb->bomb_timer = 0;
     bomb->explosion_timer = BOMB_EXPLOSION_DURATION_TICKS;
-    bomb_compute_reach(game);
+    bomb_compute_reach(game, bomb);
 }
 
-void bomb_update_explosion(t_game_state *game) {
-    if (!game || !game->bomb.active || game->bomb.state != BOMB_FIRE) return;
+void bomb_update_explosion(t_game_state *game, bomb_t *bomb) {
+    if (!game || !bomb || !bomb->active || bomb->state != BOMB_FIRE) return;
 
-    bomb_t *bomb = &game->bomb;
     if (bomb->explosion_timer == 0) {
         bomb_reset(bomb);
         return;
@@ -94,7 +112,7 @@ void bomb_update_explosion(t_game_state *game) {
 
     bomb->explosion_timer--;
     bomb->radius = (uint8_t)(bomb_explosion_frame(bomb) / 2);
-    bomb_apply_explosion_contact(game, bomb->radius);
+    bomb_apply_explosion_contact(game, bomb, bomb->radius);
 
     if (bomb->explosion_timer == 0) bomb_reset(bomb);
 }
@@ -111,8 +129,7 @@ static int explosion_side_sprite_index(uint8_t frame, bool is_tip) {
     return is_tip ? explosion_hand_sprites[frame] : explosion_arm_sprites[frame];
 }
 
-static void bomb_draw_explosion_ray(hw_video_t *video, const t_game_state *game, uint8_t dir, uint8_t rotation, uint8_t frame) {
-    const bomb_t *bomb = &game->bomb;
+static void bomb_draw_explosion_ray(hw_video_t *video, const t_game_state *game, const bomb_t *bomb, uint8_t dir, uint8_t rotation, uint8_t frame) {
     uint8_t reach = BOMB_REACH(bomb, dir);
 
     for (uint8_t dist = 1; dist <= reach; dist++) {
@@ -133,10 +150,9 @@ static void bomb_draw_explosion_ray(hw_video_t *video, const t_game_state *game,
     }
 }
 
-int draw_bomb_explosion(hw_video_t *video, t_game_state *game) {
-    if (!game || !sprites_initialized || !game->bomb.active) return 1;
+int draw_bomb_explosion(hw_video_t *video, t_game_state *game, const bomb_t *bomb) {
+    if (!game || !bomb || !sprites_initialized || !bomb->active) return 1;
 
-    const bomb_t *bomb = &game->bomb;
     uint8_t frame = bomb_explosion_frame(bomb);
     int center_index = explosion_center_sprite_index(frame);
     
@@ -152,12 +168,11 @@ int draw_bomb_explosion(hw_video_t *video, t_game_state *game) {
     }
 
     if (bomb->radius > 0) {
-        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_RIGHT, XPM_ROTATE_180, frame);
-        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_LEFT, XPM_ROTATE_0, frame);
-        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_DOWN, XPM_ROTATE_270, frame);
-        bomb_draw_explosion_ray(video, game, EXPLOSION_DIR_UP, XPM_ROTATE_90, frame);
+        bomb_draw_explosion_ray(video, game, bomb, EXPLOSION_DIR_RIGHT, XPM_ROTATE_180, frame);
+        bomb_draw_explosion_ray(video, game, bomb, EXPLOSION_DIR_LEFT, XPM_ROTATE_0, frame);
+        bomb_draw_explosion_ray(video, game, bomb, EXPLOSION_DIR_DOWN, XPM_ROTATE_270, frame);
+        bomb_draw_explosion_ray(video, game, bomb, EXPLOSION_DIR_UP, XPM_ROTATE_90, frame);
     }
     
     return 0;
 }
-

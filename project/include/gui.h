@@ -11,7 +11,7 @@ struct s_ctx;
 #define MAX_VIEWS 10
 
 typedef struct s_state {
-    
+
     uint32_t width;
     uint32_t height;
 
@@ -61,6 +61,7 @@ void      gui_pop_view(t_gui *gui);
 t_widget* gui_get_top_view(t_gui *gui);
 t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name);
 
+t_widget* widget_find_by_name(t_gui *gui, const char *name);
 // Menus/Launchers
 void init_game(struct s_ctx *ctx);
 void gui_show_start_menu(struct s_ctx *ctx);
