@@ -24,7 +24,6 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     generateBoard((char *)game->board, time.day, time.month, time.year);
 
     game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
-    game->door_active = false;
     game->door_open = false;
 
     set_date_seed(time.day, time.month, time.year);
@@ -42,7 +41,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 4, spawn_out);
+    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 1, spawn_out);
 
     for (int i = 0; i < game->enemy_count; i++) {
         enemy_init(game, &game->enemies[i], spawn_out[i]);
@@ -116,9 +115,9 @@ void game_state_update(t_ctx *ctx) {
         else if (player_collides_with_enemy(game, player)) {
             update_player_lives(player, -1);
             if (player->lives > 0) {
-            player->invincibility_timer = INVINCIBILITY_TICKS;
+                player->invincibility_timer = INVINCIBILITY_TICKS;
             }
-}
+        }
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -143,26 +142,28 @@ void game_state_update(t_ctx *ctx) {
     player_bomb_count(game);
 
     if (game->match_state == MATCH_RUNNING) {
+        player_t *p1 = &game->players[PLAYER_1];
 
-    player_t *p1 = &game->players[PLAYER_1];
+        if (p1->lives == 0) {
+            game->match_state = MATCH_LOST;
+            return;
+        }
 
-    if (p1->lives == 0) {
-        game->match_state = MATCH_LOST;
-        return;
+        int enemies_alive = 0;
+
+        for (int i = 0; i < game->enemy_count; i++) {
+            if (game->enemies[i].active)
+                enemies_alive++;
+        }
+
+        if (game->enemy_count > 0 && enemies_alive == 0) {
+            game->door_open = true;
+
+            if(p1->board_pos.x == game->door_pos.x && p1->board_pos.y == game->door_pos.y) {
+                game->match_state = MATCH_WON;
+            } 
+        }
     }
-
-    int enemies_alive = 0;
-
-    for (int i = 0; i < game->enemy_count; i++) {
-        if (game->enemies[i].active)
-            enemies_alive++;
-    }
-
-    if (game->enemy_count > 0 && enemies_alive == 0) {
-        game->match_state = MATCH_WON;
-    }
-}
-    
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {

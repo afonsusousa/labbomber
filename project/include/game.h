@@ -124,7 +124,6 @@ typedef struct s_game_state {
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     t_tuple door_pos;
-    bool door_active;
     bool door_open;
 
     player_t players[MAX_PLAYERS];
