@@ -7,7 +7,7 @@
 static int is_solid(const uint8_t *board, int rows, int cols, int x, int y) {
     if (x < 0 || x >= cols || y < 0 || y >= rows) return 1;
     uint8_t val = board[y * cols + x];
-    return (val != TILE_TYPE_GRASS);
+    return (val != TILE_TYPE_GRASS && val != TILE_TYPE_DOOR);
 }
 
 void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index) {
@@ -76,5 +76,15 @@ void draw_brick(hw_video_t *video, int32_t x, int32_t y) {
     }
     
     xpm_image_t img = scaled_sprite_cache[SPRITE_BRICK];
+    hw_vbe_draw_xpm(video, img.bytes, img, x, y);
+}
+
+void draw_door(hw_video_t *video, int32_t x, int32_t y, bool open) {
+    int sprite = open ? SPRITE_DOOR_OPEN : SPRITE_DOOR_CLOSED;
+    if (!sprites_initialized || scaled_sprite_cache[sprite].bytes == NULL) {
+        hw_vbe_draw_rect(video, x - 8, y - 8, 16, 16, 0x00AA00);
+        return;
+    }
+    xpm_image_t img = scaled_sprite_cache[sprite];
     hw_vbe_draw_xpm(video, img.bytes, img, x, y);
 }

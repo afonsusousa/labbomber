@@ -84,7 +84,12 @@ static void bomb_apply_explosion_contact(t_game_state *game, bomb_t *bomb, uint8
 
             if (dist == reach && radius >= reach && reach > 0) {
                 if (IN_BOUNDS(x, y) && game->board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
-                    game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+                    if (game->door_pos.x == x && game->door_pos.y == y) {
+                        game->board[y * BOARD_COLS + x] = TILE_TYPE_DOOR;
+                        game->door_active = true;
+                    } else {
+                        game->board[y * BOARD_COLS + x] = TILE_TYPE_GRASS;
+                    }
                 }
             }
         }

@@ -5,7 +5,7 @@ bool collision(t_game_state *game, const entity_t *entity, t_tuple pos) {
     if (game == NULL) return true;
     if (pos.x < 0 || pos.y < 0 || pos.x >= BOARD_COLS || pos.y >= BOARD_ROWS) return true;
 
-    if (game->board[BOARD_IDX(pos.x, pos.y)] != TILE_TYPE_GRASS) return true;
+    if (game->board[BOARD_IDX(pos.x, pos.y)] != TILE_TYPE_GRASS && game->board[BOARD_IDX(pos.x, pos.y)] != TILE_TYPE_DOOR) return true;
 
     for (int i = 0; i < MAX_BOMBS; i++) {
         const bomb_t *bomb = &game->bomb[i];

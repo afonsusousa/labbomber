@@ -21,6 +21,7 @@ int draw_bomb_explosion(hw_video_t *video, t_game_state *game, const bomb_t *bom
 void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index);
 void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index);
 void draw_brick(hw_video_t *video, int32_t x, int32_t y);
+void draw_door(hw_video_t *video, int32_t x, int32_t y, bool open);
 
 int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
 int decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y);
