@@ -19,8 +19,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->is_frozen = false;
     game->players[PLAYER_1].invincibility_timer = 0;
     game->players[PLAYER_2].invincibility_timer = 0;
-    //game->click_count = 0; tem de estar depois escolher as coords do player
-    game->debug_mode = false;
+
     generateBoard((char *)game->board, time.day, time.month, time.year);
 
     game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
@@ -31,13 +30,17 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     // --- PLAYER 1 ---
     t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
     player_init(game, &game->players[PLAYER_1], spawnpoint);
-    game->players[PLAYER_1].lives = 3;
+    game->players[PLAYER_1].lives = 1;
     game->current_player = PLAYER_1;
 
     // --- PLAYER 2 ---
     player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
     game->players[PLAYER_2].lives = 3;
     game->players[PLAYER_2].active = false; // Only one player for now
+
+    // for now
+    game->players[PLAYER_1].final_pos = (t_tuple){0, 0};
+    game->players[PLAYER_2].final_pos = (t_tuple){0, 0};
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];

@@ -37,33 +37,34 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     t_ctx *ctx = CTX(state);
     t_game_state *game = &ctx->game;
     
-    if (game->match_state != MATCH_RUNNING) return;
-    
-    game->logical_ticks++;
-    game_state_update(ctx);
+    if (game->match_state == MATCH_RUNNING) {
+        game->logical_ticks++;
+        game_state_update(ctx);
+    }
     
     if (game->match_state == MATCH_LOST) {
-    game->is_frozen = true;
+        game->is_frozen = true;
+        update_player_death_animation(&game->players[PLAYER_1]);
 
-    gui_show_info_dialog(
-        ctx,
-        "GAME OVER",
-        "You have no lives left!"
-    );
+        gui_show_info_dialog(
+            ctx,
+            "GAME OVER",
+            "You have no lives left!"
+        );
 
-    return;
+        return;
    }
    
-   if (game->match_state == MATCH_WON) {
-    game->is_frozen = true;
+    if (game->match_state == MATCH_WON) {
+        game->is_frozen = true;
 
-    gui_show_info_dialog(
-        ctx,
-        "YOU WIN!",
-        "All enemies defeated!"
-    );
+        gui_show_info_dialog(
+            ctx,
+            "YOU WIN!",
+            "All enemies defeated!"
+        );
 
-    return;  
+        return;  
     }
     
 }

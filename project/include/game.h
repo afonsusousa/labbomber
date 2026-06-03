@@ -70,6 +70,7 @@ typedef struct s_entity {
     char        name[32];
     t_tuple     pos;
     t_tuple     board_pos;
+    t_tuple     final_pos;
     direction_t dir;
     direction_t sprite_dir;
     uint8_t     animation_phase;
@@ -138,7 +139,6 @@ typedef struct s_game_state {
     uint32_t score;
     uint32_t logical_ticks;
     uint32_t click_count;
-    bool debug_mode;
     bool is_frozen;
 
     match_state_t match_state;
@@ -171,6 +171,7 @@ void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 void    player_bomb_count(t_game_state *game);
+void    update_player_death_animation(player_t *player);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.

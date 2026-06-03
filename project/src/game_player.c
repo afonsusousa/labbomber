@@ -36,6 +36,18 @@ t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
 int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     if (player == NULL || !sprites_initialized || !player->active) return 1;
 
+    if (player->lives == 0) {
+        xpm_image_t img = scaled_sprite_cache[SPRITE_PLAYER_DEATH];
+        hw_vbe_draw_xpm(
+            video,
+            img.bytes,
+            img,
+            game->start_x + player->pos.x,
+            game->start_y + player->pos.y
+        );
+        return 0;
+    }
+
     // Blink if invincible
     if (player->invincibility_timer > 0 && (player->invincibility_timer / 5) % 2 == 0) {
         return 0;
@@ -68,6 +80,22 @@ int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
         draw_y
     );
     return 0;
+}
+
+void update_player_death_animation(player_t *player) {
+    if (player == NULL || !player->active) return;
+    
+    if (player->pos.y == 672) {
+        player->active = false;
+        return;
+    }
+
+    if (player->pos.y > player->final_pos.y - 64) player->pos.y -= 4;
+    
+    else if (player->pos.y <= player->final_pos.y - 64) {
+        player->final_pos.y = 736;
+        player->pos.y += 4;
+    }     
 }
 
 static void remove_movement_key(player_t *player, uint8_t key_index) {
@@ -251,6 +279,6 @@ void update_player_lives(player_t *player, int change) {
     player->lives = (uint8_t)new_lives;
 
     if (player->lives == 0) {
-        player->active = false;
+        player->final_pos = player->pos;
     }
 }
