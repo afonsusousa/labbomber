@@ -43,7 +43,6 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     game_state_update(ctx);
     
     if (game->match_state == MATCH_LOST) {
-
     game->is_frozen = true;
 
     gui_show_info_dialog(
@@ -53,10 +52,9 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     );
 
     return;
-}
-
-if (game->match_state == MATCH_WON) {
-
+   }
+   
+   if (game->match_state == MATCH_WON) {
     game->is_frozen = true;
 
     gui_show_info_dialog(
@@ -65,8 +63,9 @@ if (game->match_state == MATCH_WON) {
         "All enemies defeated!"
     );
 
-    return;
-}
+    return;  
+    }
+    
 }
 
 static void _callback_game_board_on_press(t_widget *self, void *state) {

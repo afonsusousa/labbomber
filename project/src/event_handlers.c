@@ -98,9 +98,11 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
 
     if (gui->views.view_count > 0) {
         int start_idx = gui->views.view_count - 1;
+
         while (start_idx > 0 && gui->views.is_overlay[start_idx]) {
             start_idx--;
         }
+
         for (int i = start_idx; i < gui->views.view_count; i++) {
             widget_tick(gui->views.view_stack[i], ctx);
             widget_draw(gui->views.view_stack[i], &hw_state->video, ctx);
@@ -109,7 +111,8 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
 
     if (gui->input.hovered != NULL && gui->input.hovered->type == TEXT_INPUT) {
         draw_text_cursor(&hw_state->video, &hw_state->mouse);
-    } else {
+    } 
+    else {
         draw_mouse(&hw_state->video, &hw_state->mouse);
     }
 

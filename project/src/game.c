@@ -28,9 +28,9 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
 
     set_date_seed(time.day, time.month, time.year);
 
-   // --- PLAYER 1 ---
-   t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
-   player_init(game, &game->players[PLAYER_1], spawnpoint);
+    // --- PLAYER 1 ---
+    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
+    player_init(game, &game->players[PLAYER_1], spawnpoint);
     game->players[PLAYER_1].lives = 3;
     game->current_player = PLAYER_1;
 
@@ -85,9 +85,9 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     return 0;
 }
 
-void game_state_reset(t_game_state *game, t_time time)
-{
+void game_state_reset(t_game_state *game, t_time time) {
     if (game == NULL) return;
+
     _game_state_prepare_match(game, time);
     game->score = 0;
 }
@@ -107,16 +107,22 @@ void game_state_update(t_ctx *ctx) {
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &game->players[i];
-        if (!player->active) continue;
+        
+        if (!player->active) { 
+            continue;
+        }
 
         if (player->invincibility_timer > 0) {
             player->invincibility_timer--;
         } 
+
         else if (player_collides_with_enemy(game, player)) {
             update_player_lives(player, -1);
+
             if (player->lives > 0) {
                 player->invincibility_timer = INVINCIBILITY_TICKS;
             }
+
         }
     }
 
@@ -139,6 +145,7 @@ void game_state_update(t_ctx *ctx) {
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_update(game, &game->bomb[i]);
     }
+
     player_bomb_count(game);
 
     if (game->match_state == MATCH_RUNNING) {
@@ -152,8 +159,9 @@ void game_state_update(t_ctx *ctx) {
         int enemies_alive = 0;
 
         for (int i = 0; i < game->enemy_count; i++) {
-            if (game->enemies[i].active)
+            if (game->enemies[i].active) {
                 enemies_alive++;
+            }    
         }
 
         if (game->enemy_count > 0 && enemies_alive == 0) {

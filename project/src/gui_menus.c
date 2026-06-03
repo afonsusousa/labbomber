@@ -207,6 +207,7 @@ static void _callback_start_game(t_widget *self, void *state) {
     }
 
     bool player1_empty = is_blank_string(player1_input->data.text_input.buffer);
+
     if (player1_empty) {
         gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
         return;
