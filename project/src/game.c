@@ -16,9 +16,21 @@
 static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
     game->is_paused = false;
-    //game->click_count = 0; tem de estar depois escolher as coords do player
-    game->debug_mode = false;
+    game->click_count = 0;
     generateBoard((char *)game->board, time.day, time.month, time.year);
+
+    //porta simples forcada no primeiro brick
+    game->door_active = false;
+    game->door_pos = (t_tuple){-1, -1};
+    for (int y = 1; y < BOARD_ROWS - 1 && game->door_pos.x == -1; y++) {
+        for (int x = 1; x < BOARD_COLS - 1 && game->door_pos.x == -1; x++) {
+            if (game->board[BOARD_IDX(x, y)] == TILE_TYPE_BRICK) {
+                game->door_pos.x = x;
+                game->door_pos.y = y;
+            }
+        }
+    }
+
     set_date_seed(time.day, time.month, time.year);
 
    // --- PLAYER 1 ---
@@ -128,8 +140,6 @@ void game_state_update(t_ctx *ctx) {
         bomb_update(game, &game->bomb[i]);
     }
     player_bomb_count(game);
-
-    game->logical_ticks++;
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
@@ -199,6 +209,11 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
                 draw_wall(video, GET_X(game, x), GET_Y(game, y), wall_sprite);
             } else if (val == TILE_TYPE_BRICK) {
                 draw_brick(video, GET_X(game, x), GET_Y(game, y));
+
+            // simples porta qnd se destroi o tijolo
+            } else if (val == TILE_TYPE_DOOR) {
+                draw_grass(video, GET_X(game, x), GET_Y(game, y), decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y));
+                hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 4), GET_Y(game, y) - (game->tile_size / 4), game->tile_size / 2, game->tile_size / 2, 0x00AA00);
             } else {
                 hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 2), GET_Y(game, y) - (game->tile_size / 2), game->tile_size, game->tile_size, 0x000000);
             }
