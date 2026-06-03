@@ -1,6 +1,7 @@
 #include "game.h"
 #include "widget.h"
 #include "application.h"
+#include "event_handlers.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +12,7 @@ static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t sca
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
 static void _callback_game_view_on_quit(t_widget *self, void *state);
 static void _callback_game_view_on_tick(t_widget *self, void *state);
+static void _handle_game_key(t_ctx *ctx, uint8_t scancode);
 
 // =============================================================================
 // Game View
@@ -67,12 +69,25 @@ static void _callback_game_board_on_press(t_widget *self, void *state) {
 }
 
 static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
-    game_state_handle_key_press(GAME(state), scancode);
+    (void)self;
+    _handle_game_key(CTX(state), scancode);
 }
 
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     (void)self;
-    game_state_handle_key_press(GAME(state), scancode);
+    _handle_game_key(CTX(state), scancode);
+}
+
+static void _handle_game_key(t_ctx *ctx, uint8_t scancode) {
+    if (ctx == NULL) return;
+
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        app_multiplayer_send_key(ctx, scancode);
+        game_state_handle_player_key(&ctx->game, ctx->multiplayer_local_player, scancode);
+        return;
+    }
+
+    game_state_handle_key_press(&ctx->game, scancode);
 }
 
 void gui_show_game_view(t_ctx *ctx) {
@@ -88,9 +103,12 @@ void gui_show_game_view(t_ctx *ctx) {
     game_canvas->on_key_press = _callback_game_board_on_key_press;
 
     //o game state vai levar o board, os players, start time, etc
-    if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time) != 0) {
+    if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time, ctx->is_multiplayer) != 0) {
         widget_destroy(view);
         return;
+    }
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        ctx->game.current_player = ctx->multiplayer_local_player;
     }
 
     // Retrieve player names from the name menu inputs (AFTER INIT)
@@ -119,7 +137,7 @@ void gui_show_game_view(t_ctx *ctx) {
 
 void gui_reset_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
-    game_state_reset(&ctx->game, ctx->real_time);
+    game_state_reset(&ctx->game, ctx->real_time, ctx->is_multiplayer);
     ctx->game.is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }

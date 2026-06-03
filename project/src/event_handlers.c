@@ -4,9 +4,161 @@
 #include "widget.h"
 #include "draw.h"
 #include "../lib/rtc/rtc.h"
+#include "../lib/serialPort/serial_port.h"
+#include "../lib/keyboard/i8042.h"
+#include <stdio.h>
 #include <time.h>
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
+
+#define MP_PACKET_START 0xA5
+#define MP_PACKET_HELLO 0x01
+#define MP_PACKET_KEY   0x02
+
+static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1) {
+    if (serial_send_byte(MP_PACKET_START) != 0) return 1;
+    if (serial_send_byte(type) != 0) return 1;
+    if (serial_send_byte(data0) != 0) return 1;
+    return serial_send_byte(data1);
+}
+
+static void app_multiplayer_log(t_ctx *ctx, const char *message) {
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file == NULL) return;
+
+    fprintf(log_file,
+            "[MP] %s local=%u remote=%u ready=%d role=%d nonce=%u remote_nonce=%u\n",
+            message,
+            ctx != NULL ? ctx->multiplayer_local_player : 255,
+            ctx != NULL ? ctx->multiplayer_remote_player : 255,
+            ctx != NULL && ctx->multiplayer_partner_ready,
+            ctx != NULL && ctx->multiplayer_role_assigned,
+            ctx != NULL ? ctx->multiplayer_local_nonce : 0,
+            ctx != NULL ? ctx->multiplayer_remote_nonce : 0);
+    fclose(log_file);
+}
+
+static void app_multiplayer_assign_roles(t_ctx *ctx) {
+    if (ctx == NULL) return;
+
+    if (ctx->multiplayer_local_nonce >= ctx->multiplayer_remote_nonce) {
+        ctx->multiplayer_local_player = PLAYER_1;
+        ctx->multiplayer_remote_player = PLAYER_2;
+    } else {
+        ctx->multiplayer_local_player = PLAYER_2;
+        ctx->multiplayer_remote_player = PLAYER_1;
+    }
+
+    ctx->game.current_player = ctx->multiplayer_local_player;
+    ctx->multiplayer_role_assigned = true;
+    ctx->multiplayer_partner_ready = true;
+    app_multiplayer_log(ctx, "roles assigned");
+}
+
+static void app_multiplayer_process_packet(t_ctx *ctx) {
+    if (ctx == NULL) return;
+
+    switch (ctx->multiplayer_rx_type) {
+        case MP_PACKET_HELLO:
+            ctx->multiplayer_remote_nonce =
+                (uint16_t)ctx->multiplayer_rx_data[0] |
+                ((uint16_t)ctx->multiplayer_rx_data[1] << 8);
+            app_multiplayer_assign_roles(ctx);
+            break;
+        case MP_PACKET_KEY: {
+            uint8_t player_id = ctx->multiplayer_rx_data[0];
+            uint8_t scancode = ctx->multiplayer_rx_data[1];
+            FILE *log_file = fopen("/tmp/game_debug.log", "a");
+            if (log_file) {
+                fprintf(log_file, "[MP] rx key player=%u scancode=0x%02X\n", player_id, scancode);
+                fclose(log_file);
+            }
+            if (ctx->multiplayer_role_assigned && player_id != ctx->multiplayer_local_player) {
+                game_state_handle_player_key(&ctx->game, player_id, scancode);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+static void app_multiplayer_receive_byte(t_ctx *ctx, uint8_t byte) {
+    if (ctx == NULL) return;
+
+    if (ctx->multiplayer_rx_state == 0 && byte == 0xAA) {
+        app_multiplayer_log(ctx, "legacy hello byte seen");
+        return;
+    }
+
+    switch (ctx->multiplayer_rx_state) {
+        case 0:
+            if (byte == MP_PACKET_START) {
+                ctx->multiplayer_rx_state = 1;
+                ctx->multiplayer_rx_pos = 0;
+            }
+            break;
+        case 1:
+            ctx->multiplayer_rx_type = byte;
+            ctx->multiplayer_rx_state = 2;
+            break;
+        case 2:
+            ctx->multiplayer_rx_data[ctx->multiplayer_rx_pos++] = byte;
+            if (ctx->multiplayer_rx_pos >= 2) {
+                app_multiplayer_process_packet(ctx);
+                ctx->multiplayer_rx_state = 0;
+                ctx->multiplayer_rx_pos = 0;
+            }
+            break;
+        default:
+            ctx->multiplayer_rx_state = 0;
+            ctx->multiplayer_rx_pos = 0;
+            break;
+    }
+}
+
+int app_multiplayer_send_hello(t_ctx *ctx) {
+    if (ctx == NULL) return 1;
+
+    int result = app_multiplayer_send_packet(
+        MP_PACKET_HELLO,
+        (uint8_t)(ctx->multiplayer_local_nonce & 0xFF),
+        (uint8_t)(ctx->multiplayer_local_nonce >> 8)
+    );
+    serial_send_byte(0xAA);
+    app_multiplayer_log(ctx, result == 0 ? "hello sent" : "hello send failed");
+    return result;
+}
+
+int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {
+    if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return 1;
+
+    uint8_t key_index = MAKE_FROM_BREAK(scancode);
+    if (key_index != KEY_W && key_index != KEY_A && key_index != KEY_D &&
+        key_index != KEY_S && key_index != KEY_E) {
+        return 0;
+    }
+
+    int result = app_multiplayer_send_packet(MP_PACKET_KEY, ctx->multiplayer_local_player, scancode);
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file) {
+        fprintf(log_file, "[MP] tx key player=%u scancode=0x%02X result=%d\n",
+                ctx->multiplayer_local_player, scancode, result);
+        fclose(log_file);
+    }
+    return result;
+}
+
+void app_multiplayer_poll_serial(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer) return;
+
+    for (int i = 0; i < 32 && serial_has_byte(); i++) {
+        uint8_t received;
+        if (serial_read_byte(&received) == 0) {
+            app_multiplayer_receive_byte(ctx, received);
+        }
+    }
+}
 
 static bool app_time_is_valid(const t_time *time) {
     if (time == NULL) return false;
@@ -87,7 +239,23 @@ void app_tick_real_time(t_ctx *ctx) {
 
 void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
+    static int handshake_retry_delay = 0;
     hw_timer_int_handler(&hw_state->timer);
+
+    app_multiplayer_poll_serial(ctx);
+
+    if (ctx->is_multiplayer && !ctx->multiplayer_partner_ready) {
+        if (!ctx->multiplayer_signal_sent || handshake_retry_delay <= 0) {
+            if (app_multiplayer_send_hello(ctx) == 0) {
+                ctx->multiplayer_signal_sent = true;
+            }
+            handshake_retry_delay = 60;
+        } else {
+            handshake_retry_delay--;
+        }
+    } else {
+        handshake_retry_delay = 0;
+    }
     
     if (hw_state->timer.ticks % 60 == 0) {
         app_tick_real_time(ctx);

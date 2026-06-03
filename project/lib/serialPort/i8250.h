@@ -1,7 +1,7 @@
-#ifndef SERIAL_PORT_DEFS_H
-#define SERIAL_PORT_DEFS_H
+#ifndef I8250_H
+#define I8250_H
 
-// COM1 base address and IRQ 
+// COM1 base address and IRQ
 #define COM1_ADDR 0x3F8
 #define COM1_IRQ  4
 
@@ -17,7 +17,13 @@
 #define SERP_LSR  0x05
 #define SERP_MSR  0x06
 #define SERP_SCR  0x07
-
+#define LSR_DATA_READY BIT(0)
+#define LSR_THR_EMPTY BIT(5)
+#define MCR_DTR 0x01
+#define MCR_RTS 0x02
+#define MCR_OUT1 0x04
+#define MCR_OUT2 0x08
+#define MCR_LOOP 0x10
 // Line Control Register bits
 #define LCR_WORD_LENGTH_5 0x00
 #define LCR_WORD_LENGTH_6 0x01
@@ -48,4 +54,4 @@
 // UART base clock for baud rate divisor calculation
 #define FIXED_FREQUENCY   115200
 
-#endif /* SERIAL_PORT_DEFS_H */
+#endif /* I8250_H */

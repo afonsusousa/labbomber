@@ -1,11 +1,18 @@
 #include "gui.h"
 #include "assets_cache.h"
 #include <lcom/xpm.h>
+#include <lcom/lcf.h>
 #include "game.h"
 #include "application.h"
+#include "event_handlers.h"
+#include "../lib/serialPort/serial_port.h"
+#include "../lib/serialPort/i8250.h"
+#include "../lib/utils/utils.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r' || (c) == '\f' || (c) == '\v')
 
@@ -142,12 +149,71 @@ static void _callback_quit(t_widget *self, void *state) {
 
 static void _callback_show_singleplayer_name_menu(t_widget *self, void *state) {
     (void)self;
-    gui_show_name_menu(CTX(state), false);
+    t_ctx *ctx = CTX(state);
+    ctx->is_multiplayer = false;
+    gui_show_name_menu(ctx, false);
 }
 
 static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     (void)self;
-    gui_show_name_menu(CTX(state), true);
+    t_ctx *ctx = CTX(state);
+
+    ctx->is_multiplayer = true;
+    ctx->multiplayer_partner_ready = false;
+    ctx->multiplayer_signal_sent = false;
+    ctx->multiplayer_role_assigned = false;
+    ctx->multiplayer_local_player = PLAYER_1;
+    ctx->multiplayer_remote_player = PLAYER_2;
+    ctx->multiplayer_remote_nonce = 0;
+    ctx->multiplayer_rx_state = 0;
+    ctx->multiplayer_rx_type = 0;
+    ctx->multiplayer_rx_pos = 0;
+    ctx->multiplayer_local_nonce =
+        (uint16_t)((ctx->real_time.seconds * 251u) ^
+                   (ctx->real_time.minutes * 61u) ^
+                   (ctx->real_time.hours * 17u) ^
+                   (ctx->real_time.day * 7u) ^
+                   ((uint32_t)clock() & 0xFFFFu) ^
+                   ((uintptr_t)ctx & 0xFFFFu));
+    
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    
+    if (serial_init() != 0) {
+        if (log_file) {
+            fprintf(log_file, "[ERROR] serial_init() failed\n");
+            fflush(log_file);
+            fclose(log_file);
+        }
+        gui_show_info_dialog(ctx, "Serial Error", "Failed to initialize serial port");
+        ctx->is_multiplayer = false;
+        return;
+    }
+    serial_flush_rx();
+    
+    // Wait for the host pipe / TCP bridge to settle before sending the first handshake.
+    for (int i = 0; i < 1000; i++) {
+        uint8_t dummy;
+        if (util_sys_inb(COM1_ADDR + SERP_LSR, &dummy) == 0) {
+            if (log_file && (i % 200 == 0)) {
+                fprintf(log_file, "[SERIAL] waiting for connection, LSR=0x%02X\n", dummy);
+            }
+        }
+    }
+
+    int initial_result = app_multiplayer_send_hello(ctx);
+    if (log_file) {
+        fprintf(log_file, "[SERIAL] initial handshake send result=%d\n", initial_result);
+        fprintf(log_file, "[INFO] Serial initialized, handshake send initiated\n");
+        fflush(log_file);
+        fclose(log_file);
+    }
+
+    if (log_file) {
+        fprintf(log_file, "[INFO] Serial initialized, handshake byte sent\n");
+        fflush(log_file);
+        fclose(log_file);
+    }
+    gui_show_name_menu(ctx, true);
 }
 
 static void _callback_show_scoreboard(t_widget *self, void *state) {
@@ -190,7 +256,13 @@ void gui_show_start_menu(struct s_ctx *ctx) {
 
 static void _callback_start_game(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
+
+    if (ctx->is_multiplayer && !ctx->multiplayer_role_assigned) {
+        gui_show_info_dialog(ctx, "Waiting", "Waiting for multiplayer handshake...");
+        return;
+    }
 
     t_widget *player1_input = widget_find_by_name(gui, "player1_input");
     t_widget *player2_input = widget_find_by_name(gui, "player2_input");
@@ -266,7 +338,7 @@ static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = GUI(state);
-    game_state_reset(GAME(state), CTX(state)->real_time);
+    game_state_reset(GAME(state), CTX(state)->real_time, CTX(state)->is_multiplayer);
     GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }

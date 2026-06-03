@@ -1,5 +1,98 @@
 #include <lcom/lcf.h>
 #include "serial_port.h"
+#include "../utils/utils.h"
+
+int serial_init(void) {
+    if (setup_lcr(8, 1) != 0) return 1;
+    if (set_bit_rate(9600) != 0) return 1;
+    if (fifo_en() != 0) return 1;
+    if (setup_mcr() != 0) return 1;
+    return 0;
+}
+
+int setup_mcr(void) {
+    return sys_outb(COM1_ADDR + SERP_MCR, MCR_DTR | MCR_RTS);
+}
+
+int serial_send_byte(uint8_t b) {
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    uint8_t status = 0;
+    for (int i = 0; i < 10000; i++) {
+        if (util_sys_inb(COM1_ADDR + SERP_LSR, &status) != 0) {
+            if (log_file) {
+                fprintf(log_file, "[SERIAL] send_byte util_sys_inb failed\n");
+                fclose(log_file);
+            }
+            return 1;
+        }
+        if (status & LSR_THR_EMPTY) {
+            int result = send_char(b);
+            if (log_file) {
+                fprintf(log_file, "[SERIAL] send_byte(0x%02X) sent, result=%d\n", b, result);
+                fclose(log_file);
+            }
+            return result;
+        }
+    }
+    if (log_file) {
+        fprintf(log_file, "[SERIAL] send_byte(0x%02X) timeout - THR never empty\n", b);
+        fclose(log_file);
+    }
+    return 1;
+}
+
+
+bool serial_has_byte(void) {
+    uint8_t status = 0;
+    if (util_sys_inb(COM1_ADDR + SERP_LSR, &status) != 0) return false;
+    bool has_data = (status & LSR_DATA_READY) != 0;
+    
+    static int poll_count = 0;
+    if (++poll_count % 1000 == 0) {
+        FILE *log_file = fopen("/tmp/game_debug.log", "a");
+        if (log_file) {
+            fprintf(log_file, "[SERIAL] serial_has_byte check: status=0x%02X, has_data=%d\n", status, has_data);
+            fclose(log_file);
+        }
+    }
+    
+    return has_data;
+}
+
+
+int serial_read_byte(uint8_t *b) {
+    if (b == NULL) return 1;
+
+    uint8_t status = 0;
+    if (util_sys_inb(COM1_ADDR + SERP_LSR, &status) != 0) return 1;
+    if (!(status & LSR_DATA_READY)) return 1;
+    
+    int result = util_sys_inb(COM1_ADDR + SERP_DATA, b);
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file) {
+        fprintf(log_file, "[SERIAL] serial_read_byte: got 0x%02X, result=%d\n", *b, result);
+        fclose(log_file);
+    }
+    return result;
+}
+
+void serial_flush_rx(void) {
+    uint8_t status = 0;
+    uint8_t discarded = 0;
+    int count = 0;
+
+    while (util_sys_inb(COM1_ADDR + SERP_LSR, &status) == 0 && (status & LSR_DATA_READY)) {
+        if (util_sys_inb(COM1_ADDR + SERP_DATA, &discarded) != 0) break;
+        count++;
+    }
+
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file) {
+        fprintf(log_file, "[SERIAL] flushed %d stale RX byte(s)\n", count);
+        fclose(log_file);
+    }
+}
+
 
 int get_lcr(uint8_t *lcr) {
     return util_sys_inb(COM1_ADDR + SERP_LCR, lcr);
@@ -15,13 +108,13 @@ int set_bit_rate(uint16_t bit_rate) {
         return 1;
     }
 
-    uint8_t msb;
-    uint8_t lsb;
-    util_get_MSB(FIXED_FREQUENCY / bit_rate, &msb);
-    util_get_LSB(FIXED_FREQUENCY / bit_rate, &lsb);
+    uint8_t msb_val;
+    uint8_t lsb_val;
+    msb_val = msb(FIXED_FREQUENCY / bit_rate);
+    lsb_val = lsb(FIXED_FREQUENCY / bit_rate);
 
-    if (sys_outb(COM1_ADDR + SERP_DLM, msb) != 0) return 1;
-    if (sys_outb(COM1_ADDR + SERP_DLL, lsb) != 0) return 1;
+    if (sys_outb(COM1_ADDR + SERP_DLM, msb_val) != 0) return 1;
+    if (sys_outb(COM1_ADDR + SERP_DLL, lsb_val) != 0) return 1;
 
     return sys_outb(COM1_ADDR + SERP_LCR, lcr & ~LCR_DLAB);
 }
