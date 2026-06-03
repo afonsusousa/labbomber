@@ -93,6 +93,24 @@ void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *mess
     gui_push_overlay(gui, overlay);
 }
 
+void gui_show_game_end_dialog(struct s_ctx *ctx, const char *title, const char *message) {
+    t_gui *gui = &ctx->gui;
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "end_overlay");
+    if (overlay == NULL) return;
+
+    t_widget *dialog = widget_add_dialog(overlay, title, 360, 190, gui->width, gui->height, _callback_pop_view, "end_dialog");
+    dialog->on_quit = _callback_pop_view;
+
+    widget_add_text(dialog, 0, 40, 320, 24, message, "end_message");
+
+    t_widget *btn_ok = widget_add_button(dialog, 0, 86, 120, 36, "OK", _callback_confirm_return_to_main_menu, "end_ok_button");
+
+    int32_t btn_row_x = ((int32_t)dialog->width - (int32_t)btn_ok->width) / 2;
+    widget_set_position(btn_ok, btn_row_x, 120);
+
+    gui_push_overlay(gui, overlay);
+}
+
 void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
     t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "confirm_overlay");

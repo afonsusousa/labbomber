@@ -22,6 +22,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     //game->click_count = 0; tem de estar depois escolher as coords do player
     game->debug_mode = false;
     generateBoard((char *)game->board, time.day, time.month, time.year);
+
+    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
+    game->door_active = false;
+    game->door_open = false;
+
     set_date_seed(time.day, time.month, time.year);
 
    // --- PLAYER 1 ---
@@ -46,6 +51,8 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_init(&game->bomb[i]);
     }
+    
+    game->click_count = 0;
 }
 
 int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
@@ -225,6 +232,8 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
                 draw_wall(video, GET_X(game, x), GET_Y(game, y), wall_sprite);
             } else if (val == TILE_TYPE_BRICK) {
                 draw_brick(video, GET_X(game, x), GET_Y(game, y));
+            } else if (val == TILE_TYPE_DOOR) {
+                draw_door(video, GET_X(game, x), GET_Y(game, y), game->door_open);
             } else {
                 hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 2), GET_Y(game, y) - (game->tile_size / 2), game->tile_size, game->tile_size, 0x000000);
             }

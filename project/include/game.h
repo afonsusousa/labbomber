@@ -31,6 +31,7 @@ typedef enum {
 #define TILE_TYPE_GRASS 0
 #define TILE_TYPE_WALL  1
 #define TILE_TYPE_BRICK 2
+#define TILE_TYPE_DOOR  3
 
 #define GAME_TICKS_PER_SECOND 60
 #define INVINCIBILITY_TICKS (GAME_TICKS_PER_SECOND * 3)
@@ -41,7 +42,7 @@ typedef enum {
 
 #define MAX_ENEMIES          10
 #define MIN_DIST_FROM_PLAYER  6
-#define ENEMY_SPEED           2
+#define ENEMY_SPEED           1
 
 #define MAX_BOMBS 4
 
@@ -121,6 +122,10 @@ typedef struct s_game_state {
     int32_t start_y;
 
     uint8_t board[BOARD_ROWS * BOARD_COLS];
+
+    t_tuple door_pos;
+    bool door_active;
+    bool door_open;
 
     player_t players[MAX_PLAYERS];
     uint8_t current_player;
