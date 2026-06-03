@@ -2,6 +2,7 @@
 #define SERIAL_PORT_H
 
 #include <lcom/lcf.h>
+#include "i8250.h"
 
 int get_lcr(uint8_t *lcr);
 int set_bit_rate(uint16_t bit_rate);

@@ -101,7 +101,7 @@ int fifo_en(void) {
 }
 
 int send_char(uint8_t char_send) {
-    if (sys_outb(COM1_ADDR, char_send) != 0) {
+    if (sys_outb(COM1_ADDR + SERP_DATA, char_send) != 0) {
         printf("send char error\n");
         return 1;
     }
