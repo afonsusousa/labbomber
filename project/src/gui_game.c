@@ -43,17 +43,15 @@ static void _callback_game_view_on_tick(t_widget *self, void *state)
 
     bool p1_dead = (game->players[PLAYER_1].active && game->players[PLAYER_1].lives == 0);
 
-    int enemies_alive = 0;
-    for (int i = 0; i < game->enemy_count; i++) {
-        if (game->enemies[i].active) enemies_alive++;
-    }
-
     if (p1_dead) {
         game->is_paused = true;
         gui_show_info_dialog(ctx, "GAME OVER", "You have no lives left!");
-    } else if (game->enemy_count > 0 && enemies_alive == 0) {
-        game->is_paused = true;
-        gui_show_info_dialog(ctx, "YOU WIN!", "All enemies defeated!");
+    } else if (game->door_open) {
+        t_tuple player_pos = game->players[PLAYER_1].board_pos;
+        if (player_pos.x == game->door_pos.x && player_pos.y == game->door_pos.y) {
+            game->is_paused = true;
+            gui_show_info_dialog(ctx, "YOU WIN!", "All enemies defeated!");
+        }
     }
 }
 

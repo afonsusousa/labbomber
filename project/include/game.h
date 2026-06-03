@@ -118,6 +118,7 @@ typedef struct s_game_state {
 
     t_tuple door_pos;
     bool door_active;
+    bool door_open;
 
     player_t players[MAX_PLAYERS];
     uint8_t current_player;

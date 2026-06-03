@@ -140,6 +140,14 @@ void game_state_update(t_ctx *ctx) {
         bomb_update(game, &game->bomb[i]);
     }
     player_bomb_count(game);
+
+    int enemies_alive = 0;
+    for (int i = 0; i < game->enemy_count; i++) {
+        if (game->enemies[i].active) enemies_alive++;
+    }
+    if (game->enemy_count > 0 && enemies_alive == 0 && game->door_active) {
+        game->door_open = true;
+    }
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
@@ -210,7 +218,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             } else if (val == TILE_TYPE_BRICK) {
                 draw_brick(video, GET_X(game, x), GET_Y(game, y));
             } else if (val == TILE_TYPE_DOOR) {
-                draw_door(video, GET_X(game, x), GET_Y(game, y), false);
+                draw_door(video, GET_X(game, x), GET_Y(game, y), game->door_open);
             } else {
                 hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 2), GET_Y(game, y) - (game->tile_size / 2), game->tile_size, game->tile_size, 0x000000);
             }
