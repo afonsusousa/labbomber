@@ -41,16 +41,16 @@ static void _callback_game_view_on_tick(t_widget *self, void *state)
         game_state_update(ctx);
     }
 
-    bool p1_dead = (game->players[PLAYER_1].active && game->players[PLAYER_1].lives == 0);
+    bool p1_dead = (!game->players[PLAYER_1].active && game->players[PLAYER_1].lives == 0);
 
     if (p1_dead) {
         game->is_paused = true;
-        gui_show_info_dialog(ctx, "GAME OVER", "You have no lives left!");
+        gui_show_game_end_dialog(ctx, "GAME OVER", "You have no lives left!");
     } else if (game->door_open) {
         t_tuple player_pos = game->players[PLAYER_1].board_pos;
         if (player_pos.x == game->door_pos.x && player_pos.y == game->door_pos.y) {
             game->is_paused = true;
-            gui_show_info_dialog(ctx, "YOU WIN!", "All enemies defeated!");
+            gui_show_game_end_dialog(ctx, "YOU WIN!", "All enemies defeated!");
         }
     }
 }
