@@ -62,16 +62,13 @@ t_widget* gui_get_top_view(t_gui *gui);
 t_widget* gui_pop_until_widget_found(t_gui *gui, const char *widget_name);
 
 t_widget* widget_find_by_name(t_gui *gui, const char *name);
+t_widget* gui_create_dialog(struct s_ctx *ctx, const char *title, uint32_t w, uint32_t h, void (*on_close)(t_widget*, void*), const char *name);
 // Menus/Launchers
 void init_game(struct s_ctx *ctx);
 void gui_show_start_menu(struct s_ctx *ctx);
 void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer);
-void gui_show_pause_menu(struct s_ctx *ctx);
+void gui_show_session_menu(struct s_ctx *ctx, const char *title, const char *message);
 void gui_show_scoreboard(struct s_ctx *ctx);
-void gui_show_game_view(struct s_ctx *ctx);
-void gui_reset_game_view(struct s_ctx *ctx);
-void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message);
-void gui_show_game_end_dialog(struct s_ctx *ctx, const char *title, const char *message);
 void gui_show_confirm_dialog(
     struct s_ctx *ctx,
     const char *title,

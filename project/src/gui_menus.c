@@ -18,18 +18,7 @@ static void _callback_show_singleplayer_name_menu(t_widget *self, void *state);
 static void _callback_show_multiplayer_name_menu(t_widget *self, void *state);
 static void _callback_show_scoreboard(t_widget *self, void *state);
 static void _callback_start_game(t_widget *self, void *state);
-static void _callback_resume_game(t_widget *self, void *state);
-static void _callback_confirm_return_to_main_menu(t_widget *self, void *state);
-static void _callback_confirm_reset_game(t_widget *self, void *state);
-static void _callback_reset_game(t_widget *self, void *state);
-static void _callback_return_to_main_menu(t_widget *self, void *state);
 static void _callback_close_scoreboard(t_widget *self, void *state);
-
-t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name) {
-    t_widget *overlay = widget_create(OVERLAY, 0, 0, screen_w, screen_h, name);
-    overlay->on_quit = on_quit;
-    return overlay;
-}
 
 // ENTRY POINT
 
@@ -69,55 +58,21 @@ static bool is_blank_string(const char *s) {
 // Shared Dialogs
 // =============================================================================
 
-static void _callback_game_over_ok(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = GUI(state);
-    gui_pop_until_widget_found(gui, "start_menu_view");
-}
-
 void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message) {
-    t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "info_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *info_dialog = widget_add_dialog(overlay, title, 360, 190, gui->width, gui->height, _callback_pop_view, "info_dialog");
-    info_dialog->on_quit = _callback_pop_view;
+    t_widget *info_dialog = gui_create_dialog(ctx, title, 360, 190, _callback_pop_view, "info_dialog");
+    if (info_dialog == NULL) return;
 
     widget_add_text(info_dialog, 0, 40, 320, 24, message, "info_message");
 
-    t_widget *btn_ok = widget_add_button(info_dialog, 0, 86, 120, 36, "OK", _callback_game_over_ok, "info_ok_button");
+    t_widget *btn_ok = widget_add_button(info_dialog, 0, 86, 120, 36, "OK", _callback_pop_view, "info_ok_button");
 
     int32_t btn_row_x = ((int32_t)info_dialog->width - (int32_t)btn_ok->width) / 2;
     widget_set_position(btn_ok, btn_row_x, 120);
-
-    gui_push_overlay(gui, overlay);
-}
-
-void gui_show_game_end_dialog(struct s_ctx *ctx, const char *title, const char *message) {
-    t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "end_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *dialog = widget_add_dialog(overlay, title, 360, 190, gui->width, gui->height, _callback_pop_view, "end_dialog");
-    dialog->on_quit = _callback_pop_view;
-
-    widget_add_text(dialog, 0, 40, 320, 24, message, "end_message");
-
-    t_widget *btn_ok = widget_add_button(dialog, 0, 86, 120, 36, "OK", _callback_confirm_return_to_main_menu, "end_ok_button");
-
-    int32_t btn_row_x = ((int32_t)dialog->width - (int32_t)btn_ok->width) / 2;
-    widget_set_position(btn_ok, btn_row_x, 120);
-
-    gui_push_overlay(gui, overlay);
 }
 
 void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
-    t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "confirm_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *confirm_dialog = widget_add_dialog(overlay, title, 360, 190, gui->width, gui->height, on_no, "confirm_dialog");
-    confirm_dialog->on_quit = _callback_pop_view;
+    t_widget *confirm_dialog = gui_create_dialog(ctx, title, 360, 190, on_no, "confirm_dialog");
+    if (confirm_dialog == NULL) return;
 
     widget_add_text(confirm_dialog, 0, 40, 320, 24, message, "confirm_message");
 
@@ -127,8 +82,6 @@ void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *m
     int32_t btn_row_x = ((int32_t)confirm_dialog->width - (int32_t)(btn_yes->width + btn_no->width + 20)) / 2;
     widget_set_position(btn_yes, btn_row_x, 120);
     widget_set_position(btn_no, btn_row_x + (int32_t)btn_yes->width + 20, 120);
-
-    gui_push_overlay(gui, overlay);
 }
 
 // =============================================================================
@@ -249,61 +202,6 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
     widget_add_button(dlg_prompt, 0, 0, 150, 40, "Start", _callback_start_game, "start_game_button");
 
     widget_layout(dlg_prompt, 16, 48, true);
-    gui_push_overlay(gui, overlay);
-}
-
-// =============================================================================
-// Pause Menu
-// =============================================================================
-
-static void _callback_resume_game(t_widget *self, void *state) {
-    (void)self;
-    t_ctx *ctx = CTX(state);
-    t_gui *gui = GUI(state);
-    ctx->game.is_frozen = false;
-    gui_pop_view(gui);
-}
-
-static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = GUI(state);
-    gui_pop_until_widget_found(gui, "start_menu_view");
-}
-
-static void _callback_confirm_reset_game(t_widget *self, void *state) {
-    (void)self;
-    t_ctx *ctx = CTX(state);
-    t_gui *gui = GUI(state);
-    game_state_reset(GAME(state), ctx->real_time);
-    ctx->game.is_frozen = false;
-    gui_pop_until_widget_found(gui, "game_view");
-}
-
-static void _callback_reset_game(t_widget *self, void *state) {
-    (void)self;
-    gui_show_confirm_dialog(CTX(state), "Confirm Reset", "Are you sure?", _callback_confirm_reset_game, _callback_pop_view);
-}
-
-static void _callback_return_to_main_menu(t_widget *self, void *state) {
-    (void)self;
-    gui_show_confirm_dialog(CTX(state), "Confirm Main Menu", "Return to main menu?", _callback_confirm_return_to_main_menu, _callback_pop_view);
-}
-
-void gui_show_pause_menu(struct s_ctx *ctx) {
-    t_gui *gui = &ctx->gui;
-    
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "pause_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, gui->width, gui->height, _callback_resume_game, "pause_dialog");
-    
-    pause_dialog->on_quit = _callback_resume_game;
-
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "pause_resume_button");
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "pause_reset_button");
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Main Menu", _callback_return_to_main_menu, "pause_menu_button");
-
-    widget_layout(pause_dialog, 12, 32, true);
     gui_push_overlay(gui, overlay);
 }
 

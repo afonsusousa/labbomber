@@ -1,4 +1,5 @@
 #include "game.h"
+#include "macros.h"
 #include "widget.h"
 #include "application.h"
 #include <stdio.h>
@@ -16,6 +17,67 @@ static void _callback_game_view_on_tick(t_widget *self, void *state);
 // Game View
 // =============================================================================
 
+static void _callback_pop_view(t_widget *self, void *state) {
+    (void)self;
+    gui_pop_view(GUI(state));
+}
+
+static void _callback_resume_game(t_widget *self, void *state) {
+    (void)self;
+    t_ctx *ctx = CTX(state);
+    ctx->game.is_frozen = false;
+    gui_pop_view(GUI(state));
+}
+
+static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
+    (void)self;
+    gui_pop_until_widget_found(GUI(state), "start_menu_view");
+}
+
+static void _callback_confirm_reset_game(t_widget *self, void *state) {
+    (void)self;
+    t_ctx *ctx = CTX(state);
+    game_state_reset(GAME(state), ctx->real_time);
+    ctx->game.is_frozen = false;
+    gui_pop_until_widget_found(GUI(state), "game_view");
+}
+
+static void _callback_reset_game(t_widget *self, void *state) {
+    (void)self;
+    gui_show_confirm_dialog(CTX(state), "Confirm Reset", "Are you sure?", _callback_confirm_reset_game, _callback_pop_view);
+}
+
+static void _callback_return_to_main_menu(t_widget *self, void *state) {
+    (void)self;
+    gui_show_confirm_dialog(CTX(state), "Confirm Main Menu", "Return to main menu?", _callback_confirm_return_to_main_menu, _callback_pop_view);
+}
+
+void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
+    t_gui *gui = &ctx->gui;
+    bool game_over = ctx->game.match_state != MATCH_RUNNING;
+
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "session_overlay");
+    if (overlay == NULL) return;
+
+    uint32_t height = 240 + (message ? 40 : 0) + (game_over ? 0 : 50);
+    t_widget *session_dialog = widget_add_dialog(overlay, title, 360, height, gui->width, gui->height, _callback_resume_game, "session_dialog");
+
+    session_dialog->on_quit = _callback_resume_game;
+
+    if (message) {
+        widget_add_text(session_dialog, 0, 40, 320, 24, message, "session_message");
+    }
+
+    if (!game_over) {
+        widget_add_button(session_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "session_resume_button");
+    }
+    widget_add_button(session_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "session_reset_button");
+    widget_add_button(session_dialog, 0, 0, 220, 40, "Main Menu", _callback_return_to_main_menu, "session_menu_button");
+
+    widget_layout(session_dialog, 12, message ? 80 : 32, true);
+    gui_push_overlay(gui, overlay);
+}
+
 static void _callback_game_view_on_quit(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
@@ -24,48 +86,34 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
     if (gui->input.focused != NULL && gui->input.focused != self && gui->input.focused->on_quit != NULL) {
         gui->input.focused->on_quit(gui->input.focused, state);
         return;
-    }   
-
-    if (!ctx->game.is_frozen) {
-    ctx->game.is_frozen = true;
-    gui_show_pause_menu(ctx); 
     }
+
+    if (!ctx->game.is_frozen)
+    	ctx->game.is_frozen = true;
+    gui_show_session_menu(ctx, "PAUSED", NULL);
 }
 
 static void _callback_game_view_on_tick(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
-    t_game_state *game = &ctx->game;
-    
+    t_game_state *game = GAME(state);
+
     if (game->is_frozen) return;
-    
+
     game->logical_ticks++;
     game_state_update(ctx);
-    
+
     if (game->match_state == MATCH_LOST) {
-    game->is_frozen = true;
-
-    gui_show_info_dialog(
-        ctx,
-        "GAME OVER",
-        "You have no lives left!"
-    );
-
-    return;
-   }
-   
-   if (game->match_state == MATCH_WON) {
-    game->is_frozen = true;
-
-    gui_show_info_dialog(
-        ctx,
-        "YOU WIN!",
-        "All enemies defeated!"
-    );
-
-    return;  
+        game->is_frozen = true;
+        gui_show_session_menu(ctx, "GAME OVER", "You have no lives left!");
+        return;
     }
-    
+
+    if (game->match_state == MATCH_WON) {
+        game->is_frozen = true;
+        gui_show_session_menu(ctx, "YOU WIN!", "All enemies defeated!");
+        return;
+    }
 }
 
 static void _callback_game_board_on_press(t_widget *self, void *state) {
