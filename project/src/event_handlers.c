@@ -42,21 +42,6 @@ static void app_multiplayer_log(t_ctx *ctx, const char *message) {
     fclose(log_file);
 }
 
-static uint32_t app_multiplayer_compute_seed(t_ctx *ctx) {
-    uint16_t local_nonce = ctx->multiplayer_local_nonce;
-    uint16_t remote_nonce = ctx->multiplayer_remote_nonce;
-    uint8_t local_tie = ctx->multiplayer_local_tiebreaker;
-    uint8_t remote_tie = ctx->multiplayer_remote_tiebreaker;
-
-    uint16_t min_nonce = local_nonce < remote_nonce ? local_nonce : remote_nonce;
-    uint16_t max_nonce = local_nonce < remote_nonce ? remote_nonce : local_nonce;
-    uint8_t min_tie = local_tie < remote_tie ? local_tie : remote_tie;
-    uint8_t max_tie = local_tie < remote_tie ? remote_tie : local_tie;
-
-    return ((uint32_t)min_nonce << 16) ^ ((uint32_t)max_nonce << 8) ^
-           ((uint32_t)min_tie << 4) ^ (uint32_t)max_tie;
-}
-
 static void app_multiplayer_assign_roles(t_ctx *ctx) {
     if (ctx == NULL) return;
 
@@ -70,11 +55,10 @@ static void app_multiplayer_assign_roles(t_ctx *ctx) {
         ctx->multiplayer_remote_player = PLAYER_1;
     }
 
-    ctx->multiplayer_match_seed = app_multiplayer_compute_seed(ctx);
     ctx->game.current_player = ctx->multiplayer_local_player;
     ctx->multiplayer_role_assigned = true;
     ctx->multiplayer_partner_ready = true;
-    app_multiplayer_log(ctx, "roles assigned");
+    app_multiplayer_log(ctx, "roles assigned (RTC selection fallback ready)");
 }
 
 static void app_multiplayer_process_packet(t_ctx *ctx) {
@@ -333,6 +317,7 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
 
     if (app_multiplayer_name_inputs_ready(ctx)) {
         gui_pop_view(&ctx->gui);
+        app_update_real_time(ctx);
         gui_show_game_view(ctx);
     }
 

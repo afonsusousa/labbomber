@@ -75,8 +75,10 @@ static void generateInnerBoard(int innerBoard[INNER_ROWS][INNER_COLS], int seed)
     }
 }
 
-void generateBoard(char *board, uint32_t seed) {
+void generateBoard(char *board, int day, int month, int year) {
     int innerBoard[INNER_ROWS][INNER_COLS];
+
+    int seed = year * 10000 + month * 100 + day;
 
     generateInnerBoard(innerBoard, seed);
 
@@ -91,7 +93,7 @@ void generateBoard(char *board, uint32_t seed) {
     }
 }
 
-t_tuple door_spawnpoint_generator(uint8_t *board, uint32_t click_count, uint32_t seed) {
+t_tuple door_spawnpoint_generator(uint8_t *board, uint32_t click_count, int day, int month, int year) {
     int brick_positions[INNER_ROWS * INNER_COLS][2];
     int count = 0;
 
@@ -107,9 +109,9 @@ t_tuple door_spawnpoint_generator(uint8_t *board, uint32_t click_count, uint32_t
 
     if (count == 0) return (t_tuple){-1, -1};
 
-    uint32_t t = ((seed >> 24) & 0xFF) + (((seed >> 16) & 0xFF) * 31u) + (((seed >> 8) & 0xFF) * 17u) + ((seed & 0xFF) * 13u);
-    uint32_t choice = click_count + t;
-    int index = choice % count;
+    uint32_t seed = click_count * 13 + day * 31 + month * 17 + year;
+    int index = seed % count;
+
 
     return (t_tuple){brick_positions[index][0], brick_positions[index][1]};
 }

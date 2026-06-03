@@ -166,7 +166,6 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_remote_player = PLAYER_2;
     ctx->multiplayer_remote_nonce = 0;
     ctx->multiplayer_remote_tiebreaker = 0;
-    ctx->multiplayer_match_seed = 0;
     ctx->multiplayer_rx_state = 0;
     ctx->multiplayer_rx_type = 0;
     ctx->multiplayer_rx_pos = 0;
@@ -345,13 +344,7 @@ static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = GUI(state);
-    t_ctx *ctx = CTX(state);
-
-    uint32_t board_seed = ctx->is_multiplayer && ctx->multiplayer_role_assigned
-        ? ctx->multiplayer_match_seed
-        : ((uint32_t)ctx->real_time.year * 10000u + (uint32_t)ctx->real_time.month * 100u + (uint32_t)ctx->real_time.day);
-
-    game_state_reset(GAME(state), ctx->real_time, ctx->is_multiplayer, board_seed);
+    game_state_reset(GAME(state), CTX(state)->real_time, CTX(state)->is_multiplayer);
     GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }
