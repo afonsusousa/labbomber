@@ -24,37 +24,49 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
     if (gui->input.focused != NULL && gui->input.focused != self && gui->input.focused->on_quit != NULL) {
         gui->input.focused->on_quit(gui->input.focused, state);
         return;
-    }
+    }   
 
-    ctx->game.is_paused = true;
-    gui_show_pause_menu(ctx);
+    if (!ctx->game.is_frozen) {
+    ctx->game.is_frozen = true;
+    gui_show_pause_menu(ctx); 
+    }
 }
 
-static void _callback_game_view_on_tick(t_widget *self, void *state)
-{
+static void _callback_game_view_on_tick(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
     t_game_state *game = &ctx->game;
+    
+    if (game->is_frozen) return;
+    
+    game->logical_ticks++;
+    game_state_update(ctx);
+    
+    if (game->match_state == MATCH_LOST) {
 
-    if (!ctx->game.is_paused) {
-        ctx->game.logical_ticks++;
-        game_state_update(ctx);
-    }
+    game->is_frozen = true;
 
-    bool p1_dead = (game->players[PLAYER_1].active && game->players[PLAYER_1].lives == 0);
+    gui_show_info_dialog(
+        ctx,
+        "GAME OVER",
+        "You have no lives left!"
+    );
 
-    int enemies_alive = 0;
-    for (int i = 0; i < game->enemy_count; i++) {
-        if (game->enemies[i].active) enemies_alive++;
-    }
+    return;
+}
 
-    if (p1_dead) {
-        game->is_paused = true;
-        gui_show_info_dialog(ctx, "GAME OVER", "You have no lives left!");
-    } else if (game->enemy_count > 0 && enemies_alive == 0) {
-        game->is_paused = true;
-        gui_show_info_dialog(ctx, "YOU WIN!", "All enemies defeated!");
-    }
+if (game->match_state == MATCH_WON) {
+
+    game->is_frozen = true;
+
+    gui_show_info_dialog(
+        ctx,
+        "YOU WIN!",
+        "All enemies defeated!"
+    );
+
+    return;
+}
 }
 
 static void _callback_game_board_on_press(t_widget *self, void *state) {
@@ -122,6 +134,6 @@ void gui_show_game_view(t_ctx *ctx) {
 void gui_reset_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     game_state_reset(&ctx->game, ctx->real_time);
-    ctx->game.is_paused = false;
+    ctx->game.is_frozen = false;
     gui_pop_until_widget_found(gui, "game_view");
 }

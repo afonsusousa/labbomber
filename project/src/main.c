@@ -56,7 +56,6 @@ int(proj_main_loop)(int argc, char* argv[]) {
 
     t_ctx app;
     memset(&app, 0, sizeof(app));
-    app.state = APP_STATE_MENU_MAIN;
     app_update_real_time(&app);
     gui_init(&app, hw_state.video.screen_width, hw_state.video.screen_height);
 

@@ -8,16 +8,6 @@
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 
-void game_set_phase(t_game_state *game, game_phase_t new_phase) {
-    if (game == NULL) return;
-    game->phase       = new_phase;
-}
-
-void app_set_state(t_ctx *ctx, app_state_t new_state) {
-    if (ctx == NULL) return;
-    ctx->state = new_state;
-}
-
 static bool app_time_is_valid(const t_time *time) {
     if (time == NULL) return false;
 
@@ -93,51 +83,6 @@ void app_tick_real_time(t_ctx *ctx) {
 
     ctx->real_time.month = 1;
     ctx->real_time.year++;
-}
-
-
-static void _handle_game_phases(t_ctx *ctx) {
-    t_game_state *game = &ctx->game;
-
-    switch (game->phase) {
-
-    case GAME_PHASE_PLAYING:
-        /* Advance simulation */    
-        game->logical_ticks++;
-        game_state_update(ctx);
-
-        /* Check lose condition: player 1 killed by enemy */
-        player_t *p = &game->players[PLAYER_1];
-        if (p->invincibility_ticks > 0) {
-            p->invincibility_ticks--;
-        } else if (player_collides_with_enemy(game, p)) {
-            p->lives--;
-            if (p->lives == 0) {
-                game_set_phase(game, GAME_PHASE_GAME_OVER);
-            } else {
-                p->invincibility_ticks = INVINCIBILITY_TICKS; 
-        /* ativar a animação de morte do player */
-    }
-}
-
-        /* Check win condition: all enemies dead */
-        {
-            int alive = 0;
-            for (int i = 0; i < game->enemy_count; i++) {
-                if (game->enemies[i].active) alive++;
-            }
-            if (alive == 0) {
-                game_set_phase(game, GAME_PHASE_VICTORY);
-            }
-        }
-        break;
-
-
-    case GAME_PHASE_PAUSED:
-    case GAME_PHASE_GAME_OVER:
-    case GAME_PHASE_VICTORY:
-        break;
-    }
 }
 
 

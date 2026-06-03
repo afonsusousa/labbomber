@@ -108,11 +108,10 @@ typedef struct {
 } bomb_t;
 
 typedef enum {
-    GAME_PHASE_PLAYING = 0,
-    GAME_PHASE_PAUSED,
-    GAME_PHASE_GAME_OVER,
-    GAME_PHASE_VICTORY
-} game_phase_t;
+    MATCH_RUNNING,
+    MATCH_WON,
+    MATCH_LOST
+} match_state_t;
 
 typedef struct s_game_state {
     uint32_t width;
@@ -135,14 +134,10 @@ typedef struct s_game_state {
     uint32_t logical_ticks;
     uint32_t click_count;
     bool debug_mode;
-    bool is_paused;
-    game_phase_t phase;
-} t_game_state;
+    bool is_frozen;
 
-#define GAME_IS_FROZEN(game) \
-    ((game)->phase == GAME_PHASE_PAUSED    || \
-     (game)->phase == GAME_PHASE_GAME_OVER || \
-     (game)->phase == GAME_PHASE_VICTORY)
+    match_state_t match_state;
+} t_game_state;
 
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);

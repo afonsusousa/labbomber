@@ -15,9 +15,10 @@
 
 static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
-    game->players[PLAYER_1].invincibility_ticks = 0;
-    game->players[PLAYER_2].invincibility_ticks = 0;
-    game->phase         = GAME_PHASE_PLAYING;
+    game->match_state = MATCH_RUNNING; 
+    game->is_frozen = false;
+    game->players[PLAYER_1].invincibility_timer = 0;
+    game->players[PLAYER_2].invincibility_timer = 0;
     //game->click_count = 0; tem de estar depois escolher as coords do player
     game->debug_mode = false;
     generateBoard((char *)game->board, time.day, time.month, time.year);
@@ -91,7 +92,6 @@ void game_state_destroy(t_game_state *game) {
     game->width = 0;
     game->height = 0;
     game->tile_size = 0;
-    game->phase = GAME_PHASE_PAUSED;
 }
 
 void game_state_update(t_ctx *ctx) {
@@ -99,15 +99,19 @@ void game_state_update(t_ctx *ctx) {
 
     t_game_state *game = &ctx->game;
 
-    if (game->is_paused) return;
-
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &game->players[i];
         if (!player->active) continue;
 
-        if (player_collides_with_enemy(game, player)) {
+        if (player->invincibility_timer > 0) {
+            player->invincibility_timer--;
+        } 
+        else if (player_collides_with_enemy(game, player)) {
             update_player_lives(player, -1);
-        }
+            if (player->lives > 0) {
+            player->invincibility_timer = INVINCIBILITY_TICKS;
+            }
+}
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -131,7 +135,27 @@ void game_state_update(t_ctx *ctx) {
     }
     player_bomb_count(game);
 
-    game->logical_ticks++;
+    if (game->match_state == MATCH_RUNNING) {
+
+    player_t *p1 = &game->players[PLAYER_1];
+
+    if (p1->lives == 0) {
+        game->match_state = MATCH_LOST;
+        return;
+    }
+
+    int enemies_alive = 0;
+
+    for (int i = 0; i < game->enemy_count; i++) {
+        if (game->enemies[i].active)
+            enemies_alive++;
+    }
+
+    if (game->enemy_count > 0 && enemies_alive == 0) {
+        game->match_state = MATCH_WON;
+    }
+}
+    
 }
 
 void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
