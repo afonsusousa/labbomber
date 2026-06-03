@@ -11,7 +11,7 @@ int draw_text_cursor(hw_video_t *video, hw_mouse_t *mouse);
 int draw_string(hw_video_t *video, const char *str, int32_t x, int32_t y, uint32_t bg_color);
 void init_sprite_cache();
 
-void set_date_seed(uint32_t seed_value);
+void set_date_seed(int day, int month, int year);
 int draw_player(player_t *player, hw_video_t *video, t_game_state *game);
 int draw_enemy(enemy_t *enemy, hw_video_t *video, int32_t board_start_x, int32_t board_start_y);
 int draw_bomb(hw_video_t *video, t_game_state *game);
