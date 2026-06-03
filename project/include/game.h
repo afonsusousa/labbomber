@@ -74,6 +74,7 @@ typedef struct s_entity {
     uint8_t     animation_phase;
     bool        is_moving;
     bool        active;
+    bool        alive;
     uint8_t     movement_stack[4];
     uint8_t     stack_count;
     uint8_t     speed;

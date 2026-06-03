@@ -39,12 +39,13 @@ static void _callback_game_view_on_tick(t_widget *self, void *state)
     if (!ctx->game.is_paused) {
         ctx->game.logical_ticks++;
         game_state_update(ctx);
+    } else if (!game->players[PLAYER_1].alive && game->players[PLAYER_1].invincibility_timer > 0) {
+        game->players[PLAYER_1].invincibility_timer--;
     }
 
-    bool p1_dead = (!game->players[PLAYER_1].active && game->players[PLAYER_1].lives == 0);
+    bool p1_dead = (!game->players[PLAYER_1].alive && game->players[PLAYER_1].invincibility_timer == 0);
 
     if (p1_dead) {
-        game->is_paused = true;
         gui_show_game_end_dialog(ctx, "GAME OVER", "You have no lives left!");
     } else if (game->door_open) {
         t_tuple player_pos = game->players[PLAYER_1].board_pos;

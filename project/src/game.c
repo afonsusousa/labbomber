@@ -24,10 +24,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
 
     set_date_seed(time.day, time.month, time.year);
 
-   // --- PLAYER 1 ---
-   t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
-   player_init(game, &game->players[PLAYER_1], spawnpoint);
-    game->players[PLAYER_1].lives = 3;
+    // --- PLAYER 1 ---
+    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
+    player_init(game, &game->players[PLAYER_1], spawnpoint);
+    game->players[PLAYER_1].alive = true;
+    game->players[PLAYER_1].lives = 1;
     game->current_player = PLAYER_1;
 
     // --- PLAYER 2 ---
@@ -140,6 +141,11 @@ void game_state_update(t_ctx *ctx) {
     }
     if (game->enemy_count > 0 && enemies_alive == 0 && game->door_active) {
         game->door_open = true;
+    }
+
+    if (!game->players[PLAYER_1].alive && !game->is_paused) {
+        game->is_paused = true;
+        game->players[PLAYER_1].invincibility_timer = GAME_TICKS_PER_SECOND * 2;
     }
 }
 
