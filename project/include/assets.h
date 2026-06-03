@@ -858,3 +858,56 @@ static char *heart[] = {
 "      .X.      ",
 "       .       "
 };
+
+/* Door */
+static char *door_closed[] = {
+"16 16 5 1 ",
+"  c None",
+". c #34211D",
+"X c #522F29",
+"o c #613027",
+"O c #7A3B30",
+"................",
+"...XXX....XXX...",
+"..XXXXX..XXXXX..",
+"..XOOOX..XOOOX..",
+".XXOOOX..XOOOXX.",
+"..XOOOX..XOOOX..",
+"..XOO.X..X.OOX..",
+"..XOo.oooo.oOX..",
+"..XOo.oooo.oOX..",
+"..XOO.X..X.OOX..",
+"..XOOOX..XOOOX..",
+".XXOOOX..XOOOXX.",
+"..XOOOX..XOOOX..",
+"..XXXXX..XXXXX..",
+"...XXX....XXX...",
+"................"
+};
+
+
+static char *door_open[] = {
+"16 16 6 1 ",
+"  c None",
+". c #1F1716",
+"X c #34211D",
+"o c #522F29",
+"O c #613027",
+"+ c #7A3B30",
+"XXXXX......XXXXX",
+"XXoX........XoXX",
+"XooX........XooX",
+"Xo+X........X+oX",
+"Xo+X........X+oX",
+"Xo+X........X+oX",
+"Xo+X........X+oX",
+"XOOO........OOOX",
+"XOOO........OOOX",
+"Xo+X........X+oX",
+"Xo+X........X+oX",
+"Xo+X........X+oX",
+"Xo+X........X+oX",
+"XooX........XooX",
+"XXoX........XoXX",
+"XXXXX......XXXXX"
+};

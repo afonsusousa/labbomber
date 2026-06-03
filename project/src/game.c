@@ -209,11 +209,8 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
                 draw_wall(video, GET_X(game, x), GET_Y(game, y), wall_sprite);
             } else if (val == TILE_TYPE_BRICK) {
                 draw_brick(video, GET_X(game, x), GET_Y(game, y));
-
-            // simples porta qnd se destroi o tijolo
             } else if (val == TILE_TYPE_DOOR) {
-                draw_grass(video, GET_X(game, x), GET_Y(game, y), decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y));
-                hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 4), GET_Y(game, y) - (game->tile_size / 4), game->tile_size / 2, game->tile_size / 2, 0x00AA00);
+                draw_door(video, GET_X(game, x), GET_Y(game, y), false);
             } else {
                 hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 2), GET_Y(game, y) - (game->tile_size / 2), game->tile_size, game->tile_size, 0x000000);
             }
