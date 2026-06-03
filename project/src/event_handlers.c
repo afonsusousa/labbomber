@@ -12,15 +12,18 @@
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 
-#define MP_PACKET_START 0xA5
-#define MP_PACKET_HELLO 0x01
-#define MP_PACKET_KEY   0x02
+#define MP_PACKET_START        0xA5
+#define MP_PACKET_HELLO        0x01
+#define MP_PACKET_KEY          0x02
+#define MP_PACKET_PLAYER_STATE 0x03
+#define MP_PACKET_PAYLOAD_SIZE 3
 
-static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1) {
+static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1, uint8_t data2) {
     if (serial_send_byte(MP_PACKET_START) != 0) return 1;
     if (serial_send_byte(type) != 0) return 1;
     if (serial_send_byte(data0) != 0) return 1;
-    return serial_send_byte(data1);
+    if (serial_send_byte(data1) != 0) return 1;
+    return serial_send_byte(data2);
 }
 
 static void app_multiplayer_log(t_ctx *ctx, const char *message) {
@@ -39,10 +42,27 @@ static void app_multiplayer_log(t_ctx *ctx, const char *message) {
     fclose(log_file);
 }
 
+static uint32_t app_multiplayer_compute_seed(t_ctx *ctx) {
+    uint16_t local_nonce = ctx->multiplayer_local_nonce;
+    uint16_t remote_nonce = ctx->multiplayer_remote_nonce;
+    uint8_t local_tie = ctx->multiplayer_local_tiebreaker;
+    uint8_t remote_tie = ctx->multiplayer_remote_tiebreaker;
+
+    uint16_t min_nonce = local_nonce < remote_nonce ? local_nonce : remote_nonce;
+    uint16_t max_nonce = local_nonce < remote_nonce ? remote_nonce : local_nonce;
+    uint8_t min_tie = local_tie < remote_tie ? local_tie : remote_tie;
+    uint8_t max_tie = local_tie < remote_tie ? remote_tie : local_tie;
+
+    return ((uint32_t)min_nonce << 16) ^ ((uint32_t)max_nonce << 8) ^
+           ((uint32_t)min_tie << 4) ^ (uint32_t)max_tie;
+}
+
 static void app_multiplayer_assign_roles(t_ctx *ctx) {
     if (ctx == NULL) return;
 
-    if (ctx->multiplayer_local_nonce >= ctx->multiplayer_remote_nonce) {
+    if (ctx->multiplayer_local_nonce > ctx->multiplayer_remote_nonce ||
+        (ctx->multiplayer_local_nonce == ctx->multiplayer_remote_nonce &&
+         ctx->multiplayer_local_tiebreaker >= ctx->multiplayer_remote_tiebreaker)) {
         ctx->multiplayer_local_player = PLAYER_1;
         ctx->multiplayer_remote_player = PLAYER_2;
     } else {
@@ -50,6 +70,7 @@ static void app_multiplayer_assign_roles(t_ctx *ctx) {
         ctx->multiplayer_remote_player = PLAYER_1;
     }
 
+    ctx->multiplayer_match_seed = app_multiplayer_compute_seed(ctx);
     ctx->game.current_player = ctx->multiplayer_local_player;
     ctx->multiplayer_role_assigned = true;
     ctx->multiplayer_partner_ready = true;
@@ -64,6 +85,7 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
             ctx->multiplayer_remote_nonce =
                 (uint16_t)ctx->multiplayer_rx_data[0] |
                 ((uint16_t)ctx->multiplayer_rx_data[1] << 8);
+            ctx->multiplayer_remote_tiebreaker = ctx->multiplayer_rx_data[2];
             app_multiplayer_assign_roles(ctx);
             break;
         case MP_PACKET_KEY: {
@@ -76,6 +98,23 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
             }
             if (ctx->multiplayer_role_assigned && player_id != ctx->multiplayer_local_player) {
                 game_state_handle_player_key(&ctx->game, player_id, scancode);
+            }
+            break;
+        }
+        case MP_PACKET_PLAYER_STATE: {
+            uint8_t player_id = ctx->multiplayer_rx_data[0];
+            uint8_t state_value = ctx->multiplayer_rx_data[1];
+            uint8_t lives = state_value & 0x7F;
+            bool active = (state_value & 0x80) != 0;
+            FILE *log_file = fopen("/tmp/game_debug.log", "a");
+            if (log_file) {
+                fprintf(log_file, "[MP] rx state player=%u lives=%u active=%u\n", player_id, lives, active);
+                fclose(log_file);
+            }
+            if (ctx->multiplayer_role_assigned && player_id != ctx->multiplayer_local_player && player_id < MAX_PLAYERS) {
+                player_t *player = &ctx->game.players[player_id];
+                player->lives = lives;
+                player->active = (lives > 0);
             }
             break;
         }
@@ -133,7 +172,7 @@ static void app_multiplayer_receive_byte(t_ctx *ctx, uint8_t byte) {
             break;
         case 2:
             ctx->multiplayer_rx_data[ctx->multiplayer_rx_pos++] = byte;
-            if (ctx->multiplayer_rx_pos >= 2) {
+            if (ctx->multiplayer_rx_pos >= MP_PACKET_PAYLOAD_SIZE) {
                 app_multiplayer_process_packet(ctx);
                 ctx->multiplayer_rx_state = 0;
                 ctx->multiplayer_rx_pos = 0;
@@ -152,7 +191,8 @@ int app_multiplayer_send_hello(t_ctx *ctx) {
     int result = app_multiplayer_send_packet(
         MP_PACKET_HELLO,
         (uint8_t)(ctx->multiplayer_local_nonce & 0xFF),
-        (uint8_t)(ctx->multiplayer_local_nonce >> 8)
+        (uint8_t)(ctx->multiplayer_local_nonce >> 8),
+        ctx->multiplayer_local_tiebreaker
     );
     serial_send_byte(0xAA);
     app_multiplayer_log(ctx, result == 0 ? "hello sent" : "hello send failed");
@@ -168,7 +208,7 @@ int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {
         return 0;
     }
 
-    int result = app_multiplayer_send_packet(MP_PACKET_KEY, ctx->multiplayer_local_player, scancode);
+    int result = app_multiplayer_send_packet(MP_PACKET_KEY, ctx->multiplayer_local_player, scancode, 0);
     FILE *log_file = fopen("/tmp/game_debug.log", "a");
     if (log_file) {
         fprintf(log_file, "[MP] tx key player=%u scancode=0x%02X result=%d\n",
@@ -187,6 +227,24 @@ void app_multiplayer_poll_serial(t_ctx *ctx) {
             app_multiplayer_receive_byte(ctx, received);
         }
     }
+}
+
+int app_multiplayer_send_player_state(t_ctx *ctx, uint8_t player_id) {
+    if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return 1;
+    if (player_id >= MAX_PLAYERS) return 1;
+
+    player_t *player = &ctx->game.players[player_id];
+    uint8_t state_value = player->lives & 0x7F;
+    if (player->active) state_value |= 0x80;
+
+    int result = app_multiplayer_send_packet(MP_PACKET_PLAYER_STATE, player_id, state_value, 0);
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file) {
+        fprintf(log_file, "[MP] tx state player=%u lives=%u active=%u result=%d\n",
+                player_id, player->lives, player->active, result);
+        fclose(log_file);
+    }
+    return result;
 }
 
 static bool app_time_is_valid(const t_time *time) {
@@ -293,7 +351,7 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     if (hw_state->timer.ticks % 60 == 0) {
         app_tick_real_time(ctx);
     }
-    
+
     hw_vbe_clear_screen(&hw_state->video, 0x0);
 
     if (gui->views.view_count > 0) {
@@ -304,6 +362,18 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         for (int i = start_idx; i < gui->views.view_count; i++) {
             widget_tick(gui->views.view_stack[i], ctx);
             widget_draw(gui->views.view_stack[i], &hw_state->video, ctx);
+        }
+    }
+
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        uint8_t local_player = ctx->multiplayer_local_player;
+        player_t *player = &ctx->game.players[local_player];
+
+        if (player->lives != ctx->multiplayer_last_player_lives[local_player] ||
+            player->active != ctx->multiplayer_last_player_active[local_player]) {
+            app_multiplayer_send_player_state(ctx, local_player);
+            ctx->multiplayer_last_player_lives[local_player] = player->lives;
+            ctx->multiplayer_last_player_active[local_player] = player->active;
         }
     }
 

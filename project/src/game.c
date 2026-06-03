@@ -13,16 +13,16 @@
 
 // FUNÇÕES QUE VÃO CONDUZIR O JOGO
 
-static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_multiplayer) {
+static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_multiplayer, uint32_t board_seed) {
     game->logical_ticks = 0;
     game->is_paused = false;
-    generateBoard((char *)game->board, time.day, time.month, time.year);
+    generateBoard((char *)game->board, board_seed);
 
-    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
+    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, board_seed);
     game->door_active = false;
     game->door_open = false;
 
-    set_date_seed(time.day, time.month, time.year);
+    set_date_seed(board_seed);
 
     // --- PLAYER 1 ---
     t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
@@ -57,7 +57,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     game->click_count = 0;
 }
 
-int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time, bool is_multiplayer) {
+int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time, bool is_multiplayer, uint32_t board_seed) {
     if (game == NULL || width == 0 || height == 0) return 1;
 
     game_state_destroy(game);
@@ -80,7 +80,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     game->start_x = (width - board_width) / 2;
     game->start_y = (height - board_height) / 2;
 
-    _game_state_prepare_match(game, time, is_multiplayer);
+    _game_state_prepare_match(game, time, is_multiplayer, board_seed);
     game->score = 0;
 
     scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
@@ -88,10 +88,10 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     return 0;
 }
 
-void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer)
+void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer, uint32_t board_seed)
 {
     if (game == NULL) return;
-    _game_state_prepare_match(game, time, is_multiplayer);
+    _game_state_prepare_match(game, time, is_multiplayer, board_seed);
     game->score = 0;
 }
 

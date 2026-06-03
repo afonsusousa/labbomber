@@ -103,12 +103,17 @@ void gui_show_game_view(t_ctx *ctx) {
     game_canvas->on_key_press = _callback_game_board_on_key_press;
 
     //o game state vai levar o board, os players, start time, etc
-    if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time, ctx->is_multiplayer) != 0) {
+    uint32_t board_seed = ctx->is_multiplayer ? ctx->multiplayer_match_seed :
+        ((uint32_t)ctx->real_time.year * 10000u + (uint32_t)ctx->real_time.month * 100u + (uint32_t)ctx->real_time.day);
+    if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time, ctx->is_multiplayer, board_seed) != 0) {
         widget_destroy(view);
         return;
     }
     if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
         ctx->game.current_player = ctx->multiplayer_local_player;
+        uint8_t local_player = ctx->multiplayer_local_player;
+        ctx->multiplayer_last_player_lives[local_player] = ctx->game.players[local_player].lives;
+        ctx->multiplayer_last_player_active[local_player] = ctx->game.players[local_player].active;
     }
 
     // Retrieve player names from the name menu inputs (AFTER INIT)
@@ -137,7 +142,14 @@ void gui_show_game_view(t_ctx *ctx) {
 
 void gui_reset_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
-    game_state_reset(&ctx->game, ctx->real_time, ctx->is_multiplayer);
+    uint32_t board_seed = ctx->is_multiplayer ? ctx->multiplayer_match_seed :
+        ((uint32_t)ctx->real_time.year * 10000u + (uint32_t)ctx->real_time.month * 100u + (uint32_t)ctx->real_time.day);
+    game_state_reset(&ctx->game, ctx->real_time, ctx->is_multiplayer, board_seed);
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        uint8_t local_player = ctx->multiplayer_local_player;
+        ctx->multiplayer_last_player_lives[local_player] = ctx->game.players[local_player].lives;
+        ctx->multiplayer_last_player_active[local_player] = ctx->game.players[local_player].active;
+    }
     ctx->game.is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }

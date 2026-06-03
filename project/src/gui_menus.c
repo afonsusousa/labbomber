@@ -165,9 +165,15 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_local_player = PLAYER_1;
     ctx->multiplayer_remote_player = PLAYER_2;
     ctx->multiplayer_remote_nonce = 0;
+    ctx->multiplayer_remote_tiebreaker = 0;
+    ctx->multiplayer_match_seed = 0;
     ctx->multiplayer_rx_state = 0;
     ctx->multiplayer_rx_type = 0;
     ctx->multiplayer_rx_pos = 0;
+    ctx->multiplayer_last_player_lives[0] = 0;
+    ctx->multiplayer_last_player_lives[1] = 0;
+    ctx->multiplayer_last_player_active[0] = false;
+    ctx->multiplayer_last_player_active[1] = false;
     ctx->multiplayer_local_nonce =
         (uint16_t)((ctx->real_time.seconds * 251u) ^
                    (ctx->real_time.minutes * 61u) ^
@@ -175,6 +181,7 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
                    (ctx->real_time.day * 7u) ^
                    ((uint32_t)clock() & 0xFFFFu) ^
                    ((uintptr_t)ctx & 0xFFFFu));
+    ctx->multiplayer_local_tiebreaker = (uint8_t)(((unsigned long long)ctx ^ (unsigned long long)ctx->multiplayer_local_nonce) & 0xFFu);
     
     FILE *log_file = fopen("/tmp/game_debug.log", "a");
     
@@ -338,7 +345,13 @@ static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = GUI(state);
-    game_state_reset(GAME(state), CTX(state)->real_time, CTX(state)->is_multiplayer);
+    t_ctx *ctx = CTX(state);
+
+    uint32_t board_seed = ctx->is_multiplayer && ctx->multiplayer_role_assigned
+        ? ctx->multiplayer_match_seed
+        : ((uint32_t)ctx->real_time.year * 10000u + (uint32_t)ctx->real_time.month * 100u + (uint32_t)ctx->real_time.day);
+
+    game_state_reset(GAME(state), ctx->real_time, ctx->is_multiplayer, board_seed);
     GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "game_view");
 }

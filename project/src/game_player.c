@@ -10,8 +10,8 @@
 
 static int seed = 0;
 
-void set_date_seed(int day, int month, int year) {
-    seed = year * 10000 + month * 100 + day;
+void set_date_seed(uint32_t seed_value) {
+    seed = seed_value;
 }
 
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
