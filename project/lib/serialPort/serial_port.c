@@ -5,13 +5,28 @@
 int serial_init(void) {
     if (setup_lcr(8, 1) != 0) return 1;
     if (set_bit_rate(9600) != 0) return 1;
+    if (sys_outb(COM1_ADDR + SERP_IER, 0x00) != 0) return 1;
     if (fifo_en() != 0) return 1;
     if (setup_mcr() != 0) return 1;
+
+    uint8_t lcr = 0, lsr = 0, msr = 0, ier = 0;
+    get_lcr(&lcr);
+    get_ier(&ier);
+    util_sys_inb(COM1_ADDR + SERP_LSR, &lsr);
+    util_sys_inb(COM1_ADDR + SERP_MSR, &msr);
+
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file) {
+        fprintf(log_file, "[SERIAL] init complete LCR=0x%02X IER=0x%02X LSR=0x%02X MSR=0x%02X\n",
+                lcr, ier, lsr, msr);
+        fclose(log_file);
+    }
+
     return 0;
 }
 
 int setup_mcr(void) {
-    return sys_outb(COM1_ADDR + SERP_MCR, MCR_DTR | MCR_RTS);
+    return sys_outb(COM1_ADDR + SERP_MCR, MCR_DTR | MCR_RTS | MCR_OUT2);
 }
 
 int serial_send_byte(uint8_t b) {
@@ -123,8 +138,6 @@ int set_bit_rate(uint16_t bit_rate) {
 int setup_lcr(int length, int stop) {
     uint8_t lcr = 0x00;
 
-    if (get_lcr(&lcr) != 0) return 1;
-
     switch (length) {
     case 5:
         break;
@@ -151,8 +164,7 @@ int setup_lcr(int length, int stop) {
         return 1;
     }
 
-    /* Parity even for now. */
-    lcr |= LCR_PARITY_EVEN;
+    lcr |= LCR_PARITY_NONE;
 
     return sys_outb(COM1_ADDR + SERP_LCR, lcr);
 }

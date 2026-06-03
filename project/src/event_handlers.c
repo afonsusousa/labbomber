@@ -7,6 +7,7 @@
 #include "../lib/serialPort/serial_port.h"
 #include "../lib/keyboard/i8042.h"
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
@@ -81,6 +82,34 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
         default:
             break;
     }
+}
+
+static bool app_is_blank_string(const char *s) {
+    if (s == NULL) return true;
+    while (*s != '\0') {
+        if (*s != ' ' && *s != '\t' && *s != '\n' && *s != '\r' && *s != '\f' && *s != '\v') {
+            return false;
+        }
+        s++;
+    }
+    return true;
+}
+
+static bool app_multiplayer_name_inputs_ready(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return false;
+
+    t_widget *top = gui_get_top_view(&ctx->gui);
+    if (top == NULL || top->type != OVERLAY || top->name == NULL || strcmp(top->name, "name_overlay") != 0) {
+        return false;
+    }
+
+    t_widget *p1_input = widget_find_by_name(&ctx->gui, "player1_input");
+    t_widget *p2_input = widget_find_by_name(&ctx->gui, "player2_input");
+    if (p1_input == NULL || p1_input->data.text_input.buffer == NULL) return false;
+    if (p2_input == NULL || p2_input->data.text_input.buffer == NULL) return false;
+
+    return !app_is_blank_string(p1_input->data.text_input.buffer) &&
+           !app_is_blank_string(p2_input->data.text_input.buffer);
 }
 
 static void app_multiplayer_receive_byte(t_ctx *ctx, uint8_t byte) {
@@ -244,11 +273,15 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
 
     app_multiplayer_poll_serial(ctx);
 
-    if (ctx->is_multiplayer && !ctx->multiplayer_partner_ready) {
-        if (!ctx->multiplayer_signal_sent || handshake_retry_delay <= 0) {
-            if (app_multiplayer_send_hello(ctx) == 0) {
-                ctx->multiplayer_signal_sent = true;
-            }
+    if (app_multiplayer_name_inputs_ready(ctx)) {
+        gui_pop_view(&ctx->gui);
+        gui_show_game_view(ctx);
+    }
+
+    if (ctx->is_multiplayer) {
+        if (handshake_retry_delay <= 0) {
+            app_multiplayer_send_hello(ctx);
+            ctx->multiplayer_signal_sent = true;
             handshake_retry_delay = 60;
         } else {
             handshake_retry_delay--;
