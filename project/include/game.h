@@ -161,6 +161,7 @@ void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 void    player_bomb_count(t_game_state *game);
+void    update_player_death_position(player_t *player, uint32_t invincibility_timer);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.

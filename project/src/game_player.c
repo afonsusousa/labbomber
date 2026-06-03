@@ -270,3 +270,14 @@ void update_player_lives(player_t *player, int change) {
         player->alive = false; 
     }
 }
+
+void update_player_death_position(player_t *player, uint32_t invincibility_timer) {
+    if (invincibility_timer > GAME_TICKS_PER_SECOND * 2) return;
+    
+    if (invincibility_timer <= GAME_TICKS_PER_SECOND * 2 && invincibility_timer > GAME_TICKS_PER_SECOND * 1.7) {
+        player->pos.y -= 10; 
+    }
+    else if (invincibility_timer <= GAME_TICKS_PER_SECOND * 1.7 && invincibility_timer > 0) {
+        player->pos.y += 10; 
+    }
+}

@@ -41,6 +41,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state)
         game_state_update(ctx);
     } else if (!game->players[PLAYER_1].alive && game->players[PLAYER_1].invincibility_timer > 0) {
         game->players[PLAYER_1].invincibility_timer--;
+        update_player_death_position(&game->players[PLAYER_1], game->players[PLAYER_1].invincibility_timer);
     }
 
     bool p1_dead = (!game->players[PLAYER_1].alive && game->players[PLAYER_1].invincibility_timer == 0);

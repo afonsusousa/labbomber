@@ -145,7 +145,7 @@ void game_state_update(t_ctx *ctx) {
 
     if (!game->players[PLAYER_1].alive && !game->is_paused) {
         game->is_paused = true;
-        game->players[PLAYER_1].invincibility_timer = GAME_TICKS_PER_SECOND * 2;
+        game->players[PLAYER_1].invincibility_timer = GAME_TICKS_PER_SECOND * 3;
     }
 }
 
