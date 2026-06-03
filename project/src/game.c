@@ -15,18 +15,22 @@
 
 static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
-    game->is_paused = false;
+    game->match_state = MATCH_RUNNING; 
+    game->is_frozen = false;
+    game->players[PLAYER_1].invincibility_timer = 0;
+    game->players[PLAYER_2].invincibility_timer = 0;
+    //game->click_count = 0; tem de estar depois escolher as coords do player
+    game->debug_mode = false;
     generateBoard((char *)game->board, time.day, time.month, time.year);
 
     game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
-    game->door_active = false;
     game->door_open = false;
 
     set_date_seed(time.day, time.month, time.year);
 
-   // --- PLAYER 1 ---
-   t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
-   player_init(game, &game->players[PLAYER_1], spawnpoint);
+    // --- PLAYER 1 ---
+    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
+    player_init(game, &game->players[PLAYER_1], spawnpoint);
     game->players[PLAYER_1].lives = 3;
     game->current_player = PLAYER_1;
 
@@ -37,7 +41,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 4, spawn_out);
+    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 1, spawn_out);
 
     for (int i = 0; i < game->enemy_count; i++) {
         enemy_init(game, &game->enemies[i], spawn_out[i]);
@@ -81,9 +85,9 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
     return 0;
 }
 
-void game_state_reset(t_game_state *game, t_time time)
-{
+void game_state_reset(t_game_state *game, t_time time) {
     if (game == NULL) return;
+
     _game_state_prepare_match(game, time);
     game->score = 0;
 }
@@ -94,7 +98,6 @@ void game_state_destroy(t_game_state *game) {
     game->width = 0;
     game->height = 0;
     game->tile_size = 0;
-    game->is_paused = true;
 }
 
 void game_state_update(t_ctx *ctx) {
@@ -102,14 +105,24 @@ void game_state_update(t_ctx *ctx) {
 
     t_game_state *game = &ctx->game;
 
-    if (game->is_paused) return;
-
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &game->players[i];
-        if (!player->active) continue;
+        
+        if (!player->active) { 
+            continue;
+        }
 
-        if (player_collides_with_enemy(game, player)) {
+        if (player->invincibility_timer > 0) {
+            player->invincibility_timer--;
+        } 
+
+        else if (player_collides_with_enemy(game, player)) {
             update_player_lives(player, -1);
+
+            if (player->lives > 0) {
+                player->invincibility_timer = INVINCIBILITY_TICKS;
+            }
+
         }
     }
 
@@ -132,14 +145,32 @@ void game_state_update(t_ctx *ctx) {
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_update(game, &game->bomb[i]);
     }
+
     player_bomb_count(game);
 
-    int enemies_alive = 0;
-    for (int i = 0; i < game->enemy_count; i++) {
-        if (game->enemies[i].active) enemies_alive++;
-    }
-    if (game->enemy_count > 0 && enemies_alive == 0 && game->door_active) {
-        game->door_open = true;
+    if (game->match_state == MATCH_RUNNING) {
+        player_t *p1 = &game->players[PLAYER_1];
+
+        if (p1->lives == 0) {
+            game->match_state = MATCH_LOST;
+            return;
+        }
+
+        int enemies_alive = 0;
+
+        for (int i = 0; i < game->enemy_count; i++) {
+            if (game->enemies[i].active) {
+                enemies_alive++;
+            }    
+        }
+
+        if (game->enemy_count > 0 && enemies_alive == 0) {
+            game->door_open = true;
+
+            if(p1->board_pos.x == game->door_pos.x && p1->board_pos.y == game->door_pos.y) {
+                game->match_state = MATCH_WON;
+            } 
+        }
     }
 }
 

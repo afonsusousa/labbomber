@@ -37,7 +37,7 @@ void gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_height) 
     memset(&ctx->gui, 0, sizeof(ctx->gui));
     ctx->gui.width = screen_width;
     ctx->gui.height = screen_height;
-
+    
     gui_show_start_menu(ctx);
     ctx->gui.is_running = true;
 }
@@ -69,6 +69,12 @@ static bool is_blank_string(const char *s) {
 // Shared Dialogs
 // =============================================================================
 
+static void _callback_game_over_ok(t_widget *self, void *state) {
+    (void)self;
+    t_gui *gui = GUI(state);
+    gui_pop_until_widget_found(gui, "start_menu_view");
+}
+
 void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "info_overlay");
@@ -79,7 +85,7 @@ void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *mess
 
     widget_add_text(info_dialog, 0, 40, 320, 24, message, "info_message");
 
-    t_widget *btn_ok = widget_add_button(info_dialog, 0, 86, 120, 36, "OK", _callback_pop_view, "info_ok_button");
+    t_widget *btn_ok = widget_add_button(info_dialog, 0, 86, 120, 36, "OK", _callback_game_over_ok, "info_ok_button");
 
     int32_t btn_row_x = ((int32_t)info_dialog->width - (int32_t)btn_ok->width) / 2;
     widget_set_position(btn_ok, btn_row_x, 120);
@@ -201,6 +207,7 @@ static void _callback_start_game(t_widget *self, void *state) {
     }
 
     bool player1_empty = is_blank_string(player1_input->data.text_input.buffer);
+
     if (player1_empty) {
         gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
         return;
@@ -251,23 +258,24 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
 
 static void _callback_resume_game(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
-    GAME(state)->is_paused = false;
+    ctx->game.is_frozen = false;
     gui_pop_view(gui);
 }
 
 static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
     (void)self;
     t_gui *gui = GUI(state);
-    GAME(state)->is_paused = false;
     gui_pop_until_widget_found(gui, "start_menu_view");
 }
 
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
-    game_state_reset(GAME(state), CTX(state)->real_time);
-    GAME(state)->is_paused = false;
+    game_state_reset(GAME(state), ctx->real_time);
+    ctx->game.is_frozen = false;
     gui_pop_until_widget_found(gui, "game_view");
 }
 

@@ -11,7 +11,8 @@ typedef struct s_time {
     uint8_t hours;
     uint8_t minutes;
     uint8_t seconds;
-} t_time;
+} t_time;  
+
 
 typedef struct s_ctx {
     t_gui gui;

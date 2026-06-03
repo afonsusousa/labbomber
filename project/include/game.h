@@ -34,6 +34,7 @@ typedef enum {
 #define TILE_TYPE_DOOR  3
 
 #define GAME_TICKS_PER_SECOND 60
+#define INVINCIBILITY_TICKS (GAME_TICKS_PER_SECOND * 3)
 
 #define MAX_PLAYERS 2
 #define PLAYER_1    0
@@ -107,6 +108,12 @@ typedef struct {
     uint8_t reach[EXPLOSION_DIR_COUNT];
 } bomb_t;
 
+typedef enum {
+    MATCH_RUNNING,
+    MATCH_WON,
+    MATCH_LOST
+} match_state_t;
+
 typedef struct s_game_state {
     uint32_t width;
     uint32_t height;
@@ -117,7 +124,6 @@ typedef struct s_game_state {
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     t_tuple door_pos;
-    bool door_active;
     bool door_open;
 
     player_t players[MAX_PLAYERS];
@@ -131,8 +137,12 @@ typedef struct s_game_state {
     uint32_t score;
     uint32_t logical_ticks;
     uint32_t click_count;
-    bool is_paused;
+    bool debug_mode;
+    bool is_frozen;
+
+    match_state_t match_state;
 } t_game_state;
+
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);
 void    game_state_reset(t_game_state *game, struct s_time time);
