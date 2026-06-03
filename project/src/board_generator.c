@@ -92,3 +92,25 @@ void generateBoard(char *board, int day, int month, int year) {
         }
     }
 }
+
+t_tuple door_spawnpoint_generator(uint8_t *board, uint32_t click_count, int day, int month, int year) {
+    int brick_positions[INNER_ROWS * INNER_COLS][2];
+    int count = 0;
+
+    for (int y = 1; y < BOARD_ROWS - 1; y++) {
+        for (int x = 1; x < BOARD_COLS - 1; x++) {
+            if (board[y * BOARD_COLS + x] == TILE_TYPE_BRICK) {
+                brick_positions[count][0] = x;
+                brick_positions[count][1] = y;
+                count++;
+            }
+        }
+    }
+
+    if (count == 0) return (t_tuple){-1, -1};
+
+    uint32_t seed = click_count * 13 + day * 31 + month * 17 + year;
+    int index = seed % count;
+
+    return (t_tuple){brick_positions[index][0], brick_positions[index][1]};
+}

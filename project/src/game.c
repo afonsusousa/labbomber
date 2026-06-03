@@ -16,20 +16,11 @@
 static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->logical_ticks = 0;
     game->is_paused = false;
-    game->click_count = 0;
     generateBoard((char *)game->board, time.day, time.month, time.year);
 
-    //porta simples forcada no primeiro brick
+    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
     game->door_active = false;
-    game->door_pos = (t_tuple){-1, -1};
-    for (int y = 1; y < BOARD_ROWS - 1 && game->door_pos.x == -1; y++) {
-        for (int x = 1; x < BOARD_COLS - 1 && game->door_pos.x == -1; x++) {
-            if (game->board[BOARD_IDX(x, y)] == TILE_TYPE_BRICK) {
-                game->door_pos.x = x;
-                game->door_pos.y = y;
-            }
-        }
-    }
+    game->door_open = false;
 
     set_date_seed(time.day, time.month, time.year);
 
@@ -55,6 +46,8 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_init(&game->bomb[i]);
     }
+    
+    game->click_count = 0;
 }
 
 int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time) {
