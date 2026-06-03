@@ -20,6 +20,9 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     game->players[PLAYER_1].invincibility_timer = 0;
     game->players[PLAYER_2].invincibility_timer = 0;
 
+    game->players[PLAYER_1].animation_timer = 0;
+    game->players[PLAYER_2].animation_timer = 0;
+
     generateBoard((char *)game->board, time.day, time.month, time.year);
 
     game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
@@ -37,10 +40,6 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
     game->players[PLAYER_2].lives = 3;
     game->players[PLAYER_2].active = false; // Only one player for now
-
-    // for now
-    game->players[PLAYER_1].final_pos = (t_tuple){0, 0};
-    game->players[PLAYER_2].final_pos = (t_tuple){0, 0};
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
@@ -156,6 +155,7 @@ void game_state_update(t_ctx *ctx) {
 
         if (p1->lives == 0) {
             game->match_state = MATCH_LOST;
+            game->players[PLAYER_1].animation_timer = GAME_TICKS_PER_SECOND * 5;
             return;
         }
 
@@ -172,6 +172,7 @@ void game_state_update(t_ctx *ctx) {
 
             if(p1->board_pos.x == game->door_pos.x && p1->board_pos.y == game->door_pos.y) {
                 game->match_state = MATCH_WON;
+                game->players[PLAYER_1].animation_timer = GAME_TICKS_PER_SECOND * 3;
             } 
         }
     }

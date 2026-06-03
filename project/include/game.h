@@ -84,6 +84,7 @@ typedef struct s_entity {
     uint8_t     bomb_max;
     uint8_t     bomb_available;
     uint32_t    invincibility_timer;
+    uint32_t    animation_timer;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
@@ -172,6 +173,7 @@ void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 void    player_bomb_count(t_game_state *game);
 void    update_player_death_animation(player_t *player);
+void    update_player_win_animation(t_game_state *game);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.
