@@ -34,6 +34,7 @@ typedef enum {
 #define TILE_TYPE_DOOR  3
 
 #define GAME_TICKS_PER_SECOND 60
+#define INVINCIBILITY_TICKS (GAME_TICKS_PER_SECOND * 3)
 
 #define MAX_PLAYERS 2
 #define PLAYER_1    0
@@ -69,6 +70,7 @@ typedef struct s_entity {
     char        name[32];
     t_tuple     pos;
     t_tuple     board_pos;
+    t_tuple     final_pos;
     direction_t dir;
     direction_t sprite_dir;
     uint8_t     animation_phase;
@@ -107,6 +109,13 @@ typedef struct {
     uint8_t reach[EXPLOSION_DIR_COUNT];
 } bomb_t;
 
+typedef enum {
+    MATCH_RUNNING,
+    MATCH_PAUSED,
+    MATCH_WON,
+    MATCH_LOST
+} match_state_t;
+
 typedef struct s_game_state {
     uint32_t width;
     uint32_t height;
@@ -117,7 +126,6 @@ typedef struct s_game_state {
     uint8_t board[BOARD_ROWS * BOARD_COLS];
 
     t_tuple door_pos;
-    bool door_active;
     bool door_open;
 
     player_t players[MAX_PLAYERS];
@@ -130,9 +138,14 @@ typedef struct s_game_state {
 
     uint32_t score;
     uint32_t logical_ticks;
+    uint32_t time_limit;
     uint32_t click_count;
-    bool is_paused;
+    bool is_frozen;
+    uint32_t animation_timer;
+
+    match_state_t match_state;
 } t_game_state;
+
 
 int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time, bool is_multiplayer);
 void    game_state_reset(t_game_state *game, struct s_time time, bool is_multiplayer);
@@ -161,6 +174,8 @@ void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 void    player_bomb_count(t_game_state *game);
+void    update_player_death_animation(t_game_state *game, player_t *player);
+void    update_player_win_animation(t_game_state *game, player_t *player);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.

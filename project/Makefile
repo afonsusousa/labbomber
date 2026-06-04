@@ -34,6 +34,6 @@ LDADD += -llcf
 re: clean all
 
 .END:
-		cp ${.OBJDIR}/${PROG} ${.CURDIR}/${PROG};
+	cp ${.OBJDIR}/${PROG} ${.CURDIR}/${PROG}; 
 
 .include <minix.lcom.mk>

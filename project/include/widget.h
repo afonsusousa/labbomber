@@ -27,6 +27,12 @@
 #define UI_BORDER_DARK      W95_BLACK
 #define UI_CURSOR_COLOR     W95_BLACK
 
+//UI BUTTON COLORS
+#define BTN_RADIUS      12
+#define BTN_FILL        0x6a5abf
+#define BTN_FILL_HOVER  0x533bd1
+#define BTN_FILL_PRESS  0x513db8
+
 typedef enum {
     ALIGN_START,
     ALIGN_CENTER,
@@ -159,6 +165,7 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
 t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text, const char *name);
 
 // --- OVERLAY / DIALOG HELPERS ---
+t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name);
 t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*), const char *name);
 
 

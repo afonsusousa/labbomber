@@ -15,10 +15,15 @@
 
 static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_multiplayer) {
     game->logical_ticks = 0;
-    game->is_paused = false;
+    game->match_state = MATCH_RUNNING;
+    game->is_frozen = false;
+    game->players[PLAYER_1].invincibility_timer = 0;
+    game->players[PLAYER_2].invincibility_timer = 0;
+    game->animation_timer = 0;
+
     generateBoard((char *)game->board, time.day, time.month, time.year);
 
-    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);    game->door_active = false;
+    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
     game->door_open = false;
 
     set_date_seed(time.day, time.month, time.year);
@@ -30,7 +35,6 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     game->current_player = PLAYER_1;
 
     // --- PLAYER 2 ---
-
     if (is_multiplayer) {
         player_init(game, &game->players[PLAYER_2], (t_tuple){BOARD_COLS - 2, BOARD_ROWS - 2});
         game->players[PLAYER_2].lives = 3;
@@ -52,18 +56,18 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_init(&game->bomb[i]);
     }
-    
+
     game->click_count = 0;
 }
 
-int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time, bool is_multiplayer) {    if (game == NULL || width == 0 || height == 0) return 1;
+int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time time, bool is_multiplayer) {
+    if (game == NULL || width == 0 || height == 0) return 1;
 
     game_state_destroy(game);
 
     game->width = width;
     game->height = height;
 
-    // Cache pre-computed tile size and map draw offsets
     int32_t max_tile_w = (int32_t)width / BOARD_COLS;
     int32_t max_tile_h = (int32_t)height / BOARD_ROWS;
     int32_t tile = max_tile_w < max_tile_h ? max_tile_w : max_tile_h;
@@ -80,15 +84,16 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     _game_state_prepare_match(game, time, is_multiplayer);
     game->score = 0;
+    game->time_limit = 180; // segundos
 
     scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
 
     return 0;
 }
 
-void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer)
-{
+void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer) {
     if (game == NULL) return;
+
     _game_state_prepare_match(game, time, is_multiplayer);
     game->score = 0;
 }
@@ -99,7 +104,6 @@ void game_state_destroy(t_game_state *game) {
     game->width = 0;
     game->height = 0;
     game->tile_size = 0;
-    game->is_paused = true;
 }
 
 void game_state_update(t_ctx *ctx) {
@@ -107,14 +111,19 @@ void game_state_update(t_ctx *ctx) {
 
     t_game_state *game = &ctx->game;
 
-    if (game->is_paused) return;
-
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *player = &game->players[i];
+
         if (!player->active) continue;
 
-        if (player_collides_with_enemy(game, player)) {
+        if (player->invincibility_timer > 0) {
+            player->invincibility_timer--;
+        } else if (player_collides_with_enemy(game, player)) {
             update_player_lives(player, -1);
+
+            if (player->lives > 0) {
+                player->invincibility_timer = INVINCIBILITY_TICKS;
+            }
         }
     }
 
@@ -137,14 +146,36 @@ void game_state_update(t_ctx *ctx) {
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_update(game, &game->bomb[i]);
     }
+
     player_bomb_count(game);
 
-    int enemies_alive = 0;
-    for (int i = 0; i < game->enemy_count; i++) {
-        if (game->enemies[i].active) enemies_alive++;
-    }
-    if (game->enemy_count > 0 && enemies_alive == 0 && game->door_active) {
-        game->door_open = true;
+    if (game->match_state == MATCH_RUNNING) {
+        player_t *p1 = &game->players[PLAYER_1];
+
+        uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
+
+        if (elapsed >= game->time_limit || p1->lives == 0) {
+            p1->lives = 0;
+            game->match_state = MATCH_LOST;
+            game->animation_timer = GAME_TICKS_PER_SECOND * 5;
+            return;
+        }
+
+        int enemies_alive = 0;
+        for (int i = 0; i < game->enemy_count; i++) {
+            if (game->enemies[i].active) {
+                enemies_alive++;
+            }
+        }
+
+        if (game->enemy_count > 0 && enemies_alive == 0) {
+            game->door_open = true;
+
+            if (p1->board_pos.x == game->door_pos.x && p1->board_pos.y == game->door_pos.y) {
+                game->match_state = MATCH_WON;
+                game->animation_timer = GAME_TICKS_PER_SECOND * 3;
+            }
+        }
     }
 }
 
@@ -206,13 +237,10 @@ void draw_player_hearts(hw_video_t *video, t_game_state *game) {
 }
 
 void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
-    if (self == NULL || state == NULL) {
-        return;
-    }
+    if (self == NULL || state == NULL) return;
 
     t_game_state *game = GAME(state);
-    
-    // Draw Map
+
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
             int val = game->board[y * BOARD_COLS + x];
@@ -242,4 +270,13 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
         draw_player(&game->players[i], video, game);
     }
     draw_player_hearts(video, game);
+
+    uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
+    uint32_t remaining = elapsed >= game->time_limit ? 0 : game->time_limit - elapsed;
+    uint32_t mins = remaining / 60;
+    uint32_t secs = remaining % 60;
+
+    char timer_buf[16];
+    snprintf(timer_buf, sizeof(timer_buf), "%02u:%02u", mins, secs);
+    draw_string(video, timer_buf, self->abs_x + (self->width / 2) - 30, self->abs_y + 10, 0xFFFFFF);
 }

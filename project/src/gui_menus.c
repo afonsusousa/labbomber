@@ -25,18 +25,7 @@ static void _callback_show_singleplayer_name_menu(t_widget *self, void *state);
 static void _callback_show_multiplayer_name_menu(t_widget *self, void *state);
 static void _callback_show_scoreboard(t_widget *self, void *state);
 static void _callback_start_game(t_widget *self, void *state);
-static void _callback_resume_game(t_widget *self, void *state);
-static void _callback_confirm_return_to_main_menu(t_widget *self, void *state);
-static void _callback_confirm_reset_game(t_widget *self, void *state);
-static void _callback_reset_game(t_widget *self, void *state);
-static void _callback_return_to_main_menu(t_widget *self, void *state);
 static void _callback_close_scoreboard(t_widget *self, void *state);
-
-t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name) {
-    t_widget *overlay = widget_create(OVERLAY, 0, 0, screen_w, screen_h, name);
-    overlay->on_quit = on_quit;
-    return overlay;
-}
 
 // ENTRY POINT
 
@@ -94,27 +83,9 @@ void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *mess
     gui_push_overlay(gui, overlay);
 }
 
-void gui_show_game_end_dialog(struct s_ctx *ctx, const char *title, const char *message) {
-    t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "end_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *dialog = widget_add_dialog(overlay, title, 360, 190, gui->width, gui->height, _callback_pop_view, "end_dialog");
-    dialog->on_quit = _callback_pop_view;
-
-    widget_add_text(dialog, 0, 40, 320, 24, message, "end_message");
-
-    t_widget *btn_ok = widget_add_button(dialog, 0, 86, 120, 36, "OK", _callback_confirm_return_to_main_menu, "end_ok_button");
-
-    int32_t btn_row_x = ((int32_t)dialog->width - (int32_t)btn_ok->width) / 2;
-    widget_set_position(btn_ok, btn_row_x, 120);
-
-    gui_push_overlay(gui, overlay);
-}
-
 void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *message, void (*on_yes)(t_widget*, void*), void (*on_no)(t_widget*, void*)) {
     t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "confirm_overlay");
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_no, "confirm_overlay");
     if (overlay == NULL) return;
 
     t_widget *confirm_dialog = widget_add_dialog(overlay, title, 360, 190, gui->width, gui->height, on_no, "confirm_dialog");
@@ -123,11 +94,11 @@ void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *m
     widget_add_text(confirm_dialog, 0, 40, 320, 24, message, "confirm_message");
 
     t_widget *btn_yes = widget_add_button(confirm_dialog, 0, 86, 120, 36, "Yes", on_yes, "confirm_yes_button");
-    t_widget *btn_no = widget_add_button(confirm_dialog, 0, 86, 120, 36, "No", on_no, "confirm_no_button");
+    t_widget *btn_no  = widget_add_button(confirm_dialog, 0, 86, 120, 36, "No",  on_no,  "confirm_no_button");
 
     int32_t btn_row_x = ((int32_t)confirm_dialog->width - (int32_t)(btn_yes->width + btn_no->width + 20)) / 2;
     widget_set_position(btn_yes, btn_row_x, 120);
-    widget_set_position(btn_no, btn_row_x + (int32_t)btn_yes->width + 20, 120);
+    widget_set_position(btn_no,  btn_row_x + (int32_t)btn_yes->width + 20, 120);
 
     gui_push_overlay(gui, overlay);
 }
@@ -137,9 +108,8 @@ void gui_show_confirm_dialog(struct s_ctx *ctx, const char *title, const char *m
 // =============================================================================
 
 static void _callback_confirm_quit(t_widget *self, void *state) {
-    t_gui *gui = GUI(state);
     (void)self;
-    gui->is_running = false;
+    GUI(state)->is_running = false;
 }
 
 static void _callback_quit(t_widget *self, void *state) {
@@ -181,9 +151,9 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
                    ((uint32_t)clock() & 0xFFFFu) ^
                    ((uintptr_t)ctx & 0xFFFFu));
     ctx->multiplayer_local_tiebreaker = (uint8_t)(((unsigned long long)ctx ^ (unsigned long long)ctx->multiplayer_local_nonce) & 0xFFu);
-    
+
     FILE *log_file = fopen("/tmp/game_debug.log", "a");
-    
+
     if (serial_init() != 0) {
         if (log_file) {
             fprintf(log_file, "[ERROR] serial_init() failed\n");
@@ -195,8 +165,7 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
         return;
     }
     serial_flush_rx();
-    
-    // Wait for the host pipe / TCP bridge to settle before sending the first handshake.
+
     for (int i = 0; i < 1000; i++) {
         uint8_t dummy;
         if (util_sys_inb(COM1_ADDR + SERP_LSR, &dummy) == 0) {
@@ -214,11 +183,6 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
         fclose(log_file);
     }
 
-    if (log_file) {
-        fprintf(log_file, "[INFO] Serial initialized, handshake byte sent\n");
-        fflush(log_file);
-        fclose(log_file);
-    }
     gui_show_name_menu(ctx, true);
 }
 
@@ -247,12 +211,12 @@ void gui_show_start_menu(struct s_ctx *ctx) {
     menu->draw = _draw_start_menu;
 
     widget_add_button(menu, 0, 0, 300, 50, "Singleplayer", _callback_show_singleplayer_name_menu, "start_single_button");
-    widget_add_button(menu, 0, 0, 300, 50, "Multiplayer", _callback_show_multiplayer_name_menu, "start_multi_button");
-    widget_add_button(menu, 0, 0, 300, 50, "Scoreboard", _callback_show_scoreboard, "start_scoreboard_button");
-    widget_add_button(menu, 0, 0, 300, 50, "QUIT", _callback_quit, "start_scoreboard_button");
+    widget_add_button(menu, 0, 0, 300, 50, "Multiplayer",  _callback_show_multiplayer_name_menu,  "start_multi_button");
+    widget_add_button(menu, 0, 0, 300, 50, "Scoreboard",   _callback_show_scoreboard,             "start_scoreboard_button");
+    widget_add_button(menu, 0, 0, 300, 50, "QUIT",         _callback_quit,                        "start_quit_button");
     menu->on_quit = _callback_quit;
 
-    widget_layout(menu, 24, 80, true);
+    widget_layout(menu, 24, 450, true);
     gui_push_view(gui, menu);
 }
 
@@ -274,31 +238,24 @@ static void _callback_start_game(t_widget *self, void *state) {
     t_widget *player2_input = widget_find_by_name(gui, "player2_input");
 
     if (player1_input == NULL || player1_input->data.text_input.buffer == NULL) {
-        gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
+        gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
         return;
     }
-
-    bool player1_empty = is_blank_string(player1_input->data.text_input.buffer);
-    if (player1_empty) {
-        gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 1 name");
+    if (is_blank_string(player1_input->data.text_input.buffer)) {
+        gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
         return;
     }
 
     if (player2_input != NULL) {
-        if (player2_input->data.text_input.buffer == NULL) {
-            gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 2 name");
-            return;
-        }
-
-        bool player2_empty = is_blank_string(player2_input->data.text_input.buffer);
-        if (player2_empty) {
-            gui_show_info_dialog(CTX(state), "Invalid Name", "Please enter Player 2 name");
+        if (player2_input->data.text_input.buffer == NULL ||
+            is_blank_string(player2_input->data.text_input.buffer)) {
+            gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
             return;
         }
     }
 
     gui_pop_view(gui);
-    gui_show_game_view(CTX(state));
+    gui_show_game_view(ctx);
 }
 
 void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
@@ -324,60 +281,6 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
 }
 
 // =============================================================================
-// Pause Menu
-// =============================================================================
-
-static void _callback_resume_game(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = GUI(state);
-    GAME(state)->is_paused = false;
-    gui_pop_view(gui);
-}
-
-static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = GUI(state);
-    GAME(state)->is_paused = false;
-    gui_pop_until_widget_found(gui, "start_menu_view");
-}
-
-static void _callback_confirm_reset_game(t_widget *self, void *state) {
-    (void)self;
-    t_gui *gui = GUI(state);
-    game_state_reset(GAME(state), CTX(state)->real_time, CTX(state)->is_multiplayer);
-    GAME(state)->is_paused = false;
-    gui_pop_until_widget_found(gui, "game_view");
-}
-
-static void _callback_reset_game(t_widget *self, void *state) {
-    (void)self;
-    gui_show_confirm_dialog(CTX(state), "Confirm Reset", "Are you sure?", _callback_confirm_reset_game, _callback_pop_view);
-}
-
-static void _callback_return_to_main_menu(t_widget *self, void *state) {
-    (void)self;
-    gui_show_confirm_dialog(CTX(state), "Confirm Main Menu", "Return to main menu?", _callback_confirm_return_to_main_menu, _callback_pop_view);
-}
-
-void gui_show_pause_menu(struct s_ctx *ctx) {
-    t_gui *gui = &ctx->gui;
-    
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "pause_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *pause_dialog = widget_add_dialog(overlay, "Paused", 360, 260, gui->width, gui->height, _callback_resume_game, "pause_dialog");
-    
-    pause_dialog->on_quit = _callback_resume_game;
-
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "pause_resume_button");
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "pause_reset_button");
-    widget_add_button(pause_dialog, 0, 0, 220, 40, "Main Menu", _callback_return_to_main_menu, "pause_menu_button");
-
-    widget_layout(pause_dialog, 12, 32, true);
-    gui_push_overlay(gui, overlay);
-}
-
-// =============================================================================
 // Scoreboard
 // =============================================================================
 
@@ -395,8 +298,8 @@ void gui_show_scoreboard(struct s_ctx *ctx) {
     scoreboard->on_quit = _callback_close_scoreboard;
 
     widget_add_text(scoreboard, 0, 30, 450, 24, "Top Players:", "scoreboard_title");
-    widget_add_text(scoreboard, 0, 60, 450, 20, "1. Player One    - 15000 pts", "scoreboard_row_1");
-    widget_add_text(scoreboard, 0, 85, 450, 20, "2. Player Two    - 12500 pts", "scoreboard_row_2");
+    widget_add_text(scoreboard, 0, 60,  450, 20, "1. Player One    - 15000 pts", "scoreboard_row_1");
+    widget_add_text(scoreboard, 0, 85,  450, 20, "2. Player Two    - 12500 pts", "scoreboard_row_2");
     widget_add_text(scoreboard, 0, 110, 450, 20, "3. Player Three  - 10000 pts", "scoreboard_row_3");
     widget_add_text(scoreboard, 0, 135, 450, 20, "4. Player Four   -  8500 pts", "scoreboard_row_4");
     widget_add_text(scoreboard, 0, 160, 450, 20, "5. Player Five   -  7000 pts", "scoreboard_row_5");
