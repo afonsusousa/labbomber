@@ -911,7 +911,3 @@ static char *door_open[] = {
 "XXoX........XoXX",
 "XXXXX......XXXXX"
 }; 
-
-
-/* Timer Numbers*/ 
-

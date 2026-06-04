@@ -90,6 +90,17 @@ extern bool sprites_initialized;
 #define SPRITE_PLAYER_DEATH         198
 #define SPRITE_PLAYER_HAT_1         199
 #define SPRITE_PLAYER_HAT_2         200
+#define NUMBER_0                    199
+#define NUMBER_1                    200
+#define NUMBER_2                    201
+#define NUMBER_3                    202
+#define NUMBER_4                    203
+#define NUMBER_5                    204
+#define NUMBER_6                    205
+#define NUMBER_7                    206
+#define NUMBER_8                    207
+#define NUMBER_9                    208
+#define DOIS_PONTOS                 209
 
 static const int explosion_center_sprites[] = {
     SPRITE_EXPLOSION_1_CENTER,
