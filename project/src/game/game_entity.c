@@ -6,9 +6,9 @@ bool collision(t_game_state *game, const entity_t *entity, t_tuple pos) {
     if (pos.x < 0 || pos.y < 0 || pos.x >= BOARD_COLS || pos.y >= BOARD_ROWS) return true;
 
     uint8_t tile = game->board[BOARD_IDX(pos.x, pos.y)];
-    if (tile != TILE_TYPE_GRASS && 
-        tile != TILE_TYPE_DOOR && 
-        tile != TILE_TYPE_POWERUP_REACH && 
+    if (tile != TILE_TYPE_GRASS &&
+        tile != TILE_TYPE_DOOR &&
+        tile != TILE_TYPE_POWERUP_REACH &&
         tile != TILE_TYPE_POWERUP_COUNT) {
         return true;
     }
@@ -120,7 +120,8 @@ bool player_collides_with_enemy(const t_game_state *game, const player_t *player
         const enemy_t *enemy = &game->enemies[i];
         if (!enemy->active) continue;
 
-        if (entity_overlaps(player->pos, player->size, enemy->pos, enemy->size)) return true;
+        if (entity_overlaps(player->pos, player->size, enemy->pos, enemy->size)
+        	&& enemy->invincibility_timer == 0) return true;
     }
     return false;
 }

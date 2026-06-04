@@ -61,7 +61,7 @@ static void bomb_compute_reach(t_game_state *game, bomb_t *bomb) {
 static void damage_entities_at(t_game_state *game, int32_t cx, int32_t cy) {
     int32_t tile = (int32_t)game->tile_size;
     t_tuple exp_pos = { cx * tile + tile / 2, cy * tile + tile / 2 };
-    t_tuple exp_size = { tile - 2, tile - 2 };
+    t_tuple exp_size = { tile, tile };
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_t *p = &game->players[i];

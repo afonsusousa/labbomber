@@ -7,7 +7,7 @@
 static int is_solid(const uint8_t *board, int rows, int cols, int x, int y) {
     if (x < 0 || x >= cols || y < 0 || y >= rows) return 1;
     uint8_t val = board[y * cols + x];
-    return (val != TILE_TYPE_GRASS && val != TILE_TYPE_DOOR);
+    return (val != TILE_TYPE_GRASS && val != TILE_TYPE_DOOR && val != TILE_TYPE_POWERUP_COUNT && val != TILE_TYPE_POWERUP_REACH );
 }
 
 void draw_grass(hw_video_t *video, int32_t x, int32_t y, int sprite_index) {
@@ -30,16 +30,16 @@ int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y) 
             return SPRITE_GRASS_TOP_BORDER;
         return SPRITE_GRASS_TOP;
     }
-    
+
     if (L) {
         if (!UL)
             return SPRITE_GRASS_LEFT_BORDER;
         return SPRITE_GRASS_LEFT;
     }
-    
+
     if (UL)
         return SPRITE_GRASS_TOP_LEFT_BORDER;
-    
+
     return SPRITE_GRASS;
 }
 
@@ -51,7 +51,7 @@ int decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y) {
         return SPRITE_WALL1;
     }
 
-    int seed = (x * 31) + (y * 7); 
+    int seed = (x * 31) + (y * 7);
     switch (seed % 3) {
         case 0:  return SPRITE_WALL1;
         case 1:  return SPRITE_WALL2;
@@ -64,7 +64,7 @@ void draw_wall(hw_video_t *video, int32_t x, int32_t y, int sprite_index) {
         hw_vbe_draw_rect(video, x - 8, y - 8, 16, 16, 0x666666);
         return;
     }
-    
+
     xpm_image_t img = scaled_sprite_cache[sprite_index];
     hw_vbe_draw_xpm(video, img.bytes, img, x, y);
 }
@@ -74,7 +74,7 @@ void draw_brick(hw_video_t *video, int32_t x, int32_t y) {
         hw_vbe_draw_rect(video, x - 8, y - 8, 16, 16, 0x884400);
         return;
     }
-    
+
     xpm_image_t img = scaled_sprite_cache[SPRITE_BRICK];
     hw_vbe_draw_xpm(video, img.bytes, img, x, y);
 }
