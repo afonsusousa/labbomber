@@ -1,5 +1,6 @@
 #include "draw.h"
 #include "vbe.h"
+#include "macros.h"
 #include "assets_cache.h"
 #include "game.h"
 #include <stdint.h>
@@ -77,7 +78,7 @@ int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     xpm_image_t img = scaled_sprite_cache[sprite_index];
 
     int32_t draw_y = game->start_y + player->pos.y;
-    
+
     // Sneak animation
     if (!player->is_moving && player->animation_phase == 1) {
         uint32_t sneak_amount = img.height / 20;
@@ -93,9 +94,9 @@ int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     );
 
     if (game->is_multiplayer) {
-        int hat_sprite = (player == &game->players[0]) ? SPRITE_PLAYER_HAT_1 : 
+        int hat_sprite = (player == &game->players[0]) ? SPRITE_PLAYER_HAT_1 :
                          (player == &game->players[1]) ? SPRITE_PLAYER_HAT_2 : -1;
-        
+
         if (hat_sprite != -1) {
             xpm_image_t hat_img = scaled_sprite_cache[hat_sprite];
             if (hat_img.bytes != NULL) {
@@ -142,7 +143,7 @@ void update_player_win_animation(t_game_state *game, player_t *player) {
     if (player == NULL || !player->active) return;
 
     if (game->animation_timer == GAME_TICKS_PER_SECOND * 3) {
-        player->pos.x = player->board_pos.x * game->tile_size + game->tile_size / 2; 
+        player->pos.x = player->board_pos.x * game->tile_size + game->tile_size / 2;
         player->pos.y = player->board_pos.y * game->tile_size + game->tile_size / 2;
 
         player->sprite_dir = DIR_DOWN;
@@ -157,7 +158,7 @@ void update_player_win_animation(t_game_state *game, player_t *player) {
         game->animation_timer--;
         return;
     }
-    
+
     if (game->animation_timer < GAME_TICKS_PER_SECOND * 2 && game->animation_timer > GAME_TICKS_PER_SECOND * 1.8) {
         player->pos.y += 1;
         game->animation_timer--;
@@ -271,6 +272,7 @@ void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
     player->bomb_available = 1;
     player->on_snap = player_on_snap;
     player->invincibility_timer = 0;
+    player->powerups = 0;
     player->active = true;
 }
 
@@ -345,15 +347,19 @@ void player_bomb_count(t_game_state *game) {
             player->bomb_available = 0;
             continue;
         }
-        player->bomb_available = (player->bomb_max > active_counts[i])
-            ? (player->bomb_max - active_counts[i])
+
+        uint8_t bonus_bombs = GET_POWERUP_COUNT(player->powerups);
+        uint8_t effective_max = player->bomb_max + bonus_bombs;
+
+        player->bomb_available = (effective_max > active_counts[i])
+            ? (effective_max - active_counts[i])
             : 0;
     }
 }
 
 void update_player_lives(player_t *player, int change) {
     if (player == NULL || !player->active) return;
-    
+
     if (change < 0) {
         if (player->invincibility_timer > 0) return;
         player->invincibility_timer = GAME_TICKS_PER_SECOND * 2; // 2 seconds of invincibility
@@ -364,6 +370,6 @@ void update_player_lives(player_t *player, int change) {
     player->lives = (uint8_t)new_lives;
 
     if (player->lives == 0) {
-        
+
     }
 }

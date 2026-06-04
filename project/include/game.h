@@ -32,6 +32,8 @@ typedef enum {
 #define TILE_TYPE_WALL  1
 #define TILE_TYPE_BRICK 2
 #define TILE_TYPE_DOOR  3
+#define TILE_TYPE_POWERUP_REACH 4
+#define TILE_TYPE_POWERUP_COUNT 5
 
 #define GAME_TICKS_PER_SECOND 60
 #define INVINCIBILITY_TICKS (GAME_TICKS_PER_SECOND * 3)
@@ -46,7 +48,7 @@ typedef enum {
 
 #define MAX_BOMBS 4
 
-#define BOMB_EXPLOSION_RANGE 2
+#define BOMB_EXPLOSION_RANGE 1
 
 #define BOMB_DURATION_TICKS           ((5 * GAME_TICKS_PER_SECOND) / 2)
 #define BOMB_EXPLOSION_DURATION_TICKS ((2 * GAME_TICKS_PER_SECOND) / 5)
@@ -82,6 +84,7 @@ typedef struct s_entity {
     uint8_t     lives;
     uint8_t     bomb_max;
     uint8_t     bomb_available;
+    uint8_t     powerups; // Bit 0-1: Bomb Reach (0-3), Bit 2-3: Bomb Count (0-3)
     uint32_t    invincibility_timer;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
@@ -194,7 +197,7 @@ int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENE
 bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
 void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
 void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
-void    update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks);
+void    update_enemy_animation(t_game_state *game, enemy_t *enemy, uint32_t logical_ticks);
 void    update_enemy_lives(t_game_state *game, enemy_t *enemy, int change);
 void    update_player_lives(player_t *player, int change);
 

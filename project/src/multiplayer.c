@@ -164,20 +164,17 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
 
         case MP_PACKET_PLAYER_STATE: {
             uint8_t player_id = ctx->multiplayer_rx_data[0];
-            uint8_t state_value = ctx->multiplayer_rx_data[1];
-            uint8_t lives = state_value & 0x7F;
-            bool active = (state_value & 0x80) != 0;
-
-            FILE *log_file = fopen("/tmp/game_debug.log", "a");
-            if (log_file) {
-                fprintf(log_file, "[MP] rx state player=%u lives=%u active=%u\n", player_id, lives, active);
-                fclose(log_file);
-            }
+            uint8_t lives_active = ctx->multiplayer_rx_data[1];
+            uint8_t powerups = ctx->multiplayer_rx_data[2];
+            
+            uint8_t lives = lives_active & 0x7F;
+            bool active = (lives_active & 0x80) != 0;
 
             if (ctx->multiplayer_role_assigned && player_id != ctx->multiplayer_local_player && player_id < MAX_PLAYERS) {
                 player_t *player = &ctx->game.players[player_id];
                 player->lives = lives;
                 player->active = active;
+                player->powerups = powerups;
             }
 
             break;
@@ -420,7 +417,6 @@ void app_multiplayer_poll_serial(t_ctx *ctx) {
         }
     }
 }
-
 int app_multiplayer_send_player_state(t_ctx *ctx, uint8_t player_id) {
     if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return 1;
     if (player_id >= MAX_PLAYERS) return 1;
@@ -430,7 +426,7 @@ int app_multiplayer_send_player_state(t_ctx *ctx, uint8_t player_id) {
     uint8_t state_value = player->lives & 0x7F;
     if (player->active) state_value |= 0x80;
 
-    int result = app_multiplayer_send_packet(MP_PACKET_PLAYER_STATE, player_id, state_value, 0);
+    int result = app_multiplayer_send_packet(MP_PACKET_PLAYER_STATE, player_id, state_value, player->powerups);
 
     FILE *log_file = fopen("/tmp/game_debug.log", "a");
     if (log_file) {

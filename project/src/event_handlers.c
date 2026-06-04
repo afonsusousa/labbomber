@@ -57,10 +57,12 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         player_t *player = &ctx->game.players[local_player];
 
         if (player->lives != ctx->multiplayer_last_player_lives[local_player] ||
-            player->active != ctx->multiplayer_last_player_active[local_player]) {
+            player->active != ctx->multiplayer_last_player_active[local_player] ||
+            player->powerups != ctx->multiplayer_last_player_powerups[local_player]) {
             app_multiplayer_send_player_state(ctx, local_player);
             ctx->multiplayer_last_player_lives[local_player] = player->lives;
             ctx->multiplayer_last_player_active[local_player] = player->active;
+            ctx->multiplayer_last_player_powerups[local_player] = player->powerups;
         }
     }
 

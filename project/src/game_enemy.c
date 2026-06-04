@@ -239,7 +239,7 @@ void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
     update_entity_movement(game, enemy);
 }
 
-void update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks) {
+void update_enemy_animation(t_game_state *game, enemy_t *enemy, uint32_t logical_ticks) {
     if (enemy == NULL || !enemy->active) return;
 
     if (enemy->invincibility_timer > 0) {
@@ -247,6 +247,25 @@ void update_enemy_animation(enemy_t *enemy, uint32_t logical_ticks) {
         
         if (enemy->lives == 0 && enemy->invincibility_timer == 0) {
             enemy->active = false;
+
+            // power-up drop
+            if (game != NULL) {
+                int active_enemies = 0;
+                for (int i = 0; i < MAX_ENEMIES; i++) {
+                    if (game->enemies[i].active) active_enemies++;
+                }
+
+                // 20% + 5% per enemy, cap at 50%
+                int drop_chance = 20 + (active_enemies * 5);
+                if (drop_chance > 50) drop_chance = 50;
+
+                int r = rand() % 100;
+                if (r < drop_chance / 2) {
+                    game->board[enemy->board_pos.y * BOARD_COLS + enemy->board_pos.x] = TILE_TYPE_POWERUP_REACH;
+                } else if (r < drop_chance) {
+                    game->board[enemy->board_pos.y * BOARD_COLS + enemy->board_pos.x] = TILE_TYPE_POWERUP_COUNT;
+                }
+            }
         }
     }
 

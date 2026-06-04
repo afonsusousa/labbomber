@@ -36,6 +36,7 @@ typedef struct s_ctx {
     uint32_t multiplayer_match_seed;
     uint8_t multiplayer_last_player_lives[MAX_PLAYERS];
     bool multiplayer_last_player_active[MAX_PLAYERS];
+    uint8_t multiplayer_last_player_powerups[MAX_PLAYERS];
     bool multiplayer_name_sent;
     bool multiplayer_name_received;
     char multiplayer_local_name[32];

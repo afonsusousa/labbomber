@@ -176,6 +176,8 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_last_player_lives[1] = 0;
     ctx->multiplayer_last_player_active[0] = false;
     ctx->multiplayer_last_player_active[1] = false;
+    ctx->multiplayer_last_player_powerups[0] = 0;
+    ctx->multiplayer_last_player_powerups[1] = 0;
     ctx->multiplayer_last_contact_ticks = 0;
     memset(ctx->multiplayer_local_name, 0, sizeof(ctx->multiplayer_local_name));
     memset(ctx->multiplayer_remote_name, 0, sizeof(ctx->multiplayer_remote_name));

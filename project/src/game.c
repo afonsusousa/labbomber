@@ -71,7 +71,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 4, spawn_out);
+    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 3, spawn_out);
 
     for (int i = 0; i < game->enemy_count; i++) {
         enemy_init(game, &game->enemies[i], spawn_out[i]);
@@ -153,6 +153,18 @@ void game_state_update(t_ctx *ctx) {
         if (player->lives > 0) {
             update_player_movement(game, player);
             update_player_animation(player, game->logical_ticks);
+
+            // Handle Power-up Pickup
+            uint8_t tile = game->board[player->board_pos.y * BOARD_COLS + player->board_pos.x];
+            if (tile == TILE_TYPE_POWERUP_REACH) {
+                uint8_t current = GET_POWERUP_REACH(player->powerups);
+                if (current < 3) SET_POWERUP_REACH(player->powerups, current + 1);
+                game->board[player->board_pos.y * BOARD_COLS + player->board_pos.x] = TILE_TYPE_GRASS;
+            } else if (tile == TILE_TYPE_POWERUP_COUNT) {
+                uint8_t current = GET_POWERUP_COUNT(player->powerups);
+                if (current < 3) SET_POWERUP_COUNT(player->powerups, current + 1);
+                game->board[player->board_pos.y * BOARD_COLS + player->board_pos.x] = TILE_TYPE_GRASS;
+            }
         }
     }
 
@@ -162,11 +174,31 @@ void game_state_update(t_ctx *ctx) {
         if (!enemy->active) continue;
 
         update_enemy_movement(game, enemy);
-        update_enemy_animation(enemy, game->logical_ticks);
+        update_enemy_animation(game, enemy, game->logical_ticks);
     }
 
     for (int i = 0; i < MAX_BOMBS; i++) {
         bomb_update(game, &game->bomb[i]);
+    }
+
+    // Every 10 seconds spawn a new enemy if there is space and the door isn't open
+    if (game->match_state == MATCH_RUNNING && !game->door_open && game->logical_ticks > 0 && (game->logical_ticks % (GAME_TICKS_PER_SECOND * 10) == 0)) {
+        int free_idx = -1;
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            if (!game->enemies[i].active) {
+                free_idx = i;
+                break;
+            }
+        }
+
+        if (free_idx != -1) {
+            t_tuple spawn;
+            spawn = spawnpoint_generator(game->board, game->logical_ticks); 
+            enemy_init(game, &game->enemies[free_idx], spawn);
+            if (free_idx >= game->enemy_count) {
+                game->enemy_count = (uint8_t)(free_idx + 1);
+            }
+        }
     }
 
     player_bomb_count(game);
@@ -196,21 +228,23 @@ void game_state_update(t_ctx *ctx) {
         }
 
         int enemies_alive = 0;
-
         for (int i = 0; i < game->enemy_count; i++) {
-            if (game->enemies[i].active) {
-                enemies_alive++;
-            }
+            if (game->enemies[i].active) enemies_alive++;
         }
 
-        if (game->enemy_count > 0 && enemies_alive == 0) {
+        bool enemies_defeated = (game->enemy_count > 0 && enemies_alive == 0);
+        bool players_ready = true;
+        if (game->is_multiplayer) {
+            players_ready = (players_alive <= 1);
+        }
+
+        if (enemies_defeated && players_ready) {
             game->door_open = true;
 
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 player_t *player = &game->players[i];
 
-                if (!player->active) continue;
-                if (player->lives <= 0) continue;
+                if (!player->active || player->lives <= 0) continue;
 
                 if (player->board_pos.x == game->door_pos.x &&
                     player->board_pos.y == game->door_pos.y) {
@@ -289,10 +323,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
             int val = game->board[y * BOARD_COLS + x];
-            if (val == TILE_TYPE_GRASS) {
-                int grass_type = decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
-                draw_grass(video, GET_X(game, x), GET_Y(game, y), grass_type);
-            } else if (val == TILE_TYPE_WALL) {
+            if (val == TILE_TYPE_WALL) {
                 int wall_sprite = decide_wall_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
                 draw_wall(video, GET_X(game, x), GET_Y(game, y), wall_sprite);
             } else if (val == TILE_TYPE_BRICK) {
@@ -300,7 +331,17 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             } else if (val == TILE_TYPE_DOOR) {
                 draw_door(video, GET_X(game, x), GET_Y(game, y), game->door_open);
             } else {
-                hw_vbe_draw_rect(video, GET_X(game, x) - (game->tile_size / 2), GET_Y(game, y) - (game->tile_size / 2), game->tile_size, game->tile_size, 0x000000);
+                int grass_type = decide_grass_sprite(game->board, BOARD_ROWS, BOARD_COLS, x, y);
+                draw_grass(video, GET_X(game, x), GET_Y(game, y), grass_type);
+
+                // powerups on top of the grass
+                if (val == TILE_TYPE_POWERUP_REACH) {
+                    xpm_image_t img = scaled_sprite_cache[SPRITE_PLAYER_HAT_1];
+                    if (img.bytes) hw_vbe_draw_xpm(video, img.bytes, img, GET_X(game, x), GET_Y(game, y));
+                } else if (val == TILE_TYPE_POWERUP_COUNT) {
+                    xpm_image_t img = scaled_sprite_cache[SPRITE_PLAYER_HAT_2];
+                    if (img.bytes) hw_vbe_draw_xpm(video, img.bytes, img, GET_X(game, x), GET_Y(game, y));
+                }
             }
         }
     }

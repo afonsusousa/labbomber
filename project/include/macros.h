@@ -48,4 +48,16 @@
 #define GUI(state) (&CTX(state)->gui)
 #define GAME(state) (&CTX(state)->game)
 
+/* Power-up bit-field macros */
+#define POWERUP_REACH_MASK  0x03
+#define POWERUP_REACH_SHIFT 0
+#define POWERUP_COUNT_MASK  0x0C
+#define POWERUP_COUNT_SHIFT 2
+
+#define GET_POWERUP_REACH(p) (((p) & POWERUP_REACH_MASK) >> POWERUP_REACH_SHIFT)
+#define GET_POWERUP_COUNT(p) (((p) & POWERUP_COUNT_MASK) >> POWERUP_COUNT_SHIFT)
+
+#define SET_POWERUP_REACH(p, v) (p) = ((p) & ~POWERUP_REACH_MASK) | (((v) << POWERUP_REACH_SHIFT) & POWERUP_REACH_MASK)
+#define SET_POWERUP_COUNT(p, v) (p) = ((p) & ~POWERUP_COUNT_MASK) | (((v) << POWERUP_COUNT_SHIFT) & POWERUP_COUNT_MASK)
+
 #endif /* LCOM_PROJECT_MACROS_H */
