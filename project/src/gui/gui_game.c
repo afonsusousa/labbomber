@@ -3,7 +3,7 @@
 #include "core/macros.h"
 #include "gui/widget.h"
 #include "core/application.h"
-#include "time/app_time.h"
+#include "time/app_time.h"   
 #include "core/event_handlers.h"
 #include "multiplayer/multiplayer.h"
 #include <stdio.h>
@@ -69,25 +69,26 @@ void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
     bool game_over = ctx->game.match_state == MATCH_EXITING;
     bool connection_lost = (strcmp(title, "CONNECTION LOST") == 0);
+    bool show_resume = !game_over && !connection_lost;
+    bool show_reset = !ctx->is_multiplayer && !connection_lost;
+    uint32_t button_count = 1 + (show_resume ? 1 : 0) + (show_reset ? 1 : 0);
 
-    void (*on_close)(t_widget*, void*) = (game_over || connection_lost) ? _callback_return_to_main_menu : _callback_resume_game;
-
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_close, "session_overlay");
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "session_overlay");
     if (overlay == NULL) return;
 
-    uint32_t height = 240 + (message ? 40 : 0) + (game_over ? 0 : 50);
-    t_widget *session_dialog = widget_add_dialog(overlay, title, 360, height, gui->width, gui->height, on_close, "session_dialog");
+    uint32_t height = 120 + (message ? 40 : 0) + button_count * 52;
+    t_widget *session_dialog = widget_add_dialog(overlay, title, 360, height, gui->width, gui->height, _callback_resume_game, "session_dialog");
 
-    session_dialog->on_quit = on_close;
+    session_dialog->on_quit = _callback_resume_game;
 
     if (message) {
         widget_add_text(session_dialog, 0, 40, 320, 24, message, "session_message");
     }
 
-    if (!game_over && !connection_lost) {
+    if (show_resume) {
         widget_add_button(session_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "session_resume_button");
     }
-    if (!connection_lost) {
+    if (show_reset) {
         widget_add_button(session_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "session_reset_button");
     }
     widget_add_button(session_dialog, 0, 0, 220, 40, "Main Menu", _callback_return_to_main_menu, "session_menu_button");
@@ -106,7 +107,7 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
         return;
     }
 
-    if (!ctx->game.is_frozen) {
+    if (!ctx->game.is_frozen && !ctx->is_multiplayer) {
         ctx->game.is_frozen = true;
         app_multiplayer_send_pause(ctx, true);
     }
