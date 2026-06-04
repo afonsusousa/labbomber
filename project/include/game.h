@@ -70,7 +70,6 @@ typedef struct s_entity {
     char        name[32];
     t_tuple     pos;
     t_tuple     board_pos;
-    t_tuple     final_pos;
     direction_t dir;
     direction_t sprite_dir;
     uint8_t     animation_phase;
@@ -113,7 +112,8 @@ typedef enum {
     MATCH_RUNNING,
     MATCH_PAUSED,
     MATCH_WON,
-    MATCH_LOST
+    MATCH_LOST,
+    MATCH_EXITING
 } match_state_t;
 
 typedef struct s_game_state {
@@ -142,17 +142,19 @@ typedef struct s_game_state {
     uint32_t click_count;
     bool is_frozen;
     uint32_t animation_timer;
+    uint32_t enemy_seed;
 
     match_state_t match_state;
 } t_game_state;
 
 
-int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time);
-void    game_state_reset(t_game_state *game, struct s_time time);
+int     game_state_init(t_game_state *game, uint32_t width, uint32_t height, struct s_time time, bool is_multiplayer);
+void    game_state_reset(t_game_state *game, struct s_time time, bool is_multiplayer);
 void    game_state_destroy(t_game_state *game);
 void    game_state_update(struct s_ctx *ctx);
 void    game_state_handle_click(t_game_state *game, int32_t x, int32_t y);
 void    game_state_handle_key_press(t_game_state *game, uint8_t scancode);
+void    game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint8_t scancode);
 
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);

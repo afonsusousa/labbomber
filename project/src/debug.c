@@ -51,11 +51,6 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game) 
 
     y += 14;
 
-    snprintf(line, sizeof(line), "Player Final Pos: (%d,%d)", game.players[0].final_pos.x, game.players[0].final_pos.y);
-    draw_string(video, line, x, y, 0x000000);
-
-    y += 14;
-
     snprintf(line, sizeof(line), "board pos: (%d,%d)", game.players[0].board_pos.x, game.players[0].board_pos.y);
     draw_string(video, line, x, y, 0x000000);
 

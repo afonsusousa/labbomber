@@ -3,97 +3,40 @@
 #include "application.h"
 #include "widget.h"
 #include "draw.h"
-#include "../lib/rtc/rtc.h"
-#include <time.h>
+#include "multiplayer.h"
+#include "../lib/keyboard/i8042.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 
-static bool app_time_is_valid(const t_time *time) {
-    if (time == NULL) return false;
-
-    return time->month >= 1 && time->month <= 12 &&
-           time->day >= 1 && time->day <= 31 &&
-           time->hours <= 23 &&
-           time->minutes <= 59 &&
-           time->seconds <= 59;
-}
-
-static uint8_t days_in_month(uint8_t month, uint8_t year) {
-    static const uint8_t days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-    if (month < 1 || month > 12) return 31;
-    if (month == 2 && year % 4 == 0) return 29;
-
-    return days[month - 1];
-}
-
-int app_update_real_time(t_ctx *ctx) {
-    if (ctx == NULL) return 1;
-
-    hw_rtc_t hw_time;
-    if (hw_rtc_get_time(&hw_time) != 0) {
-        time_t now = time(NULL);
-        struct tm *tm_now = localtime(&now);
-        if (tm_now == NULL) return 1;
-
-        ctx->real_time.year    = (uint8_t)(tm_now->tm_year % 100);
-        ctx->real_time.month   = (uint8_t)(tm_now->tm_mon + 1);
-        ctx->real_time.day     = (uint8_t)tm_now->tm_mday;
-        ctx->real_time.hours   = (uint8_t)tm_now->tm_hour;
-        ctx->real_time.minutes = (uint8_t)tm_now->tm_min;
-        ctx->real_time.seconds = (uint8_t)tm_now->tm_sec;
-
-        return app_time_is_valid(&ctx->real_time) ? 0 : 1;
-    }
-
-    ctx->real_time.year    = hw_time.year;
-    ctx->real_time.month   = hw_time.month;
-    ctx->real_time.day     = hw_time.day;
-    ctx->real_time.hours   = hw_time.hours;
-    ctx->real_time.minutes = hw_time.minutes;
-    ctx->real_time.seconds = hw_time.seconds;
-
-    return app_time_is_valid(&ctx->real_time) ? 0 : 1;
-}
-
-void app_tick_real_time(t_ctx *ctx) {
-    if (ctx == NULL || !app_time_is_valid(&ctx->real_time)) {
-        app_update_real_time(ctx);
-        return;
-    }
-
-    ctx->real_time.seconds++;
-    if (ctx->real_time.seconds < 60) return;
-
-    ctx->real_time.seconds = 0;
-    ctx->real_time.minutes++;
-    if (ctx->real_time.minutes < 60) return;
-
-    ctx->real_time.minutes = 0;
-    ctx->real_time.hours++;
-    if (ctx->real_time.hours < 24) return;
-
-    ctx->real_time.hours = 0;
-    ctx->real_time.day++;
-    if (ctx->real_time.day <= days_in_month(ctx->real_time.month, ctx->real_time.year)) return;
-
-    ctx->real_time.day = 1;
-    ctx->real_time.month++;
-    if (ctx->real_time.month <= 12) return;
-
-    ctx->real_time.month = 1;
-    ctx->real_time.year++;
-}
-
-
 void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
+    static int handshake_retry_delay = 0;
+
     hw_timer_int_handler(&hw_state->timer);
-    
+
+    if (ctx->is_multiplayer) {
+        app_multiplayer_start_pending_game(ctx);
+        app_multiplayer_try_start_game(ctx);
+    }
+
+    if (ctx->is_multiplayer) {
+        if (handshake_retry_delay <= 0) {
+            app_multiplayer_send_hello(ctx);
+            ctx->multiplayer_signal_sent = true;
+            handshake_retry_delay = 60;
+        } else {
+            handshake_retry_delay--;
+        }
+    } else {
+        handshake_retry_delay = 0;
+    }
+
     if (hw_state->timer.ticks % 60 == 0) {
         app_tick_real_time(ctx);
     }
-    
+
     hw_vbe_clear_screen(&hw_state->video, 0x0);
 
     if (gui->views.view_count > 0) {
@@ -109,10 +52,21 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         }
     }
 
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        uint8_t local_player = ctx->multiplayer_local_player;
+        player_t *player = &ctx->game.players[local_player];
+
+        if (player->lives != ctx->multiplayer_last_player_lives[local_player] ||
+            player->active != ctx->multiplayer_last_player_active[local_player]) {
+            app_multiplayer_send_player_state(ctx, local_player);
+            ctx->multiplayer_last_player_lives[local_player] = player->lives;
+            ctx->multiplayer_last_player_active[local_player] = player->active;
+        }
+    }
+
     if (gui->input.hovered != NULL && gui->input.hovered->type == TEXT_INPUT) {
         draw_text_cursor(&hw_state->video, &hw_state->mouse);
-    } 
-    else {
+    } else {
         draw_mouse(&hw_state->video, &hw_state->mouse);
     }
 
@@ -120,16 +74,18 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     hw_vbe_flip_buffer(&hw_state->video);
 }
 
-//will need to check if this is enough for CTRL SHIFT and other 2byte keys
 void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
     t_gui *gui = &ctx->gui;
+
     hw_keyboard_ih(&hw_state->keyboard);
 
-    gui->input.shift_down = hw_state->keyboard.keys_pressed[KEY_SHIFT_LEFT] || hw_state->keyboard.keys_pressed[KEY_SHIFT_RIGHT];
-    gui->input.ctrl_down  = hw_state->keyboard.keys_pressed[KEY_CTRL];
+    gui->input.shift_down = hw_state->keyboard.keys_pressed[KEY_SHIFT_LEFT] ||
+                            hw_state->keyboard.keys_pressed[KEY_SHIFT_RIGHT];
+    gui->input.ctrl_down = hw_state->keyboard.keys_pressed[KEY_CTRL];
 
     uint8_t sc = hw_state->keyboard.scancode;
-    if (sc == KB_EXT_PREFIX) return; // ignore extended  prefix
+
+    if (sc == KB_EXT_PREFIX) return;
 
     bool is_make = IS_MAKE_CODE(sc);
     uint8_t key_index = MAKE_FROM_BREAK(sc);
@@ -139,6 +95,7 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
             *esc_was_pressed = true;
 
             t_widget *top_view = gui_get_top_view(gui);
+
             if (gui->input.focused != NULL && gui->input.focused->on_quit != NULL) {
                 gui->input.focused->on_quit(gui->input.focused, ctx);
             } else if (top_view != NULL && top_view->on_quit != NULL) {
@@ -149,11 +106,9 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
         }
     }
 
-    if (is_make) {
-        if (sc == KEY_TAB) {
-            gui_handle_tab_navigation(gui, gui->input.shift_down);
-            return;
-        }
+    if (is_make && sc == KEY_TAB) {
+        gui_handle_tab_navigation(gui, gui->input.shift_down);
+        return;
     }
 
     if (gui->input.focused != NULL && gui->input.focused->on_key_press != NULL) {
@@ -167,6 +122,7 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
 
 void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
+
     if (!hw_mouse_ih(&hw_state->mouse)) return;
 
     gui->input.mouse_x = hw_state->mouse.x;
@@ -182,23 +138,29 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
         if (!*clicked) {
             ctx->game.click_count++;
             WIDGET_SET_CLICKED(gui, target);
-            if (target) {
+
+            if (target != NULL) {
                 if (WIDGET_CAN_RECEIVE_FOCUS(target)) {
                     gui_set_focus(gui, target);
                 }
-                if (target->on_press) target->on_press(target, ctx);
+
+                if (target->on_press != NULL) {
+                    target->on_press(target, ctx);
+                }
             }
         } else {
             t_widget *active_drag = gui->drag.dragged_widget;
+
             if (active_drag != NULL && active_drag->on_drag != NULL) {
                 active_drag->on_drag(active_drag, ctx);
             }
         }
     } else {
-        if (*clicked) {
-            if (*clicked == target && (*clicked)->on_click) {
+        if (*clicked != NULL) {
+            if (*clicked == target && (*clicked)->on_click != NULL) {
                 (*clicked)->on_click(*clicked, ctx);
             }
+
             WIDGET_SET_CLICKED(gui, NULL);
         }
 
@@ -208,4 +170,9 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     if (gui->drag.dragged_widget == NULL && *hovered != target) {
         WIDGET_SET_HOVERED(gui, target);
     }
+}
+
+void handle_serial(hardware_t *hw_state, t_ctx *ctx) {
+    (void)hw_state;
+    app_multiplayer_poll_serial(ctx);
 }

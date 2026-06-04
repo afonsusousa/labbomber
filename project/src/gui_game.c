@@ -2,6 +2,8 @@
 #include "macros.h"
 #include "widget.h"
 #include "application.h"
+#include "event_handlers.h"
+#include "multiplayer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +14,7 @@ static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t sca
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
 static void _callback_game_view_on_quit(t_widget *self, void *state);
 static void _callback_game_view_on_tick(t_widget *self, void *state);
+static void _handle_game_key(t_ctx *ctx, uint8_t scancode);
 
 // =============================================================================
 // Game View
@@ -25,7 +28,9 @@ static void _callback_pop_view(t_widget *self, void *state) {
 static void _callback_resume_game(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
+    ctx->game.match_state = MATCH_RUNNING;
     ctx->game.is_frozen = false;
+    app_multiplayer_send_pause(ctx, false);
     gui_pop_view(GUI(state));
 }
 
@@ -37,7 +42,7 @@ static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
 static void _callback_confirm_reset_game(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
-    game_state_reset(GAME(state), ctx->real_time);
+    game_state_reset(GAME(state), ctx->real_time, ctx->is_multiplayer);
     ctx->game.is_frozen = false;
     gui_pop_until_widget_found(GUI(state), "game_view");
 }
@@ -54,7 +59,7 @@ static void _callback_return_to_main_menu(t_widget *self, void *state) {
 
 void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
-    bool game_over = ctx->game.match_state != MATCH_RUNNING;
+    bool game_over = ctx->game.match_state == MATCH_EXITING;
 
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "session_overlay");
     if (overlay == NULL) return;
@@ -88,8 +93,10 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
         return;
     }
 
-    if (!ctx->game.is_frozen)
-    	ctx->game.is_frozen = true;
+    if (!ctx->game.is_frozen) {
+        ctx->game.is_frozen = true;
+        app_multiplayer_send_pause(ctx, true);
+    }
     gui_show_session_menu(ctx, "PAUSED", NULL);
 }
 
@@ -102,27 +109,31 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         game->logical_ticks++;
         game_state_update(ctx);
     }
-    
+
     if (game->match_state == MATCH_LOST) {
         game->is_frozen = true;
         update_player_death_animation(game, &game->players[PLAYER_1]);
-        if (game->animation_timer > 10000) { //if (game->animation_timer == 0) {
-            gui_show_session_menu(ctx, "PAUSED", NULL);
+        if (game->players[PLAYER_2].active) update_player_death_animation(game, &game->players[PLAYER_2]);
+        if (game->animation_timer <= 0) {
+            game->match_state = MATCH_EXITING;
+            gui_show_session_menu(ctx, "GAME OVER", "Better luck next time!");
         }
         return;
    }
-   
+
     if (game->match_state == MATCH_WON) {
         game->is_frozen = true;
-        update_player_win_animation(game, &game->players[PLAYER_1]);
-        if (game->animation_timer > 10000) { //if (game->animation_timer == 0) {
+        if (game->players[PLAYER_1].board_pos.x == game->door_pos.x && game->players[PLAYER_1].board_pos.y == game->door_pos.y) update_player_win_animation(game, &game->players[PLAYER_1]);
+        else update_player_win_animation(game, &game->players[PLAYER_2]);
+        if (game->animation_timer <= 0) {
+            game->match_state = MATCH_EXITING;
             gui_show_session_menu(
                 ctx,
                 "YOU WIN!",
                 "All enemies defeated!"
             );
         }
-        return;  
+        return;
     }
 }
 
@@ -138,18 +149,32 @@ static void _callback_game_board_on_press(t_widget *self, void *state) {
 }
 
 static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
-    game_state_handle_key_press(GAME(state), scancode);
+    (void)self;
+    _handle_game_key(CTX(state), scancode);
 }
 
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
     (void)self;
-    game_state_handle_key_press(GAME(state), scancode);
+    _handle_game_key(CTX(state), scancode);
+}
+
+static void _handle_game_key(t_ctx *ctx, uint8_t scancode) {
+    if (ctx == NULL) return;
+
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        app_multiplayer_send_key(ctx, scancode);
+        game_state_handle_player_key(&ctx->game, ctx->multiplayer_local_player, scancode);
+        return;
+    }
+
+    game_state_handle_key_press(&ctx->game, scancode);
 }
 
 void gui_show_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
-    app_update_real_time(ctx);
-
+    if (!ctx->is_multiplayer || ctx->multiplayer_local_player == PLAYER_1) {
+        app_update_real_time(ctx);
+    }
     t_widget *view = widget_create(CANVAS, 0, 0, gui->width, gui->height, "game_view");
     if (view == NULL) return;
 
@@ -159,9 +184,14 @@ void gui_show_game_view(t_ctx *ctx) {
     game_canvas->on_key_press = _callback_game_board_on_key_press;
 
     //o game state vai levar o board, os players, start time, etc
-    if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time) != 0) {
+
+
+    if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time, ctx->is_multiplayer) != 0) {
         widget_destroy(view);
         return;
+    }
+    if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
+        ctx->game.current_player = ctx->multiplayer_local_player;
     }
 
     // Retrieve player names from the name menu inputs (AFTER INIT)
@@ -190,7 +220,7 @@ void gui_show_game_view(t_ctx *ctx) {
 
 void gui_reset_game_view(t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
-    game_state_reset(&ctx->game, ctx->real_time);
+    game_state_reset(&ctx->game, ctx->real_time, ctx->is_multiplayer);
     ctx->game.match_state = MATCH_RUNNING;
     gui_pop_until_widget_found(gui, "game_view");
 }

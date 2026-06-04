@@ -33,6 +33,11 @@
 #define BTN_FILL_HOVER  0x533bd1
 #define BTN_FILL_PRESS  0x513db8
 
+// DIALOG CONSTANTS
+#define DIALOG_TITLE_HEIGHT    20
+#define DIALOG_TITLE_Y_OFFSET  6
+#define DIALOG_TITLE_X_OFFSET  4
+
 typedef enum {
     ALIGN_START,
     ALIGN_CENTER,

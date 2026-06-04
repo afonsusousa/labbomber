@@ -7,5 +7,6 @@
 void handle_timer(hardware_t *hw_state, t_ctx *ctx);
 void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed);
 void handle_mouse(hardware_t *hw_state, t_ctx *ctx);
+void handle_serial(hardware_t *hw_state, t_ctx *ctx);
 
-#endif /* LCOM_PROJECT_EVENT_HANDLERS_H */
+#endif
