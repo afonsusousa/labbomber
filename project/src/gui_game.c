@@ -1,3 +1,4 @@
+#include "gui.h"
 #include "game.h"
 #include "macros.h"
 #include "widget.h"
@@ -194,21 +195,20 @@ void gui_show_game_view(t_ctx *ctx) {
         ctx->game.current_player = ctx->multiplayer_local_player;
     }
 
-    // Retrieve player names from the name menu inputs (AFTER INIT)
-    t_widget *p1_input = widget_find_by_name(gui, "player1_input");
-    t_widget *p2_input = widget_find_by_name(gui, "player2_input");
-
-    if (p1_input && p1_input->data.text_input.buffer) {
-        strncpy(ctx->game.players[PLAYER_1].name, p1_input->data.text_input.buffer, 31);
-        ctx->game.players[PLAYER_1].name[31] = '\0';
+    if (ctx->is_multiplayer) {
+        strncpy(ctx->game.players[ctx->multiplayer_local_player].name, ctx->multiplayer_local_name, 31);
+        ctx->game.players[ctx->multiplayer_local_player].name[31] = '\0';
+        strncpy(ctx->game.players[ctx->multiplayer_remote_player].name, ctx->multiplayer_remote_name, 31);
+        ctx->game.players[ctx->multiplayer_remote_player].name[31] = '\0';
     } else {
-        strcpy(ctx->game.players[PLAYER_1].name, "P1");
-    }
-    if (p2_input && p2_input->data.text_input.buffer) {
-        strncpy(ctx->game.players[PLAYER_2].name, p2_input->data.text_input.buffer, 31);
-        ctx->game.players[PLAYER_2].name[31] = '\0';
-    } else {
-        strcpy(ctx->game.players[PLAYER_2].name, "P2");
+        t_widget *p1_input = widget_find_by_name(gui, "player1_input");
+        if (p1_input && p1_input->data.text_input.buffer && !is_blank_string(p1_input->data.text_input.buffer)) {
+            strncpy(ctx->game.players[PLAYER_1].name, p1_input->data.text_input.buffer, 31);
+            ctx->game.players[PLAYER_1].name[31] = '\0';
+        } else {
+            strcpy(ctx->game.players[PLAYER_1].name, "Player 1");
+        }
+        strcpy(ctx->game.players[PLAYER_2].name, "CPU");
     }
 
     widget_add_child(view, game_canvas);

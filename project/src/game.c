@@ -100,6 +100,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
         tile = BOARD_BASE_TILE_SIZE;
 
     game->tile_size = tile;
+    game->is_multiplayer = is_multiplayer;
 
     int32_t board_width = BOARD_COLS * tile;
     int32_t board_height = BOARD_ROWS * tile;
@@ -114,10 +115,9 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     return 0;
 }
-
 void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer) {
     if (game == NULL) return;
-
+    game->is_multiplayer = is_multiplayer;
     _game_state_prepare_match(game, time, is_multiplayer);
     game->score = 0;
 }

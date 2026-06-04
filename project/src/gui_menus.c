@@ -52,7 +52,7 @@ static void _callback_focus_self(t_widget *self, void *state) {
     gui_set_focus(GUI(state), self);
 }
 
-static bool is_blank_string(const char *s) {
+bool is_blank_string(const char *s) {
     if (s == NULL) return true;
     for (const char *p = s; *p != '\0'; ++p) {
         if (!isspace((unsigned char)*p)) {
@@ -138,6 +138,8 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_start_game_sent = false;
     ctx->multiplayer_start_game_pending = false;
     ctx->multiplayer_game_started = false;
+    ctx->multiplayer_name_sent = false;
+    ctx->multiplayer_name_received = false;
     ctx->multiplayer_local_player = PLAYER_1;
     ctx->multiplayer_remote_player = PLAYER_2;
     ctx->multiplayer_match_seed = 0;
@@ -151,6 +153,8 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_last_player_lives[1] = 0;
     ctx->multiplayer_last_player_active[0] = false;
     ctx->multiplayer_last_player_active[1] = false;
+    memset(ctx->multiplayer_local_name, 0, sizeof(ctx->multiplayer_local_name));
+    memset(ctx->multiplayer_remote_name, 0, sizeof(ctx->multiplayer_remote_name));
     ctx->multiplayer_local_nonce =
         (uint16_t)((ctx->real_time.seconds * 251u) ^
                    (ctx->real_time.minutes * 61u) ^
@@ -160,20 +164,10 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
                    ((uintptr_t)ctx & 0xFFFFu));
     ctx->multiplayer_local_tiebreaker = (uint8_t)(((unsigned long long)ctx ^ (unsigned long long)ctx->multiplayer_local_nonce) & 0xFFu);
 
-    FILE *log_file = fopen("/tmp/game_debug.log", "a");
-
     serial_flush_rx();
 
-    for (int i = 0; i < 1000; i++) {
-        uint8_t dummy;
-        if (util_sys_inb(COM1_ADDR + SERP_LSR, &dummy) == 0) {
-            if (log_file && (i % 200 == 0)) {
-                fprintf(log_file, "[SERIAL] waiting for connection, LSR=0x%02X\n", dummy);
-            }
-        }
-    }
-
     int initial_result = app_multiplayer_send_hello(ctx);
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
     if (log_file) {
         fprintf(log_file, "[SERIAL] initial handshake send result=%d\n", initial_result);
         fprintf(log_file, "[INFO] Serial handshake send initiated\n");
@@ -181,7 +175,15 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
         fclose(log_file);
     }
 
-    gui_show_name_menu(ctx, true);
+    t_widget *overlay = widget_create_overlay(ctx->gui.width, ctx->gui.height, _callback_pop_view, "wait_conn_overlay");
+    if (overlay != NULL) {
+        WIDGET_SET_ACTIVE(overlay, true);
+        t_widget *dlg = widget_add_dialog(overlay, "Connecting", 400, 200, ctx->gui.width, ctx->gui.height, _callback_pop_view, "wait_conn_dialog");
+        widget_add_text(dlg, 0, 0, 300, 40, "Waiting for connection...", "wait_conn_text");
+        widget_add_button(dlg, 0, 0, 150, 40, "Abort", _callback_pop_view, "wait_conn_abort_btn");
+        widget_layout(dlg, 16, 48, true);
+        gui_push_overlay(&ctx->gui, overlay);
+    }
 }
 
 static void _callback_show_scoreboard(t_widget *self, void *state) {
@@ -228,7 +230,6 @@ static void _callback_start_game(t_widget *self, void *state) {
     t_gui *gui = GUI(state);
 
     t_widget *player1_input = widget_find_by_name(gui, "player1_input");
-    t_widget *player2_input = widget_find_by_name(gui, "player2_input");
 
     if (player1_input == NULL || player1_input->data.text_input.buffer == NULL) {
         gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
@@ -240,15 +241,11 @@ static void _callback_start_game(t_widget *self, void *state) {
         return;
     }
 
-    if (player2_input != NULL) {
-        if (player2_input->data.text_input.buffer == NULL ||
-            is_blank_string(player2_input->data.text_input.buffer)) {
-            gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
-            return;
-        }
-    }
-
     if (ctx->is_multiplayer) {
+        strncpy(ctx->multiplayer_local_name, player1_input->data.text_input.buffer, 31);
+        ctx->multiplayer_local_name[31] = '\0';
+        
+        app_multiplayer_send_name(ctx);
         ctx->multiplayer_local_start_ready = true;
         app_multiplayer_send_start_ready(ctx);
 
@@ -267,14 +264,10 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
 
     WIDGET_SET_ACTIVE(overlay, true);
 
-    const char *title = is_multiplayer ? "Enter Player Names" : "Enter Player Name";
-    t_widget *dlg_prompt = widget_add_dialog(overlay, title, 400, 300, gui->width, gui->height, _callback_pop_view, "name_dialog");
+    const char *title = is_multiplayer ? "Enter Your Name" : "Enter Player Name";
+    t_widget *dlg_prompt = widget_add_dialog(overlay, title, 400, 200, gui->width, gui->height, _callback_pop_view, "name_dialog");
 
-    widget_add_text_input(dlg_prompt, 0, 0, 300, 40, "Player 1", _callback_focus_self, "player1_input");
-
-    if (is_multiplayer) {
-        widget_add_text_input(dlg_prompt, 0, 0, 300, 40, "Player 2", _callback_focus_self, "player2_input");
-    }
+    widget_add_text_input(dlg_prompt, 0, 0, 300, 40, "Name", _callback_focus_self, "player1_input");
 
     widget_add_button(dlg_prompt, 0, 0, 150, 40, "Start", _callback_start_game, "start_game_button");
 

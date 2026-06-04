@@ -78,5 +78,7 @@ void gui_show_confirm_dialog(
     void (*on_no)(t_widget *, void *)
 );
 
+bool is_blank_string(const char *s);
+
 
 #endif

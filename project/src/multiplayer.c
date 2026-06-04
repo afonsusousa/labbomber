@@ -16,6 +16,7 @@
 #define MP_PACKET_PAUSE        0x04
 #define MP_PACKET_READY        0x05
 #define MP_PACKET_START_GAME   0x06
+#define MP_PACKET_NAME_PART    0x07
 #define MP_PACKET_PAYLOAD_SIZE 3
 
 static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1, uint8_t data2) {
@@ -59,6 +60,12 @@ static void app_multiplayer_assign_roles(t_ctx *ctx) {
     ctx->multiplayer_role_assigned = true;
     ctx->multiplayer_partner_ready = true;
     app_multiplayer_log(ctx, "roles assigned (RTC selection fallback ready)");
+
+    t_widget *wait_conn = widget_find_by_name(&ctx->gui, "wait_conn_overlay");
+    if (wait_conn != NULL) {
+        gui_pop_view(&ctx->gui);
+        gui_show_name_menu(ctx, true);
+    }
 }
 
 static uint32_t app_make_match_seed(t_ctx *ctx) {
@@ -106,38 +113,10 @@ void app_multiplayer_start_pending_game(t_ctx *ctx) {
     gui_show_game_view(ctx);
 }
 
-static bool app_is_blank_string(const char *s) {
-    if (s == NULL) return true;
-
-    while (*s != '\0') {
-        if (*s != ' ' && *s != '\t' && *s != '\n' && *s != '\r' && *s != '\f' && *s != '\v') {
-            return false;
-        }
-        s++;
-    }
-
-    return true;
-}
-
-static bool app_multiplayer_name_inputs_ready(t_ctx *ctx) {
-    if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return false;
-    if (!ctx->multiplayer_local_start_ready || !ctx->multiplayer_remote_start_ready) return false;
-    if (widget_find_by_name(&ctx->gui, "game_view") != NULL) return false;
-
-    t_widget *p1_input = widget_find_by_name(&ctx->gui, "player1_input");
-    t_widget *p2_input = widget_find_by_name(&ctx->gui, "player2_input");
-
-    if (p1_input == NULL || p1_input->data.text_input.buffer == NULL) return false;
-    if (p2_input == NULL || p2_input->data.text_input.buffer == NULL) return false;
-
-    return !app_is_blank_string(p1_input->data.text_input.buffer) &&
-           !app_is_blank_string(p2_input->data.text_input.buffer);
-}
-
 void app_multiplayer_try_start_game(t_ctx *ctx) {
     if (ctx == NULL || !ctx->is_multiplayer) return;
     if (ctx->multiplayer_game_started || ctx->multiplayer_start_game_pending) return;
-    if (!app_multiplayer_name_inputs_ready(ctx)) return;
+    if (!ctx->multiplayer_name_received || !ctx->multiplayer_remote_start_ready || !ctx->multiplayer_local_start_ready) return;
 
     uint32_t seed = app_make_match_seed(ctx);
 
@@ -194,6 +173,25 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
                 player->active = active;
             }
 
+            break;
+        }
+
+        case MP_PACKET_NAME_PART: {
+            uint8_t offset = ctx->multiplayer_rx_data[0];
+            char c1 = (char)ctx->multiplayer_rx_data[1];
+            char c2 = (char)ctx->multiplayer_rx_data[2];
+
+            if (offset < 31) {
+                ctx->multiplayer_remote_name[offset] = c1;
+                if (offset + 1 < 31) {
+                    ctx->multiplayer_remote_name[offset + 1] = c2;
+                }
+            }
+            if (c1 == '\0' || c2 == '\0') {
+                ctx->multiplayer_name_received = true;
+                app_multiplayer_log(ctx, "remote name received");
+                app_multiplayer_try_start_game(ctx);
+            }
             break;
         }
 
@@ -325,6 +323,23 @@ int app_multiplayer_send_start_game(t_ctx *ctx, uint32_t seed) {
     app_multiplayer_log(ctx, result == 0 ? "start game sent" : "start game send failed");
 
     return result;
+}
+
+int app_multiplayer_send_name(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer) return 1;
+
+    size_t len = strlen(ctx->multiplayer_local_name);
+    for (size_t i = 0; i <= len; i += 2) {
+        app_multiplayer_send_packet(
+            MP_PACKET_NAME_PART,
+            (uint8_t)i,
+            (uint8_t)ctx->multiplayer_local_name[i],
+            (uint8_t)(i + 1 <= len ? ctx->multiplayer_local_name[i + 1] : 0)
+        );
+    }
+    ctx->multiplayer_name_sent = true;
+    app_multiplayer_log(ctx, "local name sent");
+    return 0;
 }
 
 int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {
