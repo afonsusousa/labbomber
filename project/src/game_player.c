@@ -345,6 +345,6 @@ void update_player_lives(player_t *player, int change) {
     player->lives = (uint8_t)new_lives;
 
     if (player->lives == 0) {
-        player->final_pos = player->pos;
+        
     }
 }

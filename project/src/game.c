@@ -33,10 +33,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     } else {
         uint32_t total_seconds = time.hours * 3600 + time.minutes * 60 + time.seconds;
 
-        second_seed = time.year * 1000000 +
-                    time.month * 10000 +
-                    time.day * 100 +
-                    total_seconds / 10;
+        second_seed = time.year * 1000000 + time.month * 10000 + time.day * 100 + total_seconds / 10;
     }
 
     srand(second_seed);
@@ -152,18 +149,16 @@ void game_state_update(t_ctx *ctx) {
                 player->invincibility_timer = INVINCIBILITY_TICKS;
             }
         }
-    }
 
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        player_t *player = &game->players[i];
-        if (!player->active) continue;
-
-        update_player_movement(game, player);
-        update_player_animation(player, game->logical_ticks);
+        if (player->lives > 0) {
+            update_player_movement(game, player);
+            update_player_animation(player, game->logical_ticks);
+        }
     }
 
     for (int i = 0; i < game->enemy_count; i++) {
         enemy_t *enemy = &game->enemies[i];
+
         if (!enemy->active) continue;
 
         update_enemy_movement(game, enemy);
@@ -177,18 +172,31 @@ void game_state_update(t_ctx *ctx) {
     player_bomb_count(game);
 
     if (game->match_state == MATCH_RUNNING) {
-        player_t *p1 = &game->players[PLAYER_1];
-
         uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
 
-        if (elapsed >= game->time_limit || p1->lives == 0) {
-            p1->lives = 0;
+        if (elapsed >= game->time_limit) {
+            game->match_state = MATCH_LOST;
+            game->animation_timer = GAME_TICKS_PER_SECOND * 5;
+            return;
+        }
+
+        int players_alive = 0;
+
+        for (int i = 0; i < MAX_PLAYERS; i++) {
+            player_t *player = &game->players[i];
+
+            if (!player->active) continue;
+            if (player->lives > 0) players_alive++;
+        }
+
+        if (players_alive == 0) {
             game->match_state = MATCH_LOST;
             game->animation_timer = GAME_TICKS_PER_SECOND * 5;
             return;
         }
 
         int enemies_alive = 0;
+
         for (int i = 0; i < game->enemy_count; i++) {
             if (game->enemies[i].active) {
                 enemies_alive++;
@@ -198,9 +206,18 @@ void game_state_update(t_ctx *ctx) {
         if (game->enemy_count > 0 && enemies_alive == 0) {
             game->door_open = true;
 
-            if (p1->board_pos.x == game->door_pos.x && p1->board_pos.y == game->door_pos.y) {
-                game->match_state = MATCH_WON;
-                game->animation_timer = GAME_TICKS_PER_SECOND * 3;
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                player_t *player = &game->players[i];
+
+                if (!player->active) continue;
+                if (player->lives <= 0) continue;
+
+                if (player->board_pos.x == game->door_pos.x &&
+                    player->board_pos.y == game->door_pos.y) {
+                    game->match_state = MATCH_WON;
+                    game->animation_timer = GAME_TICKS_PER_SECOND * 3;
+                    return;
+                }
             }
         }
     }

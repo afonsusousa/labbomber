@@ -70,7 +70,6 @@ typedef struct s_entity {
     char        name[32];
     t_tuple     pos;
     t_tuple     board_pos;
-    t_tuple     final_pos;
     direction_t dir;
     direction_t sprite_dir;
     uint8_t     animation_phase;

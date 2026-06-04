@@ -113,6 +113,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     if (game->match_state == MATCH_LOST) {
         game->is_frozen = true;
         update_player_death_animation(game, &game->players[PLAYER_1]);
+        if (game->players[PLAYER_2].active) update_player_death_animation(game, &game->players[PLAYER_2]);
         if (game->animation_timer <= 0) {
             game->match_state = MATCH_EXITING;
             gui_show_session_menu(ctx, "GAME OVER", "Better luck next time!");
@@ -122,7 +123,8 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
 
     if (game->match_state == MATCH_WON) {
         game->is_frozen = true;
-        update_player_win_animation(game, &game->players[PLAYER_1]);
+        if (game->players[PLAYER_1].board_pos.x == game->door_pos.x && game->players[PLAYER_1].board_pos.y == game->door_pos.y) update_player_win_animation(game, &game->players[PLAYER_1]);
+        else update_player_win_animation(game, &game->players[PLAYER_2]);
         if (game->animation_timer <= 0) {
             game->match_state = MATCH_EXITING;
             gui_show_session_menu(
