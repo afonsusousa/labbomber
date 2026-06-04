@@ -41,7 +41,6 @@ typedef struct s_ctx {
     bool multiplayer_name_received;
     char multiplayer_local_name[32];
     char multiplayer_remote_name[32];
-    uint32_t multiplayer_last_contact_ticks;
 
     uint8_t multiplayer_rx_state;
     uint8_t multiplayer_rx_type;

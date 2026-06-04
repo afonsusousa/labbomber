@@ -121,7 +121,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
             app_multiplayer_send_ping(ctx);
 
             uint32_t timeout_ticks = GAME_TICKS_PER_SECOND * 2;
-            if (game->logical_ticks - ctx->multiplayer_last_contact_ticks > timeout_ticks) {
+            if (game->logical_ticks - game->multiplayer_last_contact_ticks > timeout_ticks) {
                 game->is_frozen = true;
                 gui_show_session_menu(ctx, "CONNECTION LOST", "Peer is not responding");
                 return;

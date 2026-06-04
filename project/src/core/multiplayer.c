@@ -131,7 +131,9 @@ void app_multiplayer_try_start_game(t_ctx *ctx) {
 static void app_multiplayer_process_packet(t_ctx *ctx) {
     if (ctx == NULL) return;
 
-    ctx->multiplayer_last_contact_ticks = ctx->game.logical_ticks;
+    if (ctx->is_multiplayer) {
+        ctx->game.multiplayer_last_contact_ticks = ctx->game.logical_ticks;
+    }
 
     switch (ctx->multiplayer_rx_type) {
         case MP_PACKET_HELLO:
@@ -268,7 +270,9 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
 static void app_multiplayer_receive_byte(t_ctx *ctx, uint8_t byte) {
     if (ctx == NULL) return;
 
-    ctx->multiplayer_last_contact_ticks = ctx->game.logical_ticks;
+    if (ctx->is_multiplayer) {
+        ctx->game.multiplayer_last_contact_ticks = ctx->game.logical_ticks;
+    }
 
     if (ctx->multiplayer_rx_state == 0 && byte == 0xAA) {
         app_multiplayer_log(ctx, "legacy hello byte seen");

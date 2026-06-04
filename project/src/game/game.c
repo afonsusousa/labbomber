@@ -20,6 +20,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     game->players[PLAYER_1].invincibility_timer = 0;
     game->players[PLAYER_2].invincibility_timer = 0;
     game->animation_timer = 0;
+    game->multiplayer_last_contact_ticks = 0;
 
     unsigned int first_seed = time.year * 10000 + time.month * 100 + time.day;
     srand(first_seed);

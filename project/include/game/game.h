@@ -146,6 +146,7 @@ typedef struct s_game_state {
     bool is_frozen;
     uint32_t animation_timer;
     uint32_t enemy_seed;
+    uint32_t multiplayer_last_contact_ticks;
     bool is_multiplayer;
 
     match_state_t match_state;
