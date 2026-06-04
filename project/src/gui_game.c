@@ -3,6 +3,7 @@
 #include "widget.h"
 #include "application.h"
 #include "event_handlers.h"
+#include "multiplayer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
