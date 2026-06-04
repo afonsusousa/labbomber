@@ -11,6 +11,8 @@ void app_multiplayer_poll_serial(t_ctx *ctx);
 
 int app_multiplayer_send_hello(t_ctx *ctx);
 int app_multiplayer_send_name(t_ctx *ctx);
+int app_multiplayer_send_ping(t_ctx *ctx);
+int app_multiplayer_send_cancel(t_ctx *ctx);
 int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode);
 int app_multiplayer_send_start_ready(t_ctx *ctx);
 int app_multiplayer_send_start_game(t_ctx *ctx, uint32_t seed);

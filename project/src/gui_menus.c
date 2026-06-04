@@ -118,6 +118,29 @@ static void _callback_quit(t_widget *self, void *state) {
     gui_show_confirm_dialog(CTX(state), "QUIT", "DO YOU REALLY WANT TO QUIT", _callback_confirm_quit, _callback_pop_view);
 }
 
+static void _callback_multiplayer_abort(t_widget *self, void *state) {
+    (void)self;
+    t_ctx *ctx = CTX(state);
+    if (ctx->is_multiplayer) {
+        app_multiplayer_send_cancel(ctx);
+        
+        t_widget *top = gui_get_top_view(&ctx->gui);
+        if (top != NULL && top->name != NULL) {
+            if (strcmp(top->name, "info_overlay") == 0) {
+                // Return from "Waiting" to "Name Entry"
+                gui_pop_view(&ctx->gui);
+                ctx->multiplayer_local_start_ready = false;
+            } else {
+                // Return from "Name Entry" or "Connecting" to Start Menu
+                gui_pop_view(&ctx->gui);
+                ctx->is_multiplayer = false;
+            }
+        }
+    } else {
+        gui_pop_view(&ctx->gui);
+    }
+}
+
 static void _callback_show_singleplayer_name_menu(t_widget *self, void *state) {
     (void)self;
     t_ctx *ctx = CTX(state);
@@ -153,6 +176,7 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_last_player_lives[1] = 0;
     ctx->multiplayer_last_player_active[0] = false;
     ctx->multiplayer_last_player_active[1] = false;
+    ctx->multiplayer_last_contact_ticks = 0;
     memset(ctx->multiplayer_local_name, 0, sizeof(ctx->multiplayer_local_name));
     memset(ctx->multiplayer_remote_name, 0, sizeof(ctx->multiplayer_remote_name));
     ctx->multiplayer_local_nonce =
@@ -175,12 +199,12 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
         fclose(log_file);
     }
 
-    t_widget *overlay = widget_create_overlay(ctx->gui.width, ctx->gui.height, _callback_pop_view, "wait_conn_overlay");
+    t_widget *overlay = widget_create_overlay(ctx->gui.width, ctx->gui.height, _callback_multiplayer_abort, "wait_conn_overlay");
     if (overlay != NULL) {
         WIDGET_SET_ACTIVE(overlay, true);
-        t_widget *dlg = widget_add_dialog(overlay, "Connecting", 400, 200, ctx->gui.width, ctx->gui.height, _callback_pop_view, "wait_conn_dialog");
+        t_widget *dlg = widget_add_dialog(overlay, "Connecting", 400, 200, ctx->gui.width, ctx->gui.height, _callback_multiplayer_abort, "wait_conn_dialog");
         widget_add_text(dlg, 0, 0, 300, 40, "Waiting for connection...", "wait_conn_text");
-        widget_add_button(dlg, 0, 0, 150, 40, "Abort", _callback_pop_view, "wait_conn_abort_btn");
+        widget_add_button(dlg, 0, 0, 150, 40, "Abort", _callback_multiplayer_abort, "wait_conn_abort_btn");
         widget_layout(dlg, 16, 48, true);
         gui_push_overlay(&ctx->gui, overlay);
     }
@@ -249,7 +273,14 @@ static void _callback_start_game(t_widget *self, void *state) {
         ctx->multiplayer_local_start_ready = true;
         app_multiplayer_send_start_ready(ctx);
 
-        gui_show_info_dialog(ctx, "Waiting", "Waiting for other player...");
+        t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_multiplayer_abort, "info_overlay");
+        if (overlay != NULL) {
+            t_widget *dlg = widget_add_dialog(overlay, "Waiting", 400, 200, gui->width, gui->height, _callback_multiplayer_abort, "info_dialog");
+            widget_add_text(dlg, 0, 0, 300, 40, "Waiting for other player...", "wait_text");
+            widget_add_button(dlg, 0, 0, 150, 40, "Abort", _callback_multiplayer_abort, "wait_abort_btn");
+            widget_layout(dlg, 16, 48, true);
+            gui_push_overlay(gui, overlay);
+        }
         return;
     }
 
@@ -259,13 +290,15 @@ static void _callback_start_game(t_widget *self, void *state) {
 
 void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
     t_gui *gui = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_pop_view, "name_overlay");
+    void (*on_quit)(t_widget*, void*) = is_multiplayer ? _callback_multiplayer_abort : _callback_pop_view;
+
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_quit, "name_overlay");
     if (overlay == NULL) return;
 
     WIDGET_SET_ACTIVE(overlay, true);
 
     const char *title = is_multiplayer ? "Enter Your Name" : "Enter Player Name";
-    t_widget *dlg_prompt = widget_add_dialog(overlay, title, 400, 200, gui->width, gui->height, _callback_pop_view, "name_dialog");
+    t_widget *dlg_prompt = widget_add_dialog(overlay, title, 400, 200, gui->width, gui->height, on_quit, "name_dialog");
 
     widget_add_text_input(dlg_prompt, 0, 0, 300, 40, "Name", _callback_focus_self, "player1_input");
 

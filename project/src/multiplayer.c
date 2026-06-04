@@ -17,6 +17,8 @@
 #define MP_PACKET_READY        0x05
 #define MP_PACKET_START_GAME   0x06
 #define MP_PACKET_NAME_PART    0x07
+#define MP_PACKET_CANCEL       0x08
+#define MP_PACKET_PING         0x09
 #define MP_PACKET_PAYLOAD_SIZE 3
 
 static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1, uint8_t data2) {
@@ -129,6 +131,8 @@ void app_multiplayer_try_start_game(t_ctx *ctx) {
 static void app_multiplayer_process_packet(t_ctx *ctx) {
     if (ctx == NULL) return;
 
+    ctx->multiplayer_last_contact_ticks = ctx->game.logical_ticks;
+
     switch (ctx->multiplayer_rx_type) {
         case MP_PACKET_HELLO:
             ctx->multiplayer_remote_nonce =
@@ -136,6 +140,9 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
                 ((uint16_t)ctx->multiplayer_rx_data[1] << 8);
             ctx->multiplayer_remote_tiebreaker = ctx->multiplayer_rx_data[2];
             app_multiplayer_assign_roles(ctx);
+            break;
+
+        case MP_PACKET_PING:
             break;
 
         case MP_PACKET_KEY: {
@@ -195,6 +202,23 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
             break;
         }
 
+        case MP_PACKET_CANCEL: {
+            app_multiplayer_log(ctx, "multiplayer sync: peer went back or cancelled");
+            
+            if (ctx->multiplayer_game_started) {
+                // Peer quit during the game
+                ctx->multiplayer_game_started = false;
+                ctx->is_multiplayer = false;
+                gui_pop_until_widget_found(&ctx->gui, "start_menu_view");
+                break;
+            }
+
+            ctx->multiplayer_remote_start_ready = false;
+            ctx->multiplayer_name_received = false;
+            // ... rest of the code logic for menu phase
+            break;
+        }
+
         case MP_PACKET_PAUSE: {
             bool paused = ctx->multiplayer_rx_data[0] != 0;
 
@@ -246,6 +270,8 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
 
 static void app_multiplayer_receive_byte(t_ctx *ctx, uint8_t byte) {
     if (ctx == NULL) return;
+
+    ctx->multiplayer_last_contact_ticks = ctx->game.logical_ticks;
 
     if (ctx->multiplayer_rx_state == 0 && byte == 0xAA) {
         app_multiplayer_log(ctx, "legacy hello byte seen");
@@ -340,6 +366,20 @@ int app_multiplayer_send_name(t_ctx *ctx) {
     ctx->multiplayer_name_sent = true;
     app_multiplayer_log(ctx, "local name sent");
     return 0;
+}
+
+int app_multiplayer_send_cancel(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer) return 1;
+
+    int result = app_multiplayer_send_packet(MP_PACKET_CANCEL, 0, 0, 0);
+    app_multiplayer_log(ctx, result == 0 ? "cancel sent" : "cancel send failed");
+
+    return result;
+}
+
+int app_multiplayer_send_ping(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer) return 1;
+    return app_multiplayer_send_packet(MP_PACKET_PING, 0, 0, 0);
 }
 
 int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {

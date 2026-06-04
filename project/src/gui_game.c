@@ -37,6 +37,12 @@ static void _callback_resume_game(t_widget *self, void *state) {
 
 static void _callback_confirm_return_to_main_menu(t_widget *self, void *state) {
     (void)self;
+    t_ctx *ctx = CTX(state);
+    if (ctx->is_multiplayer) {
+        app_multiplayer_send_cancel(ctx);
+    }
+    ctx->is_multiplayer = false;
+    ctx->multiplayer_game_started = false;
     gui_pop_until_widget_found(GUI(state), "start_menu_view");
 }
 
@@ -74,10 +80,14 @@ void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
         widget_add_text(session_dialog, 0, 40, 320, 24, message, "session_message");
     }
 
-    if (!game_over) {
+    bool connection_lost = (strcmp(title, "CONNECTION LOST") == 0);
+
+    if (!game_over && !connection_lost) {
         widget_add_button(session_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "session_resume_button");
     }
-    widget_add_button(session_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "session_reset_button");
+    if (!connection_lost) {
+        widget_add_button(session_dialog, 0, 0, 220, 40, "Reset", _callback_reset_game, "session_reset_button");
+    }
     widget_add_button(session_dialog, 0, 0, 220, 40, "Main Menu", _callback_return_to_main_menu, "session_menu_button");
 
     widget_layout(session_dialog, 12, message ? 80 : 32, true);
@@ -107,6 +117,17 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     t_game_state *game = &ctx->game;
 
     if (game->match_state == MATCH_RUNNING && !game->is_frozen) {
+        if (ctx->is_multiplayer) {
+            app_multiplayer_send_ping(ctx);
+
+            uint32_t timeout_ticks = GAME_TICKS_PER_SECOND * 2;
+            if (game->logical_ticks - ctx->multiplayer_last_contact_ticks > timeout_ticks) {
+                game->is_frozen = true;
+                gui_show_session_menu(ctx, "CONNECTION LOST", "Peer is not responding");
+                return;
+            }
+        }
+
         game->logical_ticks++;
         game_state_update(ctx);
     }
