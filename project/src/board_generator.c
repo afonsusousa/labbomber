@@ -50,15 +50,13 @@ static bool isBoardValid(int innerBoard[INNER_ROWS][INNER_COLS]) {
     return true;
 }
 
-static void generateInnerBoard(int innerBoard[INNER_ROWS][INNER_COLS], int seed) {
+static void generateInnerBoard(int innerBoard[INNER_ROWS][INNER_COLS]) {
     for (int i = 0; i < INNER_ROWS; i++) {
         for (int j = 0; j < INNER_COLS; j++) {
             if (i % 2 == 1 && j % 2 == 1) innerBoard[i][j] = TILE_TYPE_WALL;
             else innerBoard[i][j] = TILE_TYPE_GRASS;
         }
     }
-
-    srand(seed);
 
     for (int i = 0; i < INNER_ROWS; i++) {
         for (int j = 0; j < INNER_COLS; j++) {
@@ -75,12 +73,10 @@ static void generateInnerBoard(int innerBoard[INNER_ROWS][INNER_COLS], int seed)
     }
 }
 
-void generateBoard(char *board, int day, int month, int year) {
+void generateBoard(char *board) {
     int innerBoard[INNER_ROWS][INNER_COLS];
 
-    int seed = year * 10000 + month * 100 + day;
-
-    generateInnerBoard(innerBoard, seed);
+    generateInnerBoard(innerBoard);
 
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
@@ -93,7 +89,7 @@ void generateBoard(char *board, int day, int month, int year) {
     }
 }
 
-t_tuple door_spawnpoint_generator(uint8_t *board, uint32_t click_count, int day, int month, int year) {
+t_tuple door_spawnpoint_generator(uint8_t *board) {
     int brick_positions[INNER_ROWS * INNER_COLS][2];
     int count = 0;
 
@@ -108,10 +104,8 @@ t_tuple door_spawnpoint_generator(uint8_t *board, uint32_t click_count, int day,
     }
 
     if (count == 0) return (t_tuple){-1, -1};
-
-    uint32_t seed = click_count * 13 + day * 31 + month * 17 + year;
-    int index = seed % count;
-
+    
+    int index = rand() % count;
 
     return (t_tuple){brick_positions[index][0], brick_positions[index][1]};
 }

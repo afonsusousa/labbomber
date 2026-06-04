@@ -24,6 +24,9 @@ typedef struct s_ctx {
     bool multiplayer_role_assigned;
     bool multiplayer_local_start_ready;
     bool multiplayer_remote_start_ready;
+    bool multiplayer_start_game_sent;
+    bool multiplayer_start_game_pending;
+    bool multiplayer_game_started;
     uint8_t multiplayer_local_player;
     uint8_t multiplayer_remote_player;
     uint16_t multiplayer_local_nonce;

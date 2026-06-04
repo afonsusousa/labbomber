@@ -134,8 +134,13 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_role_assigned = false;
     ctx->multiplayer_local_start_ready = false;
     ctx->multiplayer_remote_start_ready = false;
+    ctx->multiplayer_start_game_sent = false;
+    ctx->multiplayer_start_game_pending = false;
+    ctx->multiplayer_game_started = false;
     ctx->multiplayer_local_player = PLAYER_1;
     ctx->multiplayer_remote_player = PLAYER_2;
+    ctx->multiplayer_match_seed = 0;
+    ctx->game.enemy_seed = 0;
     ctx->multiplayer_remote_nonce = 0;
     ctx->multiplayer_remote_tiebreaker = 0;
     ctx->multiplayer_rx_state = 0;
@@ -246,10 +251,8 @@ static void _callback_start_game(t_widget *self, void *state) {
         ctx->multiplayer_local_start_ready = true;
         app_multiplayer_send_start_ready(ctx);
 
-        if (!ctx->multiplayer_role_assigned || !ctx->multiplayer_remote_start_ready) {
-            gui_show_info_dialog(ctx, "Waiting", "Waiting for other player...");
-            return;
-        }
+        gui_show_info_dialog(ctx, "Waiting", "Waiting for other player...");
+        return;
     }
 
     gui_pop_view(gui);

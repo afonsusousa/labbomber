@@ -21,28 +21,55 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     game->players[PLAYER_2].invincibility_timer = 0;
     game->animation_timer = 0;
 
-    generateBoard((char *)game->board, time.day, time.month, time.year);
+    unsigned int first_seed = time.year * 10000 + time.month * 100 + time.day;
+    srand(first_seed);
 
-    game->door_pos = door_spawnpoint_generator(game->board, game->click_count, time.day, time.month, time.year);
+    generateBoard((char *)game->board);
+
+    uint32_t second_seed;
+
+    if (is_multiplayer) {
+        second_seed = game->enemy_seed;
+    } else {
+        uint32_t total_seconds = time.hours * 3600 + time.minutes * 60 + time.seconds;
+
+        second_seed = time.year * 1000000 +
+                    time.month * 10000 +
+                    time.day * 100 +
+                    total_seconds / 10;
+    }
+
+    srand(second_seed);
+
+    game->door_pos = door_spawnpoint_generator(game->board);
     game->door_open = false;
 
     set_date_seed(time.day, time.month, time.year);
 
-    // --- PLAYER 1 ---
-    t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
-    player_init(game, &game->players[PLAYER_1], spawnpoint);
-    game->players[PLAYER_1].lives = 3;
-    game->current_player = PLAYER_1;
+    // RESET PLAYERS
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        player_init(game, &game->players[i], (t_tuple){0, 0});
+        game->players[i].lives = 3;
+        game->players[i].active = false;
+    }
 
-    // --- PLAYER 2 ---
+    // MULTIPLAYER
     if (is_multiplayer) {
+        player_init(game, &game->players[PLAYER_1], (t_tuple){1, 1});
+        game->players[PLAYER_1].lives = 3;
+        game->current_player = PLAYER_1;
+
         player_init(game, &game->players[PLAYER_2], (t_tuple){BOARD_COLS - 2, BOARD_ROWS - 2});
         game->players[PLAYER_2].lives = 3;
         game->players[PLAYER_2].active = true;
-    } else {
-        player_init(game, &game->players[PLAYER_2], (t_tuple){0, 0});
-        game->players[PLAYER_2].lives = 3;
-        game->players[PLAYER_2].active = false;
+    } 
+
+    // SINGLEPLAYER
+    else {
+        t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
+        player_init(game, &game->players[PLAYER_1], spawnpoint);
+        game->players[PLAYER_1].lives = 3;
+        game->current_player = PLAYER_1;
     }
 
     // --- ENEMIES ---

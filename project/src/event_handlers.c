@@ -18,9 +18,12 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 #define MP_PACKET_PLAYER_STATE 0x03
 #define MP_PACKET_PAUSE        0x04
 #define MP_PACKET_READY        0x05
+#define MP_PACKET_START_GAME   0x06
 #define MP_PACKET_PAYLOAD_SIZE 3
 
 int app_multiplayer_send_start_ready(t_ctx *ctx);
+
+int app_multiplayer_send_start_game(t_ctx *ctx, uint32_t seed);
 
 static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1, uint8_t data2) {
     if (serial_send_byte(MP_PACKET_START) != 0) return 1;
@@ -64,6 +67,54 @@ static void app_multiplayer_assign_roles(t_ctx *ctx) {
     ctx->multiplayer_partner_ready = true;
     app_multiplayer_log(ctx, "roles assigned (RTC selection fallback ready)");
 }
+
+static uint32_t app_make_match_seed(t_ctx *ctx) {
+    uint32_t a = ctx->multiplayer_local_nonce;
+    uint32_t b = ctx->multiplayer_remote_nonce;
+
+    uint32_t low = a < b ? a : b;
+    uint32_t high = a < b ? b : a;
+
+    uint32_t seed = low * 1103515245u + high * 12345u + 0xB00B5u;
+
+    seed &= 0x00FFFFFF;
+
+    if (seed == 0) seed = 1;
+
+    return seed;
+}
+
+static void app_multiplayer_queue_start_game(t_ctx *ctx, uint32_t seed) {
+    if (ctx == NULL || ctx->multiplayer_game_started) return;
+
+    seed &= 0x00FFFFFF;
+
+    ctx->multiplayer_match_seed = seed;
+    ctx->game.enemy_seed = seed;
+    ctx->multiplayer_start_game_pending = true;
+
+    app_multiplayer_log(ctx, "start game queued");
+}
+
+static void app_multiplayer_start_pending_game(t_ctx *ctx) {
+    if (ctx == NULL) return;
+    if (!ctx->multiplayer_start_game_pending || ctx->multiplayer_game_started) return;
+    if (widget_find_by_name(&ctx->gui, "game_view") != NULL) return;
+
+    ctx->multiplayer_start_game_pending = false;
+    ctx->multiplayer_game_started = true;
+
+    t_widget *top = gui_get_top_view(&ctx->gui);
+
+    if (top != NULL && top->name != NULL && strcmp(top->name, "info_overlay") == 0) {
+        gui_pop_view(&ctx->gui);
+    }
+
+    gui_show_game_view(ctx);
+}
+
+static bool app_multiplayer_name_inputs_ready(t_ctx *ctx);
+static void app_multiplayer_try_start_game(t_ctx *ctx);
 
 static void app_multiplayer_process_packet(t_ctx *ctx) {
     if (ctx == NULL) return;
@@ -124,7 +175,23 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
                 app_multiplayer_send_start_ready(ctx);
                 app_multiplayer_log(ctx, "start ready ack sent");
             }
+            app_multiplayer_try_start_game(ctx);
+            break;
+        }
+        case MP_PACKET_START_GAME: {
+            uint32_t seed = (uint32_t)ctx->multiplayer_rx_data[0] |
+                            ((uint32_t)ctx->multiplayer_rx_data[1] << 8) |
+                            ((uint32_t)ctx->multiplayer_rx_data[2] << 16);
 
+            ctx->multiplayer_remote_start_ready = true;
+
+            if (!ctx->multiplayer_start_game_sent) {
+                ctx->multiplayer_start_game_sent = true;
+                app_multiplayer_send_start_game(ctx, seed);
+            }
+
+            app_multiplayer_log(ctx, "start game received");
+            app_multiplayer_queue_start_game(ctx, seed);
             break;
         }
         default:
@@ -155,6 +222,19 @@ static bool app_multiplayer_name_inputs_ready(t_ctx *ctx) {
 
     return !app_is_blank_string(p1_input->data.text_input.buffer) &&
            !app_is_blank_string(p2_input->data.text_input.buffer);
+}
+
+static void app_multiplayer_try_start_game(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer) return;
+    if (ctx->multiplayer_game_started || ctx->multiplayer_start_game_pending) return;
+    if (!app_multiplayer_name_inputs_ready(ctx)) return;
+
+    uint32_t seed = app_make_match_seed(ctx);
+
+    ctx->multiplayer_start_game_sent = true;
+
+    app_multiplayer_send_start_game(ctx, seed);
+    app_multiplayer_queue_start_game(ctx, seed);
 }
 
 static void app_multiplayer_receive_byte(t_ctx *ctx, uint8_t byte) {
@@ -210,6 +290,22 @@ int app_multiplayer_send_start_ready(t_ctx *ctx) {
 
     int result = app_multiplayer_send_packet(MP_PACKET_READY, 0, 0, 0);
     app_multiplayer_log(ctx, result == 0 ? "start ready sent" : "start ready send failed");
+    return result;
+}
+
+int app_multiplayer_send_start_game(t_ctx *ctx, uint32_t seed) {
+    if (ctx == NULL || !ctx->is_multiplayer) return 1;
+
+    seed &= 0x00FFFFFF;
+
+    int result = app_multiplayer_send_packet(
+        MP_PACKET_START_GAME,
+        (uint8_t)(seed & 0xFF),
+        (uint8_t)((seed >> 8) & 0xFF),
+        (uint8_t)((seed >> 16) & 0xFF)
+    );
+
+    app_multiplayer_log(ctx, result == 0 ? "start game sent" : "start game send failed");
     return result;
 }
 
@@ -358,15 +454,9 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     static int handshake_retry_delay = 0;
     hw_timer_int_handler(&hw_state->timer);
 
-    if (app_multiplayer_name_inputs_ready(ctx)) {
-        t_widget *top = gui_get_top_view(&ctx->gui);
-
-        if (top != NULL && top->name != NULL && strcmp(top->name, "info_overlay") == 0) {
-            gui_pop_view(&ctx->gui);
-        }
-
-        app_update_real_time(ctx);
-        gui_show_game_view(ctx);
+    if (ctx->is_multiplayer) {
+        app_multiplayer_start_pending_game(ctx);
+        app_multiplayer_try_start_game(ctx);
     }
 
     if (ctx->is_multiplayer) {
