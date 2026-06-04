@@ -29,6 +29,7 @@ static void _callback_resume_game(t_widget *self, void *state) {
     t_ctx *ctx = CTX(state);
     ctx->game.match_state = MATCH_RUNNING;
     ctx->game.is_frozen = false;
+    app_multiplayer_send_pause(ctx, false);
     gui_pop_view(GUI(state));
 }
 
@@ -57,7 +58,7 @@ static void _callback_return_to_main_menu(t_widget *self, void *state) {
 
 void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
-    bool game_over = ctx->game.match_state != MATCH_RUNNING;
+    bool game_over = ctx->game.match_state == MATCH_WON || ctx->game.match_state == MATCH_LOST;
 
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "session_overlay");
     if (overlay == NULL) return;
@@ -91,8 +92,10 @@ static void _callback_game_view_on_quit(t_widget *self, void *state) {
         return;
     }
 
-    if (!ctx->game.is_frozen)
-    	ctx->game.is_frozen = true;
+    if (!ctx->game.is_frozen) {
+        ctx->game.is_frozen = true;
+        app_multiplayer_send_pause(ctx, true);
+    }
     gui_show_session_menu(ctx, "PAUSED", NULL);
 }
 

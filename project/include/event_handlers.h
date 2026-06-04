@@ -10,6 +10,7 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx);
 int app_multiplayer_send_hello(t_ctx *ctx);
 int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode);
 int app_multiplayer_send_player_state(t_ctx *ctx, uint8_t player_id);
+int app_multiplayer_send_pause(t_ctx *ctx, bool paused);
 void app_multiplayer_poll_serial(t_ctx *ctx);
 
 #endif /* LCOM_PROJECT_EVENT_HANDLERS_H */

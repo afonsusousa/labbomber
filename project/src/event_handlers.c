@@ -16,6 +16,7 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 #define MP_PACKET_HELLO        0x01
 #define MP_PACKET_KEY          0x02
 #define MP_PACKET_PLAYER_STATE 0x03
+#define MP_PACKET_PAUSE        0x04
 #define MP_PACKET_PAYLOAD_SIZE 3
 
 static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1, uint8_t data2) {
@@ -99,6 +100,14 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
                 player_t *player = &ctx->game.players[player_id];
                 player->lives = lives;
                 player->active = (lives > 0);
+            }
+            break;
+        }
+        case MP_PACKET_PAUSE: {
+            bool paused = ctx->multiplayer_rx_data[0] != 0;
+            if (ctx->game.match_state == MATCH_RUNNING || ctx->game.match_state == MATCH_PAUSED) {
+                ctx->game.is_frozen = paused;
+                ctx->game.match_state = paused ? MATCH_PAUSED : MATCH_RUNNING;
             }
             break;
         }
@@ -226,6 +235,18 @@ int app_multiplayer_send_player_state(t_ctx *ctx, uint8_t player_id) {
     if (log_file) {
         fprintf(log_file, "[MP] tx state player=%u lives=%u active=%u result=%d\n",
                 player_id, player->lives, player->active, result);
+        fclose(log_file);
+    }
+    return result;
+}
+
+int app_multiplayer_send_pause(t_ctx *ctx, bool paused) {
+    if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return 1;
+
+    int result = app_multiplayer_send_packet(MP_PACKET_PAUSE, paused ? 1 : 0, 0, 0);
+    FILE *log_file = fopen("/tmp/game_debug.log", "a");
+    if (log_file) {
+        fprintf(log_file, "[MP] tx pause paused=%u result=%d\n", paused, result);
         fclose(log_file);
     }
     return result;
