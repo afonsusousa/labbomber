@@ -139,7 +139,7 @@ void gui_show_start_menu(struct s_ctx *ctx) {
     widget_add_button(menu, 0, 0, 300, 50, "QUIT", _callback_quit, "start_scoreboard_button");
     menu->on_quit = _callback_quit;
 
-    widget_layout(menu, 24, 80, true);
+    widget_layout(menu, 24, 450, true);
     gui_push_view(gui, menu);
 }
 

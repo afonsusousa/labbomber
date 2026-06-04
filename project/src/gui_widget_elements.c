@@ -67,40 +67,52 @@ static void _callback_button_on_key_press(t_widget *self, uint8_t scancode, void
     }
 }
 
+static void draw_rounded_rect(hw_video_t *video, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t r, uint32_t color) {
+    if (w < 2*r || h < 2*r) r = (w<h ? w : h) / 2;
+
+    hw_vbe_draw_rect(video, x+r, y, w-2 *r, h, color);
+    hw_vbe_draw_rect(video, x, y+r, r, h-2 *r, color);
+    hw_vbe_draw_rect(video, x+w-r, y+r, r, h-2 *r, color);
+
+    for (uint32_t dy = 0; dy < r; dy++) {
+        for (uint32_t dx = 0; dx < r; dx++) {
+            int32_t cx = r-dx-1, cy = r-dy-1;
+
+            if (cx * cx + cy * cy <= (int32_t)(r * r)) {
+                hw_vbe_draw_pixel(video, x+dx, y+dy, color);
+                hw_vbe_draw_pixel(video, x+w-1-dx, y+dy, color);
+                hw_vbe_draw_pixel(video, x + dx, y+h-1-dy, color);
+                hw_vbe_draw_pixel(video, x+w-1-dx, y+h-1-dy, color);
+            }
+        }
+    }
+}
+
 void draw_button(t_widget *self, hw_video_t *video, void *state) {
     t_gui *gui = GUI(state);
-    uint32_t abs_x = self->abs_x;
-    uint32_t abs_y = self->abs_y;
+    int32_t abs_x = self->abs_x;
+    int32_t abs_y = self->abs_y;
 
     bool pressed = WIDGET_IS_CLICKED(gui, self);
     bool hovered = WIDGET_IS_HOVERED(gui, self);
     bool focused = WIDGET_IS_FOCUSED(gui, self);
 
-    uint32_t fill = UI_PANEL_COLOR;
-    if (pressed) {
-        fill = UI_PANEL_PRESSED;
-    } else if (hovered) {
-        fill = UI_PANEL_HOVER;
-    }
+    uint32_t fill = pressed ? BTN_FILL_PRESS : hovered ? BTN_FILL_HOVER : BTN_FILL;
 
-    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, fill);
-    draw_win95_border(video, 
-        abs_x, abs_y,
-        self->width, self->height, 
-        pressed
-    );
+    if (focused) {
+        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS, 0xFFFFFF);
+        draw_rounded_rect(video, abs_x + 1, abs_y + 1, self->width - 2, self->height - 2, BTN_RADIUS - 1, fill);
+    } 
+    else {
+        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS, fill);
+    }
 
     if (self->data.button.label != NULL) {
         int text_w = strlen(self->data.button.label) * 11;
-        int text_x = abs_x + (self->width - text_w) / 2;
-        int text_y = abs_y + (self->height - 11) / 2;
-
-        if (pressed) { text_x += 1; text_y += 1;}
+        int text_x = abs_x + ((int32_t)self->width - text_w) / 2;
+        int text_y = abs_y + ((int32_t)self->height - 11) / 2;
+        if (pressed) { text_x += 1; text_y += 1; }
         draw_string(video, self->data.button.label, text_x, text_y, fill);
-    }
-
-    if (hovered || focused) {
-        draw_focus_outline(video, abs_x, abs_y, self->width, self->height, UI_ACCENT_COLOR);
     }
 }
 

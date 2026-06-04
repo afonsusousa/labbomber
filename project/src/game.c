@@ -32,7 +32,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
     // --- PLAYER 1 ---
     t_tuple spawnpoint = spawnpoint_generator(game->board, game->click_count);
     player_init(game, &game->players[PLAYER_1], spawnpoint);
-    game->players[PLAYER_1].lives = 1;
+    game->players[PLAYER_1].lives = 3;
     game->current_player = PLAYER_1;
 
     // --- PLAYER 2 ---
@@ -42,7 +42,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time) {
 
     // --- ENEMIES ---
     t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 1, spawn_out);
+    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 4, spawn_out);
 
     for (int i = 0; i < game->enemy_count; i++) {
         enemy_init(game, &game->enemies[i], spawn_out[i]);
