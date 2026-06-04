@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* ── Packet handler ──────────────────────────────────────────────────── */
+// packet handler
 
 static void mp_process_packet(t_ctx *ctx) {
     if (ctx == NULL) return;
@@ -149,7 +149,7 @@ static void mp_process_packet(t_ctx *ctx) {
     }
 }
 
-/* ── Byte-level state machine ────────────────────────────────────────── */
+// byte-level state machine
 
 static void mp_receive_byte(t_ctx *ctx, uint8_t byte) {
     if (ctx == NULL) return;
@@ -192,7 +192,7 @@ static void mp_receive_byte(t_ctx *ctx, uint8_t byte) {
     }
 }
 
-/* ── Public poll function ────────────────────────────────────────────── */
+// public poll function
 
 void app_multiplayer_poll_serial(t_ctx *ctx) {
     if (ctx == NULL) return;

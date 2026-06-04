@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* ── Role assignment ─────────────────────────────────────────────────── */
+// role assignment
 
 void app_multiplayer_assign_roles(t_ctx *ctx) {
     if (ctx == NULL) return;
@@ -35,7 +35,7 @@ void app_multiplayer_assign_roles(t_ctx *ctx) {
     }
 }
 
-/* ── Seed generation ─────────────────────────────────────────────────── */
+// seed generator
 
 static uint32_t mp_make_match_seed(t_ctx *ctx) {
     uint32_t a = ctx->multiplayer_local_nonce;
@@ -50,7 +50,7 @@ static uint32_t mp_make_match_seed(t_ctx *ctx) {
     return seed;
 }
 
-/* ── Game start sequencing ───────────────────────────────────────────── */
+// game start sequencing 
 
 static void mp_queue_start_game(t_ctx *ctx, uint32_t seed) {
     if (ctx == NULL || ctx->multiplayer_game_started) return;

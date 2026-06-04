@@ -4,11 +4,11 @@
 #include "core/application.h"
 #include <stdint.h>
 
-/* Packet framing */
+// packet framing
 #define MP_PACKET_START        0xA5
 #define MP_PACKET_PAYLOAD_SIZE 3
 
-/* Packet types */
+// packet types
 #define MP_PACKET_HELLO        0x01
 #define MP_PACKET_KEY          0x02
 #define MP_PACKET_PLAYER_STATE 0x03
