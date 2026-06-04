@@ -4,6 +4,7 @@
 #include "assets_background.h"
 #include "assets_player.h"
 #include "assets_enemy.h"
+#include "asssets_numbers.h"
 #include "../lib/vbe/vbe.h"
 #include <lcom/xpm.h>
 #include <stdlib.h>
@@ -106,7 +107,20 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)door_closed, XPM_5_6_5, &sprite_cache[SPRITE_DOOR_CLOSED]);
     xpm_load((xpm_map_t)door_open, XPM_5_6_5, &sprite_cache[SPRITE_DOOR_OPEN]);
 
-    xpm_load((xpm_map_t)menu_background_xpm, XPM_5_6_5, &sprite_cache[SPRITE_MENU_BACKGROUND]);
+    xpm_load((xpm_map_t)menu_background_xpm, XPM_5_6_5, &sprite_cache[SPRITE_MENU_BACKGROUND]); 
+
+    /* Load Timer Assets*/
+    xpm_load((xpm_map_t)number_0, XPM_5_6_5, &sprite_cache[NUMBER_0]); 
+    xpm_load((xpm_map_t)number_1, XPM_5_6_5, &sprite_cache[NUMBER_1]);
+    xpm_load((xpm_map_t)number_2, XPM_5_6_5, &sprite_cache[NUMBER_2]);
+    xpm_load((xpm_map_t)number_3, XPM_5_6_5, &sprite_cache[NUMBER_3]);
+    xpm_load((xpm_map_t)number_4, XPM_5_6_5, &sprite_cache[NUMBER_4]);
+    xpm_load((xpm_map_t)number_5, XPM_5_6_5, &sprite_cache[NUMBER_5]);
+    xpm_load((xpm_map_t)number_6, XPM_5_6_5, &sprite_cache[NUMBER_6]);
+    xpm_load((xpm_map_t)number_7, XPM_5_6_5, &sprite_cache[NUMBER_7]);
+    xpm_load((xpm_map_t)number_8, XPM_5_6_5, &sprite_cache[NUMBER_8]);
+    xpm_load((xpm_map_t)number_9, XPM_5_6_5, &sprite_cache[NUMBER_9]);
+    xpm_load((xpm_map_t)doispontos, XPM_5_6_5, &sprite_cache[DOIS_PONTOS]);
 
     sprites_initialized = true;
 }
@@ -189,5 +203,20 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
     // Enemy
     for (int i = 0; i < 16; i++) {
         scale_cached_sprite(SPRITE_ENEMY_1_STANDING + i, player_w, player_h, bpp);
+    }
+
+    // Timer 
+
+    int timer_sprites[] = { NUMBER_0, NUMBER_1, NUMBER_2, NUMBER_3, NUMBER_4, NUMBER_5, NUMBER_6, NUMBER_7, NUMBER_8, NUMBER_9, 
+        DOIS_PONTOS
+    };
+
+    int total_timer_sprites = sizeof(timer_sprites) / sizeof(timer_sprites[0]);
+
+    uint32_t timer_w = tile_size / 3;
+    uint32_t timer_h = (tile_size / 3) * 10 / 8;
+
+    for (int i = 0; i < total_timer_sprites; i++) {
+        scale_cached_sprite(timer_sprites[i], timer_w, timer_h, bpp);
     }
 }

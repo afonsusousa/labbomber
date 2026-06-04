@@ -285,6 +285,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
 
     t_game_state *game = GAME(state);
 
+    // Draw Map
     for (int y = 0; y < BOARD_ROWS; y++) {
         for (int x = 0; x < BOARD_COLS; x++) {
             int val = game->board[y * BOARD_COLS + x];
@@ -319,8 +320,30 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     uint32_t remaining = elapsed >= game->time_limit ? 0 : game->time_limit - elapsed;
     uint32_t mins = remaining / 60;
     uint32_t secs = remaining % 60;
+    
+    char timer_buf[8]; 
+    snprintf(timer_buf, sizeof(timer_buf), "%02u:%02u", mins, secs); 
+    
+    int32_t tx = self->abs_x + (self->width / 2) - 30;
+    int32_t ty = self->abs_y + 30;
+    
+    for (int i = 0; timer_buf[i] != '\0'; i++) {
+        if (timer_buf[i] == ':') {
+            xpm_image_t doispontos = scaled_sprite_cache[DOIS_PONTOS];
+            if (doispontos.bytes != NULL) {
+                hw_vbe_draw_xpm(video, doispontos.bytes, doispontos, tx, ty);
+                tx += doispontos.width + 2;
+            }  
+            continue;    
+        }  
 
-    char timer_buf[16];
-    snprintf(timer_buf, sizeof(timer_buf), "%02u:%02u", mins, secs);
-    draw_string(video, timer_buf, self->abs_x + (self->width / 2) - 30, self->abs_y + 10, 0xFFFFFF);
+    xpm_image_t img = scaled_sprite_cache[NUMBER_0 + (timer_buf[i] - '0')];
+
+    if (img.bytes == NULL) { 
+        tx += 10; 
+        continue; 
+    }
+    hw_vbe_draw_xpm(video, img.bytes, img, tx, ty);
+    tx += img.width + 2;
+    }
 }
