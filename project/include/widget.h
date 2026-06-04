@@ -30,7 +30,7 @@
 //UI BUTTON COLORS
 #define BTN_RADIUS      12
 #define BTN_FILL        0x6a5abf
-#define BTN_FILL_HOVER  0x6b5cc8
+#define BTN_FILL_HOVER  0x533bd1
 #define BTN_FILL_PRESS  0x513db8
 
 typedef enum {

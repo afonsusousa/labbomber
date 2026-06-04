@@ -99,11 +99,12 @@ void draw_button(t_widget *self, hw_video_t *video, void *state) {
 
     uint32_t fill = pressed ? BTN_FILL_PRESS : hovered ? BTN_FILL_HOVER : BTN_FILL;
 
-    if (focused) {
-        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS, 0xFFFFFF);
-        draw_rounded_rect(video, abs_x + 1, abs_y + 1, self->width - 2, self->height - 2, BTN_RADIUS - 1, fill);
+    if (focused || hovered) {
+        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS + 2, 0xFFFFFF);
+        draw_rounded_rect(video, abs_x + 1, abs_y + 1, self->width - 2, self->height - 2, BTN_RADIUS, fill);
     } 
     else {
+        draw_rounded_rect(video, abs_x - 2, abs_y - 2, self->width + 4, self->height + 4, BTN_RADIUS, 0x000000);
         draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS, fill);
     }
 
@@ -176,13 +177,11 @@ void draw_dialog(t_widget *self, hw_video_t *video, void *state) {
     uint32_t abs_x = self->abs_x;
     uint32_t abs_y = self->abs_y;
     
-    hw_vbe_draw_rect(video, abs_x, abs_y, self->width, self->height, UI_PANEL_COLOR);
-    
-    // dialog windows are always raised
-    draw_win95_border(video, abs_x, abs_y, self->width, self->height, false);
+    draw_rounded_rect(video, abs_x - 3, abs_y - 3, self->width + 6, self->height + 6, 21, 0x000000);
+    draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, 18, UI_PANEL_FLASH);
 
     if (self->data.dialog.title != NULL) {
-        hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, UI_TITLE_BAR_COLOR); // Title bar background
+        hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, UI_TITLE_BAR_COLOR);
         draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, UI_TEXT_COLOR);
     }
 }
