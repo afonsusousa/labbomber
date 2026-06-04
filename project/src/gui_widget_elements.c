@@ -99,13 +99,18 @@ void draw_button(t_widget *self, hw_video_t *video, void *state) {
 
     uint32_t fill = pressed ? BTN_FILL_PRESS : hovered ? BTN_FILL_HOVER : BTN_FILL;
 
+    bool in_dialog = (self->parent != NULL && self->parent->type == DIALOG);
+    uint32_t border_color;
+
     if (focused || hovered) {
-        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS + 2, 0xFFFFFF);
-        draw_rounded_rect(video, abs_x + 1, abs_y + 1, self->width - 2, self->height - 2, BTN_RADIUS, fill);
+        border_color = in_dialog ? 0x000000 : 0xFFFFFF;
+        draw_rounded_rect(video, abs_x - 2, abs_y - 2, self->width + 4, self->height + 4, BTN_RADIUS, border_color);
+        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS, fill);
     } 
     else {
-        draw_rounded_rect(video, abs_x - 2, abs_y - 2, self->width + 4, self->height + 4, BTN_RADIUS, 0x000000);
-        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS, fill);
+        border_color = in_dialog ? 0xFFFFFF : 0x000000;
+        draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, BTN_RADIUS + 2, border_color);
+        draw_rounded_rect(video, abs_x + 1, abs_y + 1, self->width - 2, self->height - 2, BTN_RADIUS, fill);
     }
 
     if (self->data.button.label != NULL) {
@@ -181,8 +186,8 @@ void draw_dialog(t_widget *self, hw_video_t *video, void *state) {
     draw_rounded_rect(video, abs_x, abs_y, self->width, self->height, 18, UI_PANEL_FLASH);
 
     if (self->data.dialog.title != NULL) {
-        hw_vbe_draw_rect(video, abs_x + 4, abs_y + 4, self->width - 8, 20, UI_TITLE_BAR_COLOR);
-        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + 8, UI_TEXT_COLOR);
+        draw_rounded_rect(video, abs_x + DIALOG_TITLE_X_OFFSET, abs_y + DIALOG_TITLE_Y_OFFSET, self->width - (DIALOG_TITLE_X_OFFSET * 2), DIALOG_TITLE_HEIGHT, 8, UI_TITLE_BAR_COLOR);
+        draw_string(video, self->data.dialog.title, abs_x + 8, abs_y + DIALOG_TITLE_Y_OFFSET + (DIALOG_TITLE_HEIGHT - 11) / 2, UI_TEXT_COLOR);
     }
 }
 
@@ -209,7 +214,7 @@ t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uin
     if (on_close != NULL) {
         char close_button_name[128];
         build_dialog_close_button_name(parent, close_button_name, sizeof(close_button_name));
-        t_widget *btn_close = widget_create(BUTTON, w - 22, 6, 16, 14, close_button_name);
+        t_widget *btn_close = widget_create(BUTTON, w - 22, DIALOG_TITLE_Y_OFFSET + (DIALOG_TITLE_HEIGHT - 14) / 2, 16, 14, close_button_name);
         btn_close->data.button.label = "x";
         btn_close->on_click = on_close;
         btn_close->flags |= WIDGET_FLAG_NO_FOCUS;
