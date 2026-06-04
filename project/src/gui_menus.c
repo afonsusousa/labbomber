@@ -9,6 +9,7 @@
 #include "../lib/serialPort/serial_port.h"
 #include "../lib/serialPort/i8250.h"
 #include "../lib/utils/utils.h"
+#include "scoreboard.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -282,7 +283,9 @@ static void _callback_start_game(t_widget *self, void *state) {
             gui_push_overlay(gui, overlay);
         }
         return;
-    }
+    } 
+
+    scoreboard_set_current_player(player1_input->data.text_input.buffer);
 
     gui_pop_view(gui);
     gui_show_game_view(ctx);
@@ -319,18 +322,25 @@ static void _callback_close_scoreboard(t_widget *self, void *state) {
 
 void gui_show_scoreboard(struct s_ctx *ctx) {
     t_gui *gui = &ctx->gui;
+    const score_entry_t *entries = scoreboard_entries();
+    uint32_t n = scoreboard_count();
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_close_scoreboard, "scoreboard_overlay");
     if (overlay == NULL) return;
 
     t_widget *scoreboard = widget_add_dialog(overlay, "Scoreboard", 500, 400, gui->width, gui->height, _callback_pop_view, "scoreboard_dialog");
     scoreboard->on_quit = _callback_close_scoreboard;
 
-    widget_add_text(scoreboard, 0, 30, 450, 24, "Top Players:", "scoreboard_title");
-    widget_add_text(scoreboard, 0, 60,  450, 20, "1. Player One    - 15000 pts", "scoreboard_row_1");
-    widget_add_text(scoreboard, 0, 85,  450, 20, "2. Player Two    - 12500 pts", "scoreboard_row_2");
-    widget_add_text(scoreboard, 0, 110, 450, 20, "3. Player Three  - 10000 pts", "scoreboard_row_3");
-    widget_add_text(scoreboard, 0, 135, 450, 20, "4. Player Four   -  8500 pts", "scoreboard_row_4");
-    widget_add_text(scoreboard, 0, 160, 450, 20, "5. Player Five   -  7000 pts", "scoreboard_row_5");
+    for (uint32_t i = 0; i < n; i++) { 
+        char line[64];
+        
+        snprintf(line, sizeof(line), "%u. %s - %u pts", i + 1, entries[i].player_name, entries[i].score); 
+        
+        char id[32]; 
+        
+        snprintf(id, sizeof(id), "scoreboard_row_%u", i + 1); 
+        
+        widget_add_text(scoreboard, 0, 60 + (i * 25), 450, 20, line, id); 
+    }
 
     widget_add_button(scoreboard, 0, 0, 150, 40, "Close", _callback_close_scoreboard, "scoreboard_close_button");
 

@@ -5,6 +5,7 @@
 #include "application.h"
 #include "event_handlers.h"
 #include "multiplayer.h"
+#include "scoreboard.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -148,13 +149,14 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         if (game->players[PLAYER_1].board_pos.x == game->door_pos.x && game->players[PLAYER_1].board_pos.y == game->door_pos.y) update_player_win_animation(game, &game->players[PLAYER_1]);
         else update_player_win_animation(game, &game->players[PLAYER_2]);
         if (game->animation_timer <= 0) {
+            scoreboard_submit(scoreboard_current_player(), game->score);
             game->match_state = MATCH_EXITING;
             gui_show_session_menu(
                 ctx,
                 "YOU WIN!",
                 "All enemies defeated!"
             );
-        }
+        }  
         return;
     }
 }

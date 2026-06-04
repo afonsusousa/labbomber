@@ -14,6 +14,7 @@
 #include "draw.h"
 #include "widget.h"
 #include "gui.h"
+#include "scoreboard.h"
 
 void init_hardware_state(hardware_t *hw_state) {
     if (!hw_state) return;
@@ -100,6 +101,8 @@ int(proj_main_loop)(int argc, char* argv[]) {
     mouse_write_cmd(MOUSE_DISABLE_DATA);
     hw_mouse_unsubscribe_int(&hw_state.mouse);
     serp_undo();
+
+    scoreboard_init();
     
     vg_exit();
 
