@@ -194,3 +194,17 @@ t_widget* gui_create_dialog(struct s_ctx *ctx, const char *title, uint32_t w, ui
     gui_push_overlay(gui, overlay);
     return dialog;
 }
+
+static bool is_space_char(char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f';
+}
+
+bool is_blank_string(const char *s) {
+    if (s == NULL) return true;
+    for (const char *p = s; *p != '\0'; ++p) {
+        if (!is_space_char(*p)) {
+            return false;
+        }
+    }
+    return true;
+}
