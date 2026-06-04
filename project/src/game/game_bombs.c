@@ -1,7 +1,4 @@
 #include "game/game.h"
-#include "vbe.h"
-#include "view/assets_cache.h"
-#include "view/draw.h"
 #include <stddef.h>
 #include <math.h>
 
@@ -97,46 +94,3 @@ void place_player_bomb(t_game_state *game, player_t *player) {
     }
 }
 
-static int get_bomb_sprite_index(const bomb_t *bomb) {
-    switch (bomb->state) {
-        case BOMB_BLINK:
-            return SPRITE_BOMB2;
-        case BOMB_EXPLODE:
-            return SPRITE_BOMB3;
-        case BOMB_PLACED:
-        default:
-            return SPRITE_BOMB1;
-    }
-}
-
-int draw_bomb(hw_video_t *video, t_game_state *game) {
-    if (game == NULL || !sprites_initialized) return 1;
-
-    int status = 0;
-    for (int i = 0; i < MAX_BOMBS; i++) {
-        bomb_t *bomb = &game->bomb[i];
-        if (!bomb->active) continue;
-
-        if (bomb->state == BOMB_FIRE) {
-            if (draw_bomb_explosion(video, game, bomb) != 0) status = 1;
-            continue;
-        }
-
-        int sprite_index = get_bomb_sprite_index(bomb);
-        if (sprite_index >= SPRITE_CACHE_SIZE || scaled_sprite_cache[sprite_index].bytes == NULL) {
-            status = 1;
-            continue;
-        }
-
-        xpm_image_t img = scaled_sprite_cache[sprite_index];
-
-        hw_vbe_draw_xpm(
-            video,
-            img.bytes,
-            img,
-            GET_X(game, bomb->board_pos.x),
-            GET_Y(game, bomb->board_pos.y)
-        );
-    }
-    return status;
-}

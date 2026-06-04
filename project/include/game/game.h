@@ -202,6 +202,10 @@ void    update_enemy_animation(t_game_state *game, enemy_t *enemy, uint32_t logi
 void    update_enemy_lives(t_game_state *game, enemy_t *enemy, int change);
 void    update_player_lives(player_t *player, int change);
 
+// Map helpers
+int     decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
+int     decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y);
+
 // Bomb helpers
 void    bomb_init(bomb_t *bomb);
 void    bomb_reset(bomb_t *bomb);
@@ -210,5 +214,9 @@ void    bomb_update(t_game_state *game, bomb_t *bomb);
 void    bomb_begin_explosion(t_game_state *game, bomb_t *bomb);
 void    bomb_update_explosion(t_game_state *game, bomb_t *bomb);
 void    place_player_bomb(t_game_state *game, player_t *player);
+uint8_t bomb_explosion_frame(const bomb_t *bomb);
+
+// Player helpers
+void    set_date_seed(int day, int month, int year);
 
 #endif /* LCOM_PROJECT_GAME_H */
