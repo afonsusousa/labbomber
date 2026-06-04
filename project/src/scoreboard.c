@@ -1,5 +1,6 @@
 #include "scoreboard.h"
 #include <string.h>
+#include <stdio.h>
 
 static score_entry_t entries[SCOREBOARD_MAX_ENTRIES];
 
@@ -13,7 +14,8 @@ static void sort_entries(void) {
 
         for(uint32_t j = i+1; j < count; j++) {
 
-            if (entries[j].score > entries[i].score) { 
+            if (entries[j].score > entries[i].score || 
+                (entries[j].score == entries[i].score && entries[j].duration_ticks < entries[i].duration_ticks)) { 
 
                 score_entry_t temp = entries[i]; 
 
@@ -44,7 +46,7 @@ const char *scoreboard_current_player(void) {
     return current_player;
 }
 
-void scoreboard_submit(const char *name, uint32_t score) { 
+void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks) { 
     if (name == NULL) return; 
 
     if (count < SCOREBOARD_MAX_ENTRIES) {
@@ -52,7 +54,9 @@ void scoreboard_submit(const char *name, uint32_t score) {
 
         entries[count].player_name[sizeof(entries[count].player_name) - 1] = '\0'; 
 
-        entries[count].score = score;
+        entries[count].score = score; 
+
+        entries[count].duration_ticks = duration_ticks;
         
         count++;
     }  
@@ -65,10 +69,29 @@ void scoreboard_submit(const char *name, uint32_t score) {
         entries[count - 1].player_name[sizeof(entries[count - 1].player_name) - 1] = '\0';
 
         entries[count - 1].score = score;
+
+        entries[count - 1].duration_ticks = duration_ticks;
     }  
 
     sort_entries();
-}   
+}    
+
+void scoreboard_save(const char *path) {
+    FILE *f = fopen(path, "wb");
+    if (f == NULL) return;
+    fwrite(&count, sizeof(count), 1, f);
+    fwrite(entries, sizeof(score_entry_t), count, f);
+    fclose(f);
+} 
+
+void scoreboard_load(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (f == NULL) return;
+    fread(&count, sizeof(count), 1, f);
+    if (count > SCOREBOARD_MAX_ENTRIES) count = SCOREBOARD_MAX_ENTRIES;
+    fread(entries, sizeof(score_entry_t), count, f);
+    fclose(f);
+}
 
 const score_entry_t *scoreboard_entries(void) {
     return entries;

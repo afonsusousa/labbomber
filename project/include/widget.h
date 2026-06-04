@@ -107,6 +107,7 @@ typedef struct s_widget {
 
         struct {
             char        *text;
+            char text_buf[64];
         } text_display;
 
         struct {

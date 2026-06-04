@@ -284,6 +284,10 @@ static void _callback_start_game(t_widget *self, void *state) {
         }
         return;
     } 
+    
+    char saved_name[32]; 
+    strncpy(saved_name, player1_input->data.text_input.buffer, sizeof(saved_name) - 1); 
+    saved_name[sizeof(saved_name) - 1] = '\0';
 
     scoreboard_set_current_player(player1_input->data.text_input.buffer);
 
@@ -320,10 +324,21 @@ static void _callback_close_scoreboard(t_widget *self, void *state) {
     gui_pop_view(GUI(state));
 }
 
+static void _callback_clear_scoreboard(t_widget *self, void *state) {
+    (void)self;
+    scoreboard_init();
+    scoreboard_save("/home/lcom/labs/project/scoreboard.dat");
+    gui_pop_view(GUI(state));  // fecha o scoreboard
+}
+
 void gui_show_scoreboard(struct s_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     const score_entry_t *entries = scoreboard_entries();
     uint32_t n = scoreboard_count();
+
+    static char lines[SCOREBOARD_MAX_ENTRIES][64];
+    static char ids[SCOREBOARD_MAX_ENTRIES][32];
+
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_close_scoreboard, "scoreboard_overlay");
     if (overlay == NULL) return;
 
@@ -331,18 +346,23 @@ void gui_show_scoreboard(struct s_ctx *ctx) {
     scoreboard->on_quit = _callback_close_scoreboard;
 
     for (uint32_t i = 0; i < n; i++) { 
-        char line[64];
         
-        snprintf(line, sizeof(line), "%u. %s - %u pts", i + 1, entries[i].player_name, entries[i].score); 
-        
-        char id[32]; 
-        
-        snprintf(id, sizeof(id), "scoreboard_row_%u", i + 1); 
-        
-        widget_add_text(scoreboard, 0, 60 + (i * 25), 450, 20, line, id); 
+        uint32_t secs = entries[i].duration_ticks / GAME_TICKS_PER_SECOND; 
+
+        snprintf(lines[i], sizeof(lines[i]), "%u. %s - %u pts (%um%02us)", 
+        i + 1,
+        entries[i].player_name,
+        entries[i].score,
+        secs / 60,
+        secs % 60);
+
+        snprintf(ids[i], sizeof(ids[i]), "scoreboard_row_%u", i + 1);
+
+        widget_add_text(scoreboard, 0, 60 + (i * 25), 450, 20, lines[i], ids[i]); 
     }
 
     widget_add_button(scoreboard, 0, 0, 150, 40, "Close", _callback_close_scoreboard, "scoreboard_close_button");
+    widget_add_button(scoreboard, 0, 0, 150, 40, "Clear", _callback_clear_scoreboard, "scoreboard_clear_button");
 
     widget_layout(scoreboard, 12, 40, true);
     gui_push_overlay(gui, overlay);

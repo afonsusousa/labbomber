@@ -61,6 +61,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     app_update_real_time(&app);
     gui_init(&app, hw_state.video.screen_width, hw_state.video.screen_height);
 
+    scoreboard_load("/home/lcom/labs/project/scoreboard.dat");
     if (timer_set_frequency(0, 60) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
     if (hw_keyboard_subscribe_int(&hw_state.keyboard) != 0) return 1;
@@ -102,7 +103,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     hw_mouse_unsubscribe_int(&hw_state.mouse);
     serp_undo();
 
-    scoreboard_init();
+    scoreboard_save("/home/lcom/labs/project/scoreboard.dat");
     
     vg_exit();
 
