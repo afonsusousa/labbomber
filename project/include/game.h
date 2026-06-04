@@ -139,6 +139,7 @@ typedef struct s_game_state {
 
     uint32_t score;
     uint32_t logical_ticks;
+    uint32_t time_limit;
     uint32_t click_count;
     bool is_frozen;
 

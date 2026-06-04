@@ -81,6 +81,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     _game_state_prepare_match(game, time);
     game->score = 0;
+    game->time_limit = 10;
 
     scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
 
@@ -152,8 +153,11 @@ void game_state_update(t_ctx *ctx) {
 
     if (game->match_state == MATCH_RUNNING) {
         player_t *p1 = &game->players[PLAYER_1];
+        
+        uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
 
-        if (p1->lives == 0) {
+        if (elapsed >= game->time_limit || p1->lives == 0) {
+            p1->lives = 0;
             game->match_state = MATCH_LOST;
             game->players[PLAYER_1].animation_timer = GAME_TICKS_PER_SECOND * 5;
             return;
@@ -262,5 +266,14 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
         draw_player(&game->players[i], video, game);
     }
-    draw_player_hearts(video, game);
+    draw_player_hearts(video, game);  
+
+    uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
+    uint32_t remaining = elapsed >= game->time_limit ? 0 : game->time_limit - elapsed;
+    uint32_t mins = remaining / 60;
+    uint32_t secs = remaining % 60;
+    
+    char timer_buf[16];
+    snprintf(timer_buf, sizeof(timer_buf), "%02u:%02u", mins, secs);
+    draw_string(video, timer_buf, self->abs_x + (self->width / 2) - 30, self->abs_y + 10, 0xFFFFFF);
 }
