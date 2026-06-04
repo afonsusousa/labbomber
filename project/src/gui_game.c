@@ -58,7 +58,7 @@ static void _callback_return_to_main_menu(t_widget *self, void *state) {
 
 void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
-    bool game_over = ctx->game.match_state == MATCH_WON || ctx->game.match_state == MATCH_LOST;
+    bool game_over = ctx->game.match_state == MATCH_EXITING;
 
     t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "session_overlay");
     if (overlay == NULL) return;
@@ -108,27 +108,29 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         game->logical_ticks++;
         game_state_update(ctx);
     }
-    
+
     if (game->match_state == MATCH_LOST) {
         game->is_frozen = true;
         update_player_death_animation(game, &game->players[PLAYER_1]);
-        if (game->animation_timer > 10000) { //if (game->animation_timer == 0) {
-            gui_show_session_menu(ctx, "PAUSED", NULL);
+        if (game->animation_timer <= 0) {
+            game->match_state = MATCH_EXITING;
+            gui_show_session_menu(ctx, "GAME OVER", "Better luck next time!");
         }
         return;
    }
-   
+
     if (game->match_state == MATCH_WON) {
         game->is_frozen = true;
         update_player_win_animation(game, &game->players[PLAYER_1]);
-        if (game->animation_timer > 10000) { //if (game->animation_timer == 0) {
+        if (game->animation_timer <= 0) {
+            game->match_state = MATCH_EXITING;
             gui_show_session_menu(
                 ctx,
                 "YOU WIN!",
                 "All enemies defeated!"
             );
         }
-        return;  
+        return;
     }
 }
 
@@ -179,7 +181,7 @@ void gui_show_game_view(t_ctx *ctx) {
     game_canvas->on_key_press = _callback_game_board_on_key_press;
 
     //o game state vai levar o board, os players, start time, etc
- 	
+
 
     if (game_state_init(&ctx->game, gui->width, gui->height, ctx->real_time, ctx->is_multiplayer) != 0) {
         widget_destroy(view);
@@ -187,7 +189,7 @@ void gui_show_game_view(t_ctx *ctx) {
     }
     if (ctx->is_multiplayer && ctx->multiplayer_role_assigned) {
         ctx->game.current_player = ctx->multiplayer_local_player;
-    }   
+    }
 
     // Retrieve player names from the name menu inputs (AFTER INIT)
     t_widget *p1_input = widget_find_by_name(gui, "player1_input");

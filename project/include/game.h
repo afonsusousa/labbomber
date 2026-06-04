@@ -113,7 +113,8 @@ typedef enum {
     MATCH_RUNNING,
     MATCH_PAUSED,
     MATCH_WON,
-    MATCH_LOST
+    MATCH_LOST,
+    MATCH_EXITING
 } match_state_t;
 
 typedef struct s_game_state {
