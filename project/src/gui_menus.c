@@ -132,6 +132,8 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     ctx->multiplayer_partner_ready = false;
     ctx->multiplayer_signal_sent = false;
     ctx->multiplayer_role_assigned = false;
+    ctx->multiplayer_local_start_ready = false;
+    ctx->multiplayer_remote_start_ready = false;
     ctx->multiplayer_local_player = PLAYER_1;
     ctx->multiplayer_remote_player = PLAYER_2;
     ctx->multiplayer_remote_nonce = 0;
@@ -229,11 +231,6 @@ static void _callback_start_game(t_widget *self, void *state) {
     t_ctx *ctx = CTX(state);
     t_gui *gui = GUI(state);
 
-    if (ctx->is_multiplayer && !ctx->multiplayer_role_assigned) {
-        gui_show_info_dialog(ctx, "Waiting", "Waiting for multiplayer handshake...");
-        return;
-    }
-
     t_widget *player1_input = widget_find_by_name(gui, "player1_input");
     t_widget *player2_input = widget_find_by_name(gui, "player2_input");
 
@@ -241,6 +238,7 @@ static void _callback_start_game(t_widget *self, void *state) {
         gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
         return;
     }
+
     if (is_blank_string(player1_input->data.text_input.buffer)) {
         gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 1 name");
         return;
@@ -250,6 +248,16 @@ static void _callback_start_game(t_widget *self, void *state) {
         if (player2_input->data.text_input.buffer == NULL ||
             is_blank_string(player2_input->data.text_input.buffer)) {
             gui_show_info_dialog(ctx, "Invalid Name", "Please enter Player 2 name");
+            return;
+        }
+    }
+
+    if (ctx->is_multiplayer) {
+        ctx->multiplayer_local_start_ready = true;
+        app_multiplayer_send_start_ready(ctx);
+
+        if (!ctx->multiplayer_role_assigned || !ctx->multiplayer_remote_start_ready) {
+            gui_show_info_dialog(ctx, "Waiting", "Waiting for other player...");
             return;
         }
     }

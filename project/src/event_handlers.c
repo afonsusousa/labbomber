@@ -17,7 +17,10 @@ void draw_debug_overlay(hw_video_t *video, const t_gui *gui, t_game_state game);
 #define MP_PACKET_KEY          0x02
 #define MP_PACKET_PLAYER_STATE 0x03
 #define MP_PACKET_PAUSE        0x04
+#define MP_PACKET_READY        0x05
 #define MP_PACKET_PAYLOAD_SIZE 3
+
+int app_multiplayer_send_start_ready(t_ctx *ctx);
 
 static int app_multiplayer_send_packet(uint8_t type, uint8_t data0, uint8_t data1, uint8_t data2) {
     if (serial_send_byte(MP_PACKET_START) != 0) return 1;
@@ -111,6 +114,19 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
             }
             break;
         }
+        case MP_PACKET_READY: {
+            bool was_remote_ready = ctx->multiplayer_remote_start_ready;
+
+            ctx->multiplayer_remote_start_ready = true;
+            app_multiplayer_log(ctx, "remote start ready");
+
+            if (!was_remote_ready && ctx->multiplayer_local_start_ready) {
+                app_multiplayer_send_start_ready(ctx);
+                app_multiplayer_log(ctx, "start ready ack sent");
+            }
+
+            break;
+        }
         default:
             break;
     }
@@ -129,11 +145,8 @@ static bool app_is_blank_string(const char *s) {
 
 static bool app_multiplayer_name_inputs_ready(t_ctx *ctx) {
     if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return false;
-
-    t_widget *top = gui_get_top_view(&ctx->gui);
-    if (top == NULL || top->type != OVERLAY || top->name == NULL || strcmp(top->name, "name_overlay") != 0) {
-        return false;
-    }
+    if (!ctx->multiplayer_local_start_ready || !ctx->multiplayer_remote_start_ready) return false;
+    if (widget_find_by_name(&ctx->gui, "game_view") != NULL) return false;
 
     t_widget *p1_input = widget_find_by_name(&ctx->gui, "player1_input");
     t_widget *p2_input = widget_find_by_name(&ctx->gui, "player2_input");
@@ -189,6 +202,14 @@ int app_multiplayer_send_hello(t_ctx *ctx) {
     );
     serial_send_byte(0xAA);
     app_multiplayer_log(ctx, result == 0 ? "hello sent" : "hello send failed");
+    return result;
+}
+
+int app_multiplayer_send_start_ready(t_ctx *ctx) {
+    if (ctx == NULL || !ctx->is_multiplayer) return 1;
+
+    int result = app_multiplayer_send_packet(MP_PACKET_READY, 0, 0, 0);
+    app_multiplayer_log(ctx, result == 0 ? "start ready sent" : "start ready send failed");
     return result;
 }
 
@@ -338,7 +359,12 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     app_multiplayer_poll_serial(ctx);
 
     if (app_multiplayer_name_inputs_ready(ctx)) {
-        gui_pop_view(&ctx->gui);
+        t_widget *top = gui_get_top_view(&ctx->gui);
+
+        if (top != NULL && top->name != NULL && strcmp(top->name, "info_overlay") == 0) {
+            gui_pop_view(&ctx->gui);
+        }
+
         app_update_real_time(ctx);
         gui_show_game_view(ctx);
     }
