@@ -8,6 +8,8 @@ BUILD_DIR_PATH != mkdir -p ${.CURDIR}/${BUILD_DIR} && echo ${.CURDIR}/${BUILD_DI
 
 # Source search paths
 .PATH: ${.CURDIR}/src/core
+.PATH: ${.CURDIR}/src/multiplayer
+.PATH: ${.CURDIR}/src/time
 .PATH: ${.CURDIR}/src/game
 .PATH: ${.CURDIR}/src/gui
 .PATH: ${.CURDIR}/src/view
@@ -21,7 +23,9 @@ BUILD_DIR_PATH != mkdir -p ${.CURDIR}/${BUILD_DIR} && echo ${.CURDIR}/${BUILD_DI
 .PATH: ${.CURDIR}/lib/serialPort
 
 SRCS += keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c serial_port.c
-SRCS += main.c app_time.c event_handlers.c multiplayer.c debug.c
+SRCS += main.c event_handlers.c debug.c
+SRCS += app_time.c
+SRCS += multiplayer.c
 SRCS += game.c game_entity.c game_player.c game_enemy.c
 SRCS += game_bombs.c game_bombs_explosion.c game_map.c board_generator.c
 SRCS += gui_game.c gui_menus.c gui_utils.c
@@ -33,6 +37,8 @@ CFLAGS += -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__
 # Project headers
 CFLAGS += -I${.CURDIR}/include
 CFLAGS += -I${.CURDIR}/include/core
+CFLAGS += -I${.CURDIR}/include/multiplayer
+CFLAGS += -I${.CURDIR}/include/time
 CFLAGS += -I${.CURDIR}/include/game
 CFLAGS += -I${.CURDIR}/include/gui
 CFLAGS += -I${.CURDIR}/include/view

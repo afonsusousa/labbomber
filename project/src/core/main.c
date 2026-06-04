@@ -10,6 +10,7 @@
 #include "core/hardware.h"
 #include "core/event_handlers.h"
 #include "core/application.h"
+#include "time/app_time.h"
 #include "game/game.h"
 #include "view/draw.h"
 #include "gui/widget.h"

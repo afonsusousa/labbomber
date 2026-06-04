@@ -1,9 +1,10 @@
 #include "core/hardware.h"
 #include "gui/gui.h"
 #include "core/application.h"
+#include "time/app_time.h"
 #include "gui/widget.h"
 #include "view/draw.h"
-#include "core/multiplayer.h"
+#include "multiplayer/multiplayer.h"
 #include "i8042.h"
 #include <stdbool.h>
 #include <stdint.h>

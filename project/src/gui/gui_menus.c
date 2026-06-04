@@ -5,7 +5,7 @@
 #include "game/game.h"
 #include "core/application.h"
 #include "core/event_handlers.h"
-#include "core/multiplayer.h"
+#include "multiplayer/multiplayer.h"
 #include "serial_port.h"
 #include "i8250.h"
 #include "utils.h"

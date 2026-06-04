@@ -1,4 +1,4 @@
-#include "core/multiplayer.h"
+#include "multiplayer/multiplayer.h"
 #include "gui/gui.h"
 #include "gui/widget.h"
 #include "game/game.h"

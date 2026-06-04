@@ -3,8 +3,9 @@
 #include "core/macros.h"
 #include "gui/widget.h"
 #include "core/application.h"
+#include "time/app_time.h"
 #include "core/event_handlers.h"
-#include "core/multiplayer.h"
+#include "multiplayer/multiplayer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

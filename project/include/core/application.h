@@ -48,9 +48,4 @@ typedef struct s_ctx {
     uint8_t multiplayer_rx_pos;
 } t_ctx;
 
-#include "core/macros.h"
-
-int app_update_real_time(t_ctx *ctx);
-void app_tick_real_time(t_ctx *ctx);
-
 #endif /* LCOM_PROJECT_APPLICATION_H */
