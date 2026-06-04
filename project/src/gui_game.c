@@ -105,21 +105,17 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
     
     if (game->match_state == MATCH_LOST) {
         game->is_frozen = true;
-        update_player_death_animation(&game->players[PLAYER_1]);
-        if (game->players[PLAYER_1].animation_timer == 0) {
-            gui_show_session_menu(
-                ctx,
-                "GAME OVER",
-                "You have no lives left!"
-            );
+        update_player_death_animation(game, &game->players[PLAYER_1]);
+        if (game->animation_timer > 10000) { //if (game->animation_timer == 0) {
+            gui_show_session_menu(ctx, "PAUSED", NULL);
         }
         return;
    }
    
     if (game->match_state == MATCH_WON) {
         game->is_frozen = true;
-        update_player_win_animation(game);
-        if (game->players[PLAYER_1].animation_timer == 0) {
+        update_player_win_animation(game, &game->players[PLAYER_1]);
+        if (game->animation_timer > 10000) { //if (game->animation_timer == 0) {
             gui_show_session_menu(
                 ctx,
                 "YOU WIN!",

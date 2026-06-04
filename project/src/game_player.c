@@ -48,6 +48,18 @@ int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
         return 0;
     }
 
+    if (game->match_state == MATCH_WON) {
+        xpm_image_t img = scaled_sprite_cache[SPRITE_PLAYER_WIN];
+        hw_vbe_draw_xpm(
+            video,
+            img.bytes,
+            img,
+            game->start_x + player->pos.x,
+            game->start_y + player->pos.y
+        );
+        return 0;
+    }
+
     // Blink if invincible
     if (player->invincibility_timer > 0 && (player->invincibility_timer / 5) % 2 == 0) {
         return 0;
@@ -82,75 +94,74 @@ int draw_player(player_t *player, hw_video_t *video, t_game_state *game) {
     return 0;
 }
 
-void update_player_death_animation(player_t *player) {
+void update_player_death_animation(t_game_state *game, player_t *player) {
     if (player == NULL || !player->active) return;
 
     if (player->pos.y == 672) {
         player->active = false;
-        player->animation_timer = 0;
+        game->animation_timer = 0;
         return;
     }
 
-    if (player->animation_timer > GAME_TICKS_PER_SECOND * 4.5) {
-        player->animation_timer--;
+    if (game->animation_timer > GAME_TICKS_PER_SECOND * 4.5) {
+        game->animation_timer--;
         return;
     }
 
-    if (player->animation_timer > GAME_TICKS_PER_SECOND * 4.2) {
+    if (game->animation_timer > GAME_TICKS_PER_SECOND * 4.2) {
         player->pos.y -= 4;
     }
 
-    else if (player->animation_timer > 0) {
+    else if (game->animation_timer > 0) {
         player->pos.y += 4;
     }
 
-    player->animation_timer--;
+    game->animation_timer--;
 }
 
-void update_player_win_animation(t_game_state *game) {
-    player_t *player = &game->players[PLAYER_1];
+void update_player_win_animation(t_game_state *game, player_t *player) {
     if (player == NULL || !player->active) return;
 
-    if (player->animation_timer == GAME_TICKS_PER_SECOND * 3) {
+    if (game->animation_timer == GAME_TICKS_PER_SECOND * 3) {
         player->pos.x = player->board_pos.x * game->tile_size + game->tile_size / 2; 
         player->pos.y = player->board_pos.y * game->tile_size + game->tile_size / 2;
 
         player->sprite_dir = DIR_DOWN;
         player->animation_phase = 0;
 
-        player->animation_timer--;
+        game->animation_timer--;
         return;
     }
 
-    if (player->animation_timer < GAME_TICKS_PER_SECOND * 2.2 && player->animation_timer > GAME_TICKS_PER_SECOND * 2) {
+    if (game->animation_timer < GAME_TICKS_PER_SECOND * 2.2 && game->animation_timer > GAME_TICKS_PER_SECOND * 2) {
         player->pos.y -= 1;
-        player->animation_timer--;
+        game->animation_timer--;
         return;
     }
     
-    if (player->animation_timer < GAME_TICKS_PER_SECOND * 2 && player->animation_timer > GAME_TICKS_PER_SECOND * 1.8) {
+    if (game->animation_timer < GAME_TICKS_PER_SECOND * 2 && game->animation_timer > GAME_TICKS_PER_SECOND * 1.8) {
         player->pos.y += 1;
-        player->animation_timer--;
+        game->animation_timer--;
         return;
     }
 
-    if (player->animation_timer < GAME_TICKS_PER_SECOND * 1 && player->animation_timer > GAME_TICKS_PER_SECOND * 0.8) {
+    if (game->animation_timer < GAME_TICKS_PER_SECOND * 1 && game->animation_timer > GAME_TICKS_PER_SECOND * 0.8) {
         player->pos.y -= 1;
-        player->animation_timer--;
+        game->animation_timer--;
         return;
     }
 
-    if (player->animation_timer < GAME_TICKS_PER_SECOND * 0.8 && player->animation_timer > GAME_TICKS_PER_SECOND * 0.6) {
+    if (game->animation_timer < GAME_TICKS_PER_SECOND * 0.8 && game->animation_timer > GAME_TICKS_PER_SECOND * 0.6) {
         player->pos.y += 1;
-        player->animation_timer--;
+        game->animation_timer--;
         return;
     }
 
-    if (player->animation_timer == 0) {
+    if (game->animation_timer == 0) {
         player->active = false;
         return;
     }
-    player->animation_timer--;
+    game->animation_timer--;
 }
 
 static void remove_movement_key(player_t *player, uint8_t key_index) {
