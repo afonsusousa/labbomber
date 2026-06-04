@@ -345,11 +345,15 @@ void gui_show_scoreboard(struct s_ctx *ctx) {
     t_widget *scoreboard = widget_add_dialog(overlay, "Scoreboard", 500, 400, gui->width, gui->height, _callback_pop_view, "scoreboard_dialog");
     scoreboard->on_quit = _callback_close_scoreboard;
 
+    if (n == 0) {
+        widget_add_text(scoreboard, 0, 60, 450, 20, "No scores yet!", "scoreboard_empty_text");
+    }
+    
     for (uint32_t i = 0; i < n; i++) { 
         
         uint32_t secs = entries[i].duration_ticks / GAME_TICKS_PER_SECOND; 
 
-        snprintf(lines[i], sizeof(lines[i]), "%u. %s - %u pts (%um%02us)", 
+        snprintf(lines[i], sizeof(lines[i]), "%u. %s - %u pts (%u mins %02u secs)", 
         i + 1,
         entries[i].player_name,
         entries[i].score,
