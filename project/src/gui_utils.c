@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "widget.h"
 #include "gui.h"
+#include "application.h"
 
 static bool widget_is_descendant_of(t_widget *widget, t_widget *ancestor) {
     while (widget != NULL) {
@@ -180,4 +181,16 @@ int gui_get_curr_time(t_gui *gui, hw_rtc_t *out) {
 
     *out = *source;
     return 0;
+}
+
+t_widget* gui_create_dialog(struct s_ctx *ctx, const char *title, uint32_t w, uint32_t h, void (*on_close)(t_widget*, void*), const char *name) {
+    t_gui *gui = &ctx->gui;
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_close, name);
+    if (overlay == NULL) return NULL;
+
+    t_widget *dialog = widget_add_dialog(overlay, title, w, h, gui->width, gui->height, on_close, name);
+    dialog->on_quit = on_close;
+
+    gui_push_overlay(gui, overlay);
+    return dialog;
 }

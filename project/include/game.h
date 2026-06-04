@@ -70,6 +70,7 @@ typedef struct s_entity {
     char        name[32];
     t_tuple     pos;
     t_tuple     board_pos;
+    t_tuple     final_pos;
     direction_t dir;
     direction_t sprite_dir;
     uint8_t     animation_phase;
@@ -83,6 +84,7 @@ typedef struct s_entity {
     uint8_t     bomb_max;
     uint8_t     bomb_available;
     uint32_t    invincibility_timer;
+    uint32_t    animation_timer;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
@@ -110,6 +112,7 @@ typedef struct {
 
 typedef enum {
     MATCH_RUNNING,
+    MATCH_PAUSED,
     MATCH_WON,
     MATCH_LOST
 } match_state_t;
@@ -136,8 +139,8 @@ typedef struct s_game_state {
 
     uint32_t score;
     uint32_t logical_ticks;
+    uint32_t time_limit;
     uint32_t click_count;
-    bool debug_mode;
     bool is_frozen;
 
     match_state_t match_state;
@@ -170,6 +173,8 @@ void    update_player_movement(t_game_state *game, player_t *player);
 void    update_player_animation(player_t *player, uint32_t logical_ticks);
 void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
 void    player_bomb_count(t_game_state *game);
+void    update_player_death_animation(player_t *player);
+void    update_player_win_animation(t_game_state *game);
 
 /**
  * get_board_pos - compute a continuous/smoothed board cell for an entity.

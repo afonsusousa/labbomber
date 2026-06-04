@@ -175,6 +175,12 @@ void draw_dialog(t_widget *self, hw_video_t *video, void *state) {
     }
 }
 
+t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name) {
+    t_widget *overlay = widget_create(OVERLAY, 0, 0, screen_w, screen_h, name);
+    overlay->on_quit = on_quit;
+    return overlay;
+}
+
 t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*), const char *name) {
     t_widget *dialog = widget_create(DIALOG, 0, 0, w, h, name);
     dialog->data.dialog.title = (char*)title;
