@@ -6,7 +6,14 @@ BUILD_DIR ?= build
 BUILD_DIR_PATH != mkdir -p ${.CURDIR}/${BUILD_DIR} && echo ${.CURDIR}/${BUILD_DIR}
 .OBJDIR: ${BUILD_DIR_PATH}
 
-.PATH: ${.CURDIR}/src
+# Source search paths
+.PATH: ${.CURDIR}/src/core
+.PATH: ${.CURDIR}/src/multiplayer
+.PATH: ${.CURDIR}/src/time
+.PATH: ${.CURDIR}/src/game
+.PATH: ${.CURDIR}/src/gui
+.PATH: ${.CURDIR}/src/view
+.PATH: ${.CURDIR}/src/view/game
 .PATH: ${.CURDIR}/lib/keyboard
 .PATH: ${.CURDIR}/lib/mouse
 .PATH: ${.CURDIR}/lib/rtc
@@ -15,18 +22,34 @@ BUILD_DIR_PATH != mkdir -p ${.CURDIR}/${BUILD_DIR} && echo ${.CURDIR}/${BUILD_DI
 .PATH: ${.CURDIR}/lib/vbe
 .PATH: ${.CURDIR}/lib/serialPort
 
-SRCS = keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c board_generator.c debug.c draw.c assets.c glyphs.c event_handlers.c multiplayer.c app_time.c game.c game_entity.c game_player.c game_enemy.c game_bombs.c game_bombs_explosion.c game_map.c gui_game.c gui_menus.c gui_utils.c gui_widget_elements.c gui_widget_text_input.c gui_widget_utils.c main.c serial_port.c scoreboard.c
+SRCS += keyboard.c mouse.c rtc.c timer.c bitwise.c utils.c vbe.c serial_port.c
+SRCS += main.c event_handlers.c debug.c
+SRCS += app_time.c
+SRCS += mp_protocol.c mp_send.c mp_receive.c mp_session.c
+SRCS += game.c game_entity.c game_player.c game_enemy.c
+SRCS += game_bombs.c game_bombs_explosion.c game_map.c board_generator.c
+SRCS += gui_dialogs.c gui_game.c gui_menus.c gui_utils.c
+SRCS += gui_widget_elements.c gui_widget_text_input.c gui_widget_utils.c
+SRCS += draw.c assets.c glyphs.c
+SRCS += draw_player.c draw_enemy.c draw_map.c draw_bombs.c draw_hud.c draw_game.c
 
 CFLAGS += -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__
+# Project headers
 CFLAGS += -I${.CURDIR}/include
-CFLAGS += -I${.CURDIR}/lib/serialPort
-CFLAGS += -I${.CURDIR}/src
+CFLAGS += -I${.CURDIR}/include/core
+CFLAGS += -I${.CURDIR}/include/multiplayer
+CFLAGS += -I${.CURDIR}/include/time
+CFLAGS += -I${.CURDIR}/include/game
+CFLAGS += -I${.CURDIR}/include/gui
+CFLAGS += -I${.CURDIR}/include/view
+# Lib headers
 CFLAGS += -I${.CURDIR}/lib/keyboard
 CFLAGS += -I${.CURDIR}/lib/mouse
 CFLAGS += -I${.CURDIR}/lib/rtc
 CFLAGS += -I${.CURDIR}/lib/timer
 CFLAGS += -I${.CURDIR}/lib/utils
 CFLAGS += -I${.CURDIR}/lib/vbe
+CFLAGS += -I${.CURDIR}/lib/serialPort
 
 DPADD += ${LIBLCF}
 LDADD += -llcf
