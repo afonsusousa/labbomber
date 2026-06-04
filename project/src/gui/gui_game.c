@@ -3,8 +3,9 @@
 #include "core/macros.h"
 #include "gui/widget.h"
 #include "core/application.h"
+#include "time/app_time.h"
 #include "core/event_handlers.h"
-#include "core/multiplayer.h"
+#include "multiplayer/multiplayer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,20 +68,21 @@ static void _callback_return_to_main_menu(t_widget *self, void *state) {
 void gui_show_session_menu(t_ctx *ctx, const char *title, const char *message) {
     t_gui *gui = &ctx->gui;
     bool game_over = ctx->game.match_state == MATCH_EXITING;
+    bool connection_lost = (strcmp(title, "CONNECTION LOST") == 0);
 
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_resume_game, "session_overlay");
+    void (*on_close)(t_widget*, void*) = (game_over || connection_lost) ? _callback_return_to_main_menu : _callback_resume_game;
+
+    t_widget *overlay = widget_create_overlay(gui->width, gui->height, on_close, "session_overlay");
     if (overlay == NULL) return;
 
     uint32_t height = 240 + (message ? 40 : 0) + (game_over ? 0 : 50);
-    t_widget *session_dialog = widget_add_dialog(overlay, title, 360, height, gui->width, gui->height, _callback_resume_game, "session_dialog");
+    t_widget *session_dialog = widget_add_dialog(overlay, title, 360, height, gui->width, gui->height, on_close, "session_dialog");
 
-    session_dialog->on_quit = _callback_resume_game;
+    session_dialog->on_quit = on_close;
 
     if (message) {
         widget_add_text(session_dialog, 0, 40, 320, 24, message, "session_message");
     }
-
-    bool connection_lost = (strcmp(title, "CONNECTION LOST") == 0);
 
     if (!game_over && !connection_lost) {
         widget_add_button(session_dialog, 0, 0, 220, 40, "Resume", _callback_resume_game, "session_resume_button");

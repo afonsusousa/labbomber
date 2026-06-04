@@ -309,6 +309,13 @@ void draw_text_input(t_widget *self, hw_video_t *video, void *state) {
     }
 }
 
+static void destroy_text_input(struct s_widget *self) {
+    if (self == NULL) return;
+
+    free(self->data.text_input.buffer);
+    self->data.text_input.buffer = NULL;
+}
+
 t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *default_text, void (*on_click)(t_widget*, void*), const char *name) {
     t_widget *self = widget_create(TEXT_INPUT, x, y, w, h, name);
 
@@ -332,7 +339,7 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
     self->on_tick = _callback_text_input_on_tick;
     self->on_key_press = _callback_text_input_on_key_press;
     self->on_quit = _callback_text_input_on_quit;
-    self->on_destroy = (void (*)(struct s_widget*)) free;
+    self->on_destroy = destroy_text_input;
 
     widget_add_child(parent, self);
     return self;

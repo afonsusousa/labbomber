@@ -10,7 +10,7 @@ int spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES
     if (n < 1) n = 1;
     if (n > MAX_ENEMIES) n = MAX_ENEMIES;
 
-    // BFS desde player
+    // BFS from player
     int  dist[TOTAL_CELLS];
     bool visited[TOTAL_CELLS];
     memset(dist,    -1,    sizeof(dist));
@@ -50,7 +50,7 @@ int spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES
         }
     }
 
-    // recolher células candidatas com dist >= MIN_DIST_FROM_PLAYER
+    // receive candidate cells with dist >= MIN_DIST_FROM_PLAYER
     int candidates_x[TOTAL_CELLS];
     int candidates_y[TOTAL_CELLS];
     int n_candidates = 0;
@@ -69,7 +69,7 @@ int spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES
     if (n_candidates == 0)
         return 0;
 
-    // distribuir inimigos pelos candidatos
+    // spread enemies evenly among candidates
     int n_placed = (n_candidates < n) ? n_candidates : n;
     int offset = (player.x * 31 + player.y * 17) % n_candidates;
 
@@ -95,7 +95,7 @@ bool enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir) {
     return !collision(game, enemy, next);
 }
 
-// enemies tentam andar sempre em frente ou virar em curvas com chance igual, mas tem 5% de chance de inverter a direção (para evitar que fiquem presos em loops pequenos)
+// enemis always try to move forward or turn at corners, but have a 5% chance of inverting direction (to avoid getting stuck in small loops)
 void choose_enemy_direction(t_game_state *game, enemy_t *enemy) {
 
     if (game == NULL || enemy == NULL) return;
@@ -130,13 +130,13 @@ void choose_enemy_direction(t_game_state *game, enemy_t *enemy) {
         }
     }
 
-    // obrigado a inverter se não tiver outras opções
+    // no option but to go back
     if (count == 0) {
         if (enemy_can_move(game, enemy, opposite)) enemy->dir = opposite;
         return;
     }
 
-    // escolher direção aleatória entre as válidas
+    // choose random valid direction
     enemy->dir = valid_dirs[rand() % count];
 }
 
