@@ -4,6 +4,7 @@
 #include "../lib/timer/timer.h"
 #include "../lib/keyboard/keyboard.h"
 #include "../lib/mouse/mouse.h"
+#include "../lib/serialPort/serial_port.h"
 #include "../lib/keyboard/i8042.h"
 #include "../lib/utils/utils.h"
 #include "hardware.h"
@@ -63,6 +64,9 @@ int(proj_main_loop)(int argc, char* argv[]) {
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
     if (hw_keyboard_subscribe_int(&hw_state.keyboard) != 0) return 1;
     if (hw_mouse_subscribe_int(&hw_state.mouse) != 0) return 1;
+    if (serial_init() != 0) return 1;
+    if (serial_subscribe_int(&hw_state.serial_mask) != 0) return 1;
+    if (ier_enable_receive() != 0) return 1;
     if (mouse_write_cmd(MOUSE_ENABLE_DATA) != 0) return 1;
     init_sprite_cache();
 
@@ -83,6 +87,8 @@ int(proj_main_loop)(int argc, char* argv[]) {
                 handle_keyboard(&hw_state, &app, &esc_was_pressed);
             if (msg.m_notify.interrupts & hw_state.mouse.mask)
                 handle_mouse(&hw_state, &app);
+            if (msg.m_notify.interrupts & hw_state.serial_mask)
+                handle_serial(&hw_state, &app);
         }
     }
 
@@ -93,6 +99,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     hw_keyboard_unsubscribe_int(&hw_state.keyboard);
     mouse_write_cmd(MOUSE_DISABLE_DATA);
     hw_mouse_unsubscribe_int(&hw_state.mouse);
+    serp_undo();
     
     vg_exit();
 

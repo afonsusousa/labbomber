@@ -233,12 +233,14 @@ int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {
 }
 
 void app_multiplayer_poll_serial(t_ctx *ctx) {
-    if (ctx == NULL || !ctx->is_multiplayer) return;
+    if (ctx == NULL) return;
 
     for (int i = 0; i < 32 && serial_has_byte(); i++) {
         uint8_t received;
         if (serial_read_byte(&received) == 0) {
-            app_multiplayer_receive_byte(ctx, received);
+            if (ctx->is_multiplayer) {
+                app_multiplayer_receive_byte(ctx, received);
+            }
         }
     }
 }
@@ -355,8 +357,6 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
     t_gui *gui = &ctx->gui;
     static int handshake_retry_delay = 0;
     hw_timer_int_handler(&hw_state->timer);
-
-    app_multiplayer_poll_serial(ctx);
 
     if (app_multiplayer_name_inputs_ready(ctx)) {
         t_widget *top = gui_get_top_view(&ctx->gui);
@@ -511,4 +511,9 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     if (gui->drag.dragged_widget == NULL && *hovered != target) {
         WIDGET_SET_HOVERED(gui, target);
     }
+}
+
+void handle_serial(hardware_t *hw_state, t_ctx *ctx) {
+    (void)hw_state;
+    app_multiplayer_poll_serial(ctx);
 }

@@ -156,16 +156,6 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
 
     FILE *log_file = fopen("/tmp/game_debug.log", "a");
 
-    if (serial_init() != 0) {
-        if (log_file) {
-            fprintf(log_file, "[ERROR] serial_init() failed\n");
-            fflush(log_file);
-            fclose(log_file);
-        }
-        gui_show_info_dialog(ctx, "Serial Error", "Failed to initialize serial port");
-        ctx->is_multiplayer = false;
-        return;
-    }
     serial_flush_rx();
 
     for (int i = 0; i < 1000; i++) {
@@ -180,7 +170,7 @@ static void _callback_show_multiplayer_name_menu(t_widget *self, void *state) {
     int initial_result = app_multiplayer_send_hello(ctx);
     if (log_file) {
         fprintf(log_file, "[SERIAL] initial handshake send result=%d\n", initial_result);
-        fprintf(log_file, "[INFO] Serial initialized, handshake send initiated\n");
+        fprintf(log_file, "[INFO] Serial handshake send initiated\n");
         fflush(log_file);
         fclose(log_file);
     }
