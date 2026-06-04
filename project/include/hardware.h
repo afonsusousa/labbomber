@@ -16,6 +16,7 @@ typedef struct {
     hw_mouse_t     mouse;
     hw_keyboard_t  keyboard;
     hw_video_t     video;
+    uint8_t        serial_mask;
 
     bool           is_running;
 } hardware_t;
