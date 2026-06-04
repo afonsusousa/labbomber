@@ -1,5 +1,5 @@
 #include "vbe.h"
-#include "../../include/macros.h"
+#include "../../include/core/macros.h"
 #include <minix/syslib.h>
 #include <minix/drivers.h>
 #include <stdlib.h>
