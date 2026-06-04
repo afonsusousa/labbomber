@@ -159,6 +159,7 @@ t_widget* widget_add_text_input(t_widget *parent, int32_t x, int32_t y, uint32_t
 t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text, const char *name);
 
 // --- OVERLAY / DIALOG HELPERS ---
+t_widget* widget_create_overlay(uint32_t screen_w, uint32_t screen_h, void (*on_quit)(t_widget*, void*), const char *name);
 t_widget* widget_add_dialog(t_widget *parent, const char *title, uint32_t w, uint32_t h, uint32_t screen_w, uint32_t screen_h, void (*on_close)(t_widget*, void*), const char *name);
 
 
