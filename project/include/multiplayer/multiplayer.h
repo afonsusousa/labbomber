@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+void app_multiplayer_assign_roles(t_ctx *ctx);
 void app_multiplayer_start_pending_game(t_ctx *ctx);
 void app_multiplayer_try_start_game(t_ctx *ctx);
 void app_multiplayer_poll_serial(t_ctx *ctx);
