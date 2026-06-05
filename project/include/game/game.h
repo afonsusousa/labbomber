@@ -26,17 +26,6 @@ void    game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
-// Player helpers
-t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
-void    player_init(t_game_state *game, player_t *player, t_tuple spawnpoint);
-void    update_player_movement(t_game_state *game, player_t *player);
-void    update_player_animation(player_t *player, uint32_t logical_ticks);
-void    update_player_direction(player_t *player, uint8_t scancode, bool is_make);
-void    player_bomb_count(t_game_state *game);
-void    update_player_death_animation(t_game_state *game, player_t *player);
-void    update_player_win_animation(t_game_state *game, player_t *player);
-void    update_player_lives(player_t *player, int change);
-
 // Enemy helpers
 void    enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint);
 int     spawn_enemies_singleplayer(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]);

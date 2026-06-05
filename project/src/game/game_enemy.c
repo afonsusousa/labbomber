@@ -1,6 +1,8 @@
 #include "game/game.h"
+#include "game/entity_controller.h"
 #include "view/assets_cache.h"
-#include <stdint.h>
+#include "models/board.h"
+#include <stdlib.h>
 
 bool enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir) {
     if (game == NULL || enemy == NULL) return false;

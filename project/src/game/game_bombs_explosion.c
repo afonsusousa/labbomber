@@ -1,4 +1,6 @@
 #include "game/game.h"
+#include "game/player_controller.h"
+#include "game/entity_controller.h"
 #include "vbe.h"
 #include "core/macros.h"
 #include "view/assets_cache.h"
