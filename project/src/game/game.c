@@ -118,6 +118,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     return 0;
 }
+
 void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer) {
     if (game == NULL) return;
     game->is_multiplayer = is_multiplayer;
@@ -196,10 +197,13 @@ void game_state_update(t_ctx *ctx) {
 
         if (free_idx != -1) {
             t_tuple spawn;
-            spawn = spawnpoint_generator(game->board, game->logical_ticks); 
-            enemy_init(game, &game->enemies[free_idx], spawn);
-            if (free_idx >= game->enemy_count) {
-                game->enemy_count = (uint8_t)(free_idx + 1);
+
+            if (spawnpoint_new_enemy_multiplayer(game, &spawn)) {
+                enemy_init(game, &game->enemies[free_idx], spawn);
+
+                if (free_idx >= game->enemy_count) {
+                    game->enemy_count = (uint8_t)(free_idx + 1);
+                }
             }
         }
     }

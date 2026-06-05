@@ -137,6 +137,70 @@ int spawn_enemies_multiplayer(uint8_t *board, int n, t_tuple out[MAX_ENEMIES]) {
     return n_placed;
 }
 
+static int player_on_cell(t_game_state *game, int x, int y) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        if (game->players[i].board_pos.x == x && game->players[i].board_pos.y == y) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int enemy_on_cell(t_game_state *game, int x, int y) {
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (game->enemies[i].active &&
+            game->enemies[i].board_pos.x == x &&
+            game->enemies[i].board_pos.y == y) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int spawnpoint_new_enemy_multiplayer(t_game_state *game, t_tuple *out) {
+    if (game == NULL || out == NULL) return 0;
+
+    t_tuple spawnpoints[5];
+
+    spawnpoints[0].x = 1;
+    spawnpoints[0].y = 1;
+
+    spawnpoints[1].x = BOARD_COLS - 2;
+    spawnpoints[1].y = 1;
+
+    spawnpoints[2].x = 1;
+    spawnpoints[2].y = BOARD_ROWS - 2;
+
+    spawnpoints[3].x = BOARD_COLS - 2;
+    spawnpoints[3].y = BOARD_ROWS - 2;
+
+    spawnpoints[4].x = BOARD_COLS / 2;
+    spawnpoints[4].y = BOARD_ROWS / 2;
+
+    int n_spawnpoints = 5;
+
+    while (n_spawnpoints > 0) {
+        int pick = rand() % n_spawnpoints;
+
+        int x = spawnpoints[pick].x;
+        int y = spawnpoints[pick].y;
+        int idx = BOARD_IDX(x, y);
+
+        if (game->board[idx] == 0 && !player_on_cell(game, x, y) && !enemy_on_cell(game, x, y)) {
+            out->x = x;
+            out->y = y;
+            return 1;
+        }
+
+        spawnpoints[pick] = spawnpoints[n_spawnpoints - 1];
+        n_spawnpoints--;
+    }
+
+    return 0;
+}
+
 bool enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir) {
     if (game == NULL || enemy == NULL) return false;
 
