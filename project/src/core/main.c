@@ -14,7 +14,8 @@
 #include "draw.h"
 #include "widget.h"
 #include "gui.h"
-#include "scoreboard.h"
+#include "scoreboard_controller.h"
+#include "app_time.h"
 
 void init_hardware_state(hardware_t *hw_state) {
     if (!hw_state) return;
@@ -61,7 +62,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     app_update_real_time(&app);
     gui_init(&app, hw_state.video.screen_width, hw_state.video.screen_height);
 
-    scoreboard_load("/home/lcom/labs/project/scoreboard.dat");
+    scoreboard_load(SCOREBOARD_PATH);
     if (timer_set_frequency(0, 60) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
     if (hw_keyboard_subscribe_int(&hw_state.keyboard) != 0) return 1;
@@ -103,7 +104,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     hw_mouse_unsubscribe_int(&hw_state.mouse);
     serp_undo();
 
-    scoreboard_save("/home/lcom/labs/project/scoreboard.dat");
+    scoreboard_save(SCOREBOARD_PATH);
     
     vg_exit();
 

@@ -7,6 +7,7 @@
 #include "core/event_handlers.h"
 #include "multiplayer/multiplayer.h"
 #include "serial_port.h"
+#include "scoreboard/scoreboard_controller.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -209,6 +210,11 @@ static void _callback_start_game(t_widget *self, void *state) {
         return;
     }
 
+    char saved_name[32];
+    strncpy(saved_name, input->data.text_input.buffer, sizeof(saved_name) - 1);
+    saved_name[31] = '\0';
+    scoreboard_set_current_player(saved_name);
+
     gui_pop_view(gui);
     gui_show_game_view(ctx);
 }
@@ -229,35 +235,5 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer) {
     widget_add_button    (dlg, 0, 0, 150, 40, "Start", _callback_start_game, "start_game_button");
 
     widget_layout(dlg, 16, 48, true);
-    gui_push_overlay(gui, overlay);
-}
-
-// =============================================================================
-// Scoreboard
-// =============================================================================
-
-static void _callback_close_scoreboard(t_widget *self, void *state) {
-    (void)self;
-    gui_pop_view(GUI(state));
-}
-
-void gui_show_scoreboard(struct s_ctx *ctx) {
-    t_gui    *gui     = &ctx->gui;
-    t_widget *overlay = widget_create_overlay(gui->width, gui->height, _callback_close_scoreboard, "scoreboard_overlay");
-    if (overlay == NULL) return;
-
-    t_widget *board = widget_add_dialog(overlay, "Scoreboard", 500, 400, gui->width, gui->height, _callback_pop_view, "scoreboard_dialog");
-    board->on_quit  = _callback_close_scoreboard;
-
-    widget_add_text(board, 0, 30,  450, 24, "Top Players:",                 "scoreboard_title");
-    widget_add_text(board, 0, 60,  450, 20, "1. Player One    - 15000 pts", "scoreboard_row_1");
-    widget_add_text(board, 0, 85,  450, 20, "2. Player Two    - 12500 pts", "scoreboard_row_2");
-    widget_add_text(board, 0, 110, 450, 20, "3. Player Three  - 10000 pts", "scoreboard_row_3");
-    widget_add_text(board, 0, 135, 450, 20, "4. Player Four   -  8500 pts", "scoreboard_row_4");
-    widget_add_text(board, 0, 160, 450, 20, "5. Player Five   -  7000 pts", "scoreboard_row_5");
-
-    widget_add_button(board, 0, 0, 150, 40, "Close", _callback_close_scoreboard, "scoreboard_close_button");
-
-    widget_layout(board, 12, 40, true);
     gui_push_overlay(gui, overlay);
 }

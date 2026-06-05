@@ -9,6 +9,7 @@ BUILD_DIR_PATH != mkdir -p ${.CURDIR}/${BUILD_DIR} && echo ${.CURDIR}/${BUILD_DI
 # Source search paths
 .PATH: ${.CURDIR}/src/core
 .PATH: ${.CURDIR}/src/multiplayer
+.PATH: ${.CURDIR}/src/scoreboard
 .PATH: ${.CURDIR}/src/time
 .PATH: ${.CURDIR}/src/game
 .PATH: ${.CURDIR}/src/gui
@@ -28,16 +29,18 @@ SRCS += app_time.c
 SRCS += mp_protocol.c mp_send.c mp_receive.c mp_session.c
 SRCS += game.c game_entity.c game_player.c game_enemy.c
 SRCS += game_bombs.c game_bombs_explosion.c game_map.c board_generator.c
-SRCS += gui_dialogs.c gui_game.c gui_menus.c gui_utils.c
+SRCS += scoreboard_controller.c
+SRCS += gui_dialogs.c gui_game.c gui_menus.c gui_scoreboard.c gui_utils.c
 SRCS += gui_widget_elements.c gui_widget_text_input.c gui_widget_utils.c
 SRCS += draw.c assets.c glyphs.c
-SRCS += draw_player.c draw_enemy.c draw_map.c draw_bombs.c draw_hud.c draw_game.c
+SRCS += draw_player.c draw_enemy.c draw_map.c draw_bombs.c draw_hud.c draw_game.c 
 
 CFLAGS += -Wall -Wextra -pedantic -D__LCOM_OPTIMIZED__
 # Project headers
 CFLAGS += -I${.CURDIR}/include
 CFLAGS += -I${.CURDIR}/include/core
 CFLAGS += -I${.CURDIR}/include/multiplayer
+CFLAGS += -I${.CURDIR}/include/scoreboard
 CFLAGS += -I${.CURDIR}/include/time
 CFLAGS += -I${.CURDIR}/include/game
 CFLAGS += -I${.CURDIR}/include/gui
@@ -49,7 +52,7 @@ CFLAGS += -I${.CURDIR}/lib/rtc
 CFLAGS += -I${.CURDIR}/lib/timer
 CFLAGS += -I${.CURDIR}/lib/utils
 CFLAGS += -I${.CURDIR}/lib/vbe
-CFLAGS += -I${.CURDIR}/lib/serialPort
+CFLAGS += -I${.CURDIR}/lib/serialPort 
 
 DPADD += ${LIBLCF}
 LDADD += -llcf
