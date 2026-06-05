@@ -98,6 +98,14 @@ int(proj_main_loop)(int argc, char* argv[]) {
     gui_destroy(&app.gui);
     game_state_destroy(&app.game);
 
+    if (app.game.match_state == MATCH_EXITING && app.game.score > 0) {
+        scoreboard_submit(
+            scoreboard_current_player(),
+            app.game.score,
+            app.game.logical_ticks
+        );
+    }
+
     hw_timer_unsubscribe_int(&hw_state.timer);
     hw_keyboard_unsubscribe_int(&hw_state.keyboard);
     mouse_write_cmd(MOUSE_DISABLE_DATA);

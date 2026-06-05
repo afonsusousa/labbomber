@@ -10,10 +10,11 @@ static void sort_entries(void) {
     for (uint32_t i = 0; i < count; i++) {
         for (uint32_t j = i + 1; j < count; j++) {
             if (entries[j].score > entries[i].score ||
-               (entries[j].score == entries[i].score && entries[j].duration_ticks < entries[i].duration_ticks)) {
+               (entries[j].score == entries[i].score &&
+                entries[j].duration_ticks < entries[i].duration_ticks)) {
                 score_entry_t tmp = entries[i];
-                entries[i] = entries[j];
-                entries[j] = tmp;
+                entries[i]        = entries[j];
+                entries[j]        = tmp;
             }
         }
     }
@@ -37,6 +38,20 @@ const char *scoreboard_current_player(void) {
 
 void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks) {
     if (name == NULL) return;
+
+    for (uint32_t i = 0; i < count; i++) {
+        
+        if (strncmp(entries[i].player_name, name, sizeof(entries[i].player_name)) == 0) {
+
+            if (score > entries[i].score || (score == entries[i].score && duration_ticks < entries[i].duration_ticks)) {
+
+                entries[i].score = score;
+                entries[i].duration_ticks = duration_ticks;
+                sort_entries();
+            }
+            return;
+        }
+    }
 
     if (count < SCOREBOARD_MAX_ENTRIES) {
         strncpy(entries[count].player_name, name, sizeof(entries[count].player_name) - 1);
@@ -64,18 +79,31 @@ uint32_t scoreboard_count(void) {
 }
 
 void scoreboard_save(const char *path) {
+    if (path == NULL) return;
     FILE *f = fopen(path, "wb");
     if (f == NULL) return;
-    fwrite(&count,   sizeof(count),        1,     f);
-    fwrite(entries,  sizeof(score_entry_t), count, f);
+    fwrite(&count,  sizeof(count),        1,     f);
+    fwrite(entries, sizeof(score_entry_t), count, f);
     fclose(f);
 }
 
 void scoreboard_load(const char *path) {
+    if (path == NULL) return;
     FILE *f = fopen(path, "rb");
     if (f == NULL) return;
-    fread(&count, sizeof(count), 1, f);
-    if (count > SCOREBOARD_MAX_ENTRIES) count = SCOREBOARD_MAX_ENTRIES;
-    fread(entries, sizeof(score_entry_t), count, f);
+
+    uint32_t loaded_count = 0;
+    if (fread(&loaded_count, sizeof(loaded_count), 1, f) != 1) {
+        fclose(f);
+        return;
+    }
+    if (loaded_count > SCOREBOARD_MAX_ENTRIES) loaded_count = SCOREBOARD_MAX_ENTRIES;
+
+    if (fread(entries, sizeof(score_entry_t), loaded_count, f) != loaded_count) {
+        fclose(f);
+        return;
+    }
+
+    count = loaded_count;
     fclose(f);
 }

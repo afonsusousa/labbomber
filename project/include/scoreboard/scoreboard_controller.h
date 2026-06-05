@@ -4,7 +4,6 @@
 #include "models/score.h"
 
 #define SCOREBOARD_MAX_ENTRIES 5
-#define SCOREBOARD_PATH        "/home/lcom/labs/project/scoreboard.dat"
 
 void                 scoreboard_init(void);
 void                 scoreboard_set_current_player(const char *name);

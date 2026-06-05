@@ -4,6 +4,8 @@
 #include "game/game.h"
 #include "gui/gui.h"
 
+#define SCOREBOARD_PATH "/home/lcom/labs/project/scoreboard.dat"
+
 typedef struct s_time {
     uint8_t year;
     uint8_t month;
