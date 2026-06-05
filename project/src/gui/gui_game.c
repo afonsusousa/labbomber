@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "scoreboard/scoreboard_controller.h"
 
 // Forward declarations for static callback functions
 static void _callback_game_board_on_press(t_widget *self, void *state);
@@ -151,6 +152,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         if (game->players[PLAYER_1].board_pos.x == game->door_pos.x && game->players[PLAYER_1].board_pos.y == game->door_pos.y) update_player_win_animation(game, &game->players[PLAYER_1]);
         else update_player_win_animation(game, &game->players[PLAYER_2]);
         if (game->animation_timer <= 0) {
+            scoreboard_submit(scoreboard_current_player(), game->score, game->logical_ticks);
             game->match_state = MATCH_EXITING;
             gui_show_session_menu(
                 ctx,

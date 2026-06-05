@@ -1,20 +1,21 @@
 #include <stdio.h>
 #include <lcom/lcf.h>
 #include <string.h>
-#include "timer.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "serial_port.h"
-#include "i8042.h"
-#include "utils.h"
-#include "core/hardware.h"
-#include "core/event_handlers.h"
-#include "core/application.h"
-#include "time/app_time.h"
-#include "game/game.h"
-#include "view/draw.h"
-#include "gui/widget.h"
-#include "gui/gui.h"
+#include "../lib/timer/timer.h"
+#include "../lib/keyboard/keyboard.h"
+#include "../lib/mouse/mouse.h"
+#include "../lib/serialPort/serial_port.h"
+#include "../lib/keyboard/i8042.h"
+#include "../lib/utils/utils.h"
+#include "hardware.h"
+#include "event_handlers.h"
+#include "application.h"
+#include "game.h"
+#include "draw.h"
+#include "widget.h"
+#include "gui.h"
+#include "scoreboard_controller.h"
+#include "app_time.h"
 
 void init_hardware_state(hardware_t *hw_state) {
     if (!hw_state) return;
@@ -61,6 +62,7 @@ int(proj_main_loop)(int argc, char* argv[]) {
     app_update_real_time(&app);
     gui_init(&app, hw_state.video.screen_width, hw_state.video.screen_height);
 
+    scoreboard_load(SCOREBOARD_PATH);
     if (timer_set_frequency(0, 60) != 0) return 1;
     if (hw_timer_subscribe_int(&hw_state.timer) != 0) return 1;
     if (hw_keyboard_subscribe_int(&hw_state.keyboard) != 0) return 1;
@@ -101,6 +103,8 @@ int(proj_main_loop)(int argc, char* argv[]) {
     mouse_write_cmd(MOUSE_DISABLE_DATA);
     hw_mouse_unsubscribe_int(&hw_state.mouse);
     serp_undo();
+
+    scoreboard_save(SCOREBOARD_PATH);
     
     vg_exit();
 
