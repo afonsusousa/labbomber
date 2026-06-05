@@ -279,8 +279,6 @@ void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
     (void)game; (void)x; (void)y;
 }
 
-#define KEY_E 0x12
-
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     if (game == NULL) return;
     game_state_handle_player_key(game, game->current_player, scancode);
@@ -296,7 +294,7 @@ void game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint8_t
     player_t *player = &game->players[player_id];
     if (!player->active) return;
 
-    if (is_make && key_index == KEY_E) {
+    if (is_make && key_index == KEY_SPACE) {
         uint8_t previous_player = game->current_player;
         game->current_player = player_id;
         place_player_bomb(game, player);

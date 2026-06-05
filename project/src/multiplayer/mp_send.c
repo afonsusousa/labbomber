@@ -84,7 +84,7 @@ int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {
     if (ctx == NULL || !ctx->is_multiplayer || !ctx->multiplayer_role_assigned) return 1;
 
     uint8_t key_index = MAKE_FROM_BREAK(scancode);
-    if (key_index != KEY_W && key_index != KEY_A && key_index != KEY_D && key_index != KEY_S && key_index != KEY_E) {
+    if (key_index != KEY_W && key_index != KEY_A && key_index != KEY_D && key_index != KEY_S && key_index != KEY_SPACE) {
         return 0;
     }
 
