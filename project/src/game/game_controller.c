@@ -21,6 +21,7 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     game->logical_ticks = 0;
     game->match_state = MATCH_RUNNING;
     game->enemies_to_kill = is_multiplayer ? 600 : 400;
+    game->last_enemy_spawn_ticks = 0;
     game->is_frozen = false;
     game->players[PLAYER_1].invincibility_timer = 0;
     game->players[PLAYER_2].invincibility_timer = 0;
@@ -191,7 +192,14 @@ void game_state_update(t_ctx *ctx) {
     }
 
     // Every 10 seconds spawn a new enemy if there is space and the door isn't open
-    if (game->match_state == MATCH_RUNNING && !game->door_open && game->logical_ticks > 0 && (game->logical_ticks % (GAME_TICKS_PER_SECOND * 10) == 0)) {
+    uint32_t enemy_spawn_interval = GAME_TICKS_PER_SECOND * 10;
+
+    if (game->match_state == MATCH_RUNNING &&
+        game->logical_ticks >= enemy_spawn_interval &&
+        game->logical_ticks - game->last_enemy_spawn_ticks >= enemy_spawn_interval) {
+
+        game->last_enemy_spawn_ticks = game->logical_ticks;
+
         int free_idx = -1;
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!game->enemies[i].active) {
