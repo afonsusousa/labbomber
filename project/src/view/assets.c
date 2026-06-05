@@ -68,6 +68,7 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)player_death_xpm, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_DEATH]);
     xpm_load((xpm_map_t)player_hat_1, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_HAT_1]);
     xpm_load((xpm_map_t)player_hat_2, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_HAT_2]);
+    xpm_load((xpm_map_t)player_hat_3, XPM_5_6_5, &sprite_cache[SPRITE_PLAYER_HAT_3]); 
 
     /* Load enemy assets */
     xpm_load((xpm_map_t)enemy_1_standing_xpm, XPM_5_6_5, &sprite_cache[SPRITE_ENEMY_1_STANDING]);
@@ -200,6 +201,7 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
     scale_cached_sprite(SPRITE_PLAYER_DEATH, player_w, player_h, bpp);
     scale_cached_sprite(SPRITE_PLAYER_HAT_1, (uint32_t)(player_w * 1.2), (uint32_t)(player_h * 1.2), bpp);
     scale_cached_sprite(SPRITE_PLAYER_HAT_2, (uint32_t)(player_w * 1.2), (uint32_t)(player_h * 1.2), bpp);
+    scale_cached_sprite(SPRITE_PLAYER_HAT_3, (uint32_t)(player_w * 1.2), (uint32_t)(player_h * 1.2), bpp);
 
     // Enemy
     for (int i = 0; i < 16; i++) {

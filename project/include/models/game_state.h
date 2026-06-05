@@ -27,6 +27,7 @@ typedef struct s_game_state {
     uint8_t enemy_count;
 
     bomb_t bomb[MAX_BOMBS];
+    int8_t dragged_bomb_idx;    
 
     uint32_t      score;
     uint32_t      enemies_to_kill;

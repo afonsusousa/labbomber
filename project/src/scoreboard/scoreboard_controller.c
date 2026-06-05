@@ -36,7 +36,7 @@ const char *scoreboard_current_player(void) {
     return current_player;
 }
 
-void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks) {
+void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks, uint8_t day, uint8_t month, uint8_t year) {
     if (name == NULL) return;
 
     for (uint32_t i = 0; i < count; i++) {
@@ -47,6 +47,9 @@ void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks
 
                 entries[i].score = score;
                 entries[i].duration_ticks = duration_ticks;
+                entries[i].day   = day;
+                entries[i].month = month;
+                entries[i].year  = year;
                 sort_entries();
             }
             return;
@@ -58,6 +61,9 @@ void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks
         entries[count].player_name[sizeof(entries[count].player_name) - 1] = '\0';
         entries[count].score          = score;
         entries[count].duration_ticks = duration_ticks;
+        entries[count].day            = day;
+        entries[count].month          = month;
+        entries[count].year           = year;
         count++;
     } else {
         if (score <= entries[count - 1].score) return;
@@ -65,6 +71,9 @@ void scoreboard_submit(const char *name, uint32_t score, uint32_t duration_ticks
         entries[count - 1].player_name[sizeof(entries[count - 1].player_name) - 1] = '\0';
         entries[count - 1].score          = score;
         entries[count - 1].duration_ticks = duration_ticks;
+        entries[count - 1].day            = day;
+        entries[count - 1].month          = month;
+        entries[count - 1].year           = year;
     }
 
     sort_entries();

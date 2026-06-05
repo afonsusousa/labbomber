@@ -97,3 +97,83 @@ void place_player_bomb(t_game_state *game, player_t *player) {
     }
 }
 
+static int32_t _pixel_to_tile_x(const t_game_state *game, int32_t px) {
+    return (px - game->start_x) / game->tile_size;
+}
+
+static int32_t _pixel_to_tile_y(const t_game_state *game, int32_t py) {
+    return (py - game->start_y) / game->tile_size;
+}
+
+int8_t bomb_drag_start(t_game_state *game, int32_t px, int32_t py) {
+    if (game == NULL || game->tile_size == 0) return -1;
+    if (game->current_player >= MAX_PLAYERS) return -1;
+
+    player_t *player = &game->players[game->current_player];
+
+    if (!GET_POWERUP_DRAG(player->powerups)) return -1;
+
+    int32_t tx = _pixel_to_tile_x(game, px);
+    int32_t ty = _pixel_to_tile_y(game, py);
+
+    if (tx < 0 || ty < 0 || tx >= BOARD_COLS || ty >= BOARD_ROWS) return -1;
+
+    game->dragged_bomb_idx = -1;
+
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        bomb_t *bomb = &game->bomb[i];
+
+        if (!bomb->active || bomb->state == BOMB_FIRE) continue;
+        if (bomb->player_id != game->current_player) continue;
+
+        if (bomb->board_pos.x == tx && bomb->board_pos.y == ty) {
+            game->dragged_bomb_idx = i;
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void bomb_drag_move(t_game_state *game, int32_t px, int32_t py) {
+    if (game == NULL || game->tile_size == 0) return;
+    if (game->dragged_bomb_idx < 0 || game->dragged_bomb_idx >= MAX_BOMBS) return;
+
+    bomb_t *bomb = &game->bomb[game->dragged_bomb_idx];
+
+    if (!bomb->active || bomb->state == BOMB_FIRE) return;
+    if (bomb->player_id != game->current_player) return;
+
+    int32_t tx = _pixel_to_tile_x(game, px);
+    int32_t ty = _pixel_to_tile_y(game, py);
+
+    if (tx < 0 || ty < 0 || tx >= BOARD_COLS || ty >= BOARD_ROWS) return;
+
+    uint8_t tile = game->board[BOARD_IDX(tx, ty)];
+
+    if (tile != TILE_TYPE_GRASS &&
+        tile != TILE_TYPE_DOOR &&
+        tile != TILE_TYPE_POWERUP_REACH &&
+        tile != TILE_TYPE_POWERUP_COUNT &&
+        tile != TILE_TYPE_POWERUP_DRAG) {
+        return;
+    }
+
+    for (int i = 0; i < MAX_BOMBS; i++) {
+        if (i == game->dragged_bomb_idx) continue;
+
+        bomb_t *other = &game->bomb[i];
+
+        if (!other->active || other->state == BOMB_FIRE) continue;
+
+        if (other->board_pos.x == tx && other->board_pos.y == ty) return;
+    }
+
+    bomb->board_pos.x = tx;
+    bomb->board_pos.y = ty;
+}
+
+void bomb_drag_end(t_game_state *game) {
+    if (game == NULL) return;
+    game->dragged_bomb_idx = -1;
+}

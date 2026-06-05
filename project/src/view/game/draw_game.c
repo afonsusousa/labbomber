@@ -39,6 +39,9 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
                 } else if (val == TILE_TYPE_POWERUP_COUNT) {
                     xpm_image_t img = scaled_sprite_cache[SPRITE_PLAYER_HAT_2];
                     if (img.bytes) hw_vbe_draw_xpm(video, img.bytes, img, GET_X(game, x), GET_Y(game, y));
+                } else if (val == TILE_TYPE_POWERUP_DRAG) { 
+                    xpm_image_t img = scaled_sprite_cache[SPRITE_PLAYER_HAT_3];
+                    if (img.bytes) hw_vbe_draw_xpm(video, img.bytes, img, GET_X(game, x), GET_Y(game, y));
                 }
             }
         }

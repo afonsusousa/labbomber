@@ -1,4 +1,5 @@
 #include "gui/gui.h"
+#include "game/bomb_controller.h"   
 #include "game/game.h"
 #include "game/player_controller.h"
 #include "scoreboard/scoreboard_controller.h"
@@ -14,6 +15,7 @@
 
 // Forward declarations for static callback functions
 static void _callback_game_board_on_press(t_widget *self, void *state);
+static void _callback_game_board_on_drag(t_widget *self, void *state);
 static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
 static void _callback_game_view_on_key_press(struct s_widget *self, uint8_t scancode, void *state);
 static void _callback_game_view_on_quit(t_widget *self, void *state);
@@ -155,7 +157,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         if (game->animation_timer <= 0) {
             game->match_state = MATCH_EXITING;
 
-            scoreboard_submit(scoreboard_current_player(), ctx->game.score, ctx->game.logical_ticks);
+            scoreboard_submit(scoreboard_current_player(), ctx->game.score, ctx->game.logical_ticks, ctx->real_time.day, ctx->real_time.month, ctx->real_time.year);
             scoreboard_save(SCOREBOARD_PATH);
 
             gui_show_session_menu(
@@ -170,13 +172,29 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
 
 static void _callback_game_board_on_press(t_widget *self, void *state) {
     t_gui *gui = GUI(state);
+    t_game_state *game = GAME(state); 
+
+    int32_t rel_x = gui->input.mouse_x - self->abs_x;
+    int32_t rel_y = gui->input.mouse_y - self->abs_y;
+
+    if (game_state_handle_click(game, rel_x, rel_y)) {
+        gui_begin_drag(gui, self, gui->input.mouse_x, gui->input.mouse_y);
+    }
+}
+
+static void _callback_game_board_on_drag(t_widget *self, void *state) {
+    t_gui *gui = GUI(state);
     t_game_state *game = GAME(state);
 
-    game_state_handle_click(
-        game,
-        gui->input.mouse_x - self->abs_x,
-        gui->input.mouse_y - self->abs_y
-    );
+    if (gui->drag.dragged_widget != self) {
+        bomb_drag_end(game);
+        return;
+    }
+
+    int32_t rel_x = gui->input.mouse_x - self->abs_x;
+    int32_t rel_y = gui->input.mouse_y - self->abs_y;
+
+    bomb_drag_move(game, rel_x, rel_y);
 }
 
 static void _callback_game_board_on_key_press(struct s_widget *self, uint8_t scancode, void *state) {
@@ -212,6 +230,7 @@ void gui_show_game_view(t_ctx *ctx) {
     t_widget *game_canvas = widget_create(GAME, 0, 0, gui->width, gui->height, "game_canvas");
     game_canvas->draw = draw_game_board;
     game_canvas->on_press = _callback_game_board_on_press;
+    game_canvas->on_drag = _callback_game_board_on_drag;
     game_canvas->on_key_press = _callback_game_board_on_key_press;
 
     //o game state vai levar o board, os players, start time, etc

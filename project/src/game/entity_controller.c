@@ -11,7 +11,8 @@ bool collision(t_game_state *game, const entity_t *entity, t_tuple pos) {
     if (tile != TILE_TYPE_GRASS &&
         tile != TILE_TYPE_DOOR &&
         tile != TILE_TYPE_POWERUP_REACH &&
-        tile != TILE_TYPE_POWERUP_COUNT) {
+        tile != TILE_TYPE_POWERUP_COUNT && 
+        tile != TILE_TYPE_POWERUP_DRAG) {
         return true;
     }
 
