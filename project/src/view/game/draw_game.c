@@ -54,6 +54,7 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
         draw_player(&game->players[i], video, game);
     }
     draw_player_hearts(video, game);
+    draw_player_powerups(video, game);
 
     uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
     uint32_t remaining = elapsed >= game->time_limit ? 0 : game->time_limit - elapsed;

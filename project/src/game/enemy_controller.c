@@ -153,6 +153,7 @@ void update_enemy_animation(t_game_state *game, enemy_t *enemy, uint32_t logical
                 // 20% + 5% per enemy, cap at 50%
                 int drop_chance = 20 + (active_enemies * 5);
                 if (drop_chance > 50) drop_chance = 50;
+                drop_chance = 100;
 
                 int r = rand() % 100;
                 if (r < drop_chance / 2) {
