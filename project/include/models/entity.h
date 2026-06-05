@@ -7,15 +7,16 @@
 #include <stdbool.h>
 
 #define MAX_PLAYERS 2
-#define PLAYER_1    0
-#define PLAYER_2    1
+#define PLAYER_1 0
+#define PLAYER_2 1
 
-#define MAX_ENEMIES          10
-#define MIN_DIST_FROM_PLAYER  6
-#define ENEMY_SPEED           1
+#define MAX_ENEMIES 10
+#define MIN_DIST_FROM_PLAYER 6
+#define MULTIPLAYER_ENEMY_SPAWN_RADIUS 4 
+#define ENEMY_SPEED 1
 
 #define GAME_TICKS_PER_SECOND 60
-#define INVINCIBILITY_TICKS   (GAME_TICKS_PER_SECOND * 3)
+#define INVINCIBILITY_TICKS (GAME_TICKS_PER_SECOND * 3)
 
 struct s_game_state;
 

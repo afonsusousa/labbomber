@@ -49,6 +49,8 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
         game->players[i].active = false;
     }
 
+    t_tuple spawn_out[MAX_ENEMIES];
+
     // MULTIPLAYER
     if (is_multiplayer) {
         player_init(game, &game->players[PLAYER_1], (t_tuple){1, 1});
@@ -58,6 +60,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
         player_init(game, &game->players[PLAYER_2], (t_tuple){BOARD_COLS - 2, BOARD_ROWS - 2});
         game->players[PLAYER_2].lives = 3;
         game->players[PLAYER_2].active = true;
+
+        game->enemy_count = spawn_enemies_multiplayer(game->board, 5, spawn_out);
+        for (int i = 0; i < game->enemy_count; i++) {
+            enemy_init(game, &game->enemies[i], spawn_out[i]);
+        }
     } 
 
     // SINGLEPLAYER
@@ -66,14 +73,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
         player_init(game, &game->players[PLAYER_1], spawnpoint);
         game->players[PLAYER_1].lives = 3;
         game->current_player = PLAYER_1;
-    }
 
-    // --- ENEMIES ---
-    t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 3, spawn_out);
-
-    for (int i = 0; i < game->enemy_count; i++) {
-        enemy_init(game, &game->enemies[i], spawn_out[i]);
+        game->enemy_count = spawn_enemies_singleplayer(game->board, game->players[PLAYER_1].board_pos, 3, spawn_out);
+        for (int i = 0; i < game->enemy_count; i++) {
+            enemy_init(game, &game->enemies[i], spawn_out[i]);
+        }
     }
 
     for (int i = 0; i < MAX_BOMBS; i++) {
@@ -108,7 +112,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     _game_state_prepare_match(game, time, is_multiplayer);
     game->score = 0;
-    game->time_limit = 180; // segundos
+    game->time_limit = 180; // seconds
 
     scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
 
@@ -206,6 +210,13 @@ void game_state_update(t_ctx *ctx) {
         uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
 
         if (elapsed >= game->time_limit) {
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                player_t *player = &game->players[i];
+                if (player->active) {
+                    player->lives = 0;
+                    player->invincibility_timer = 0;
+                }
+            }
             game->match_state = MATCH_LOST;
             game->animation_timer = GAME_TICKS_PER_SECOND * 5;
             return;

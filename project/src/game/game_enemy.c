@@ -6,7 +6,7 @@
 static const int dCol[4] = {0, 0, -1, 1};
 static const int dRow[4] = {-1, 1, 0, 0};
 
-int spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]) {
+int spawn_enemies_singleplayer(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]) {
     if (n < 1) n = 1;
     if (n > MAX_ENEMIES) n = MAX_ENEMIES;
 
@@ -77,6 +77,61 @@ int spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES
         int idx = (offset + i * (n_candidates / (n_placed + 1) + 1)) % n_candidates;
         out[i].x = candidates_x[idx];
         out[i].y = candidates_y[idx];
+    }
+
+    return n_placed;
+}
+
+int spawn_enemies_multiplayer(uint8_t *board, int n, t_tuple out[MAX_ENEMIES]) {
+    if (board == NULL || out == NULL) return 0;
+
+    if (n < 1) n = 1;
+    if (n > MAX_ENEMIES) n = MAX_ENEMIES;
+
+    int center_x = BOARD_COLS / 2;
+    int center_y = BOARD_ROWS / 2;
+
+    int candidates_x[TOTAL_CELLS];
+    int candidates_y[TOTAL_CELLS];
+    int n_candidates = 0;
+
+    for (int y = 1; y < BOARD_ROWS - 1; y++) {
+        for (int x = 1; x < BOARD_COLS - 1; x++) {
+            int idx = BOARD_IDX(x, y);
+
+            if (board[idx] != 0) {
+                continue;
+            }
+
+            int dx = x - center_x;
+            int dy = y - center_y;
+
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+
+            if (dx + dy <= MULTIPLAYER_ENEMY_SPAWN_RADIUS) {
+                candidates_x[n_candidates] = x;
+                candidates_y[n_candidates] = y;
+                n_candidates++;
+            }
+        }
+    }
+
+    if (n_candidates == 0) {
+        return 0;
+    }
+
+    int n_placed = (n_candidates < n) ? n_candidates : n;
+
+    for (int i = 0; i < n_placed; i++) {
+        int pick = rand() % n_candidates;
+
+        out[i].x = candidates_x[pick];
+        out[i].y = candidates_y[pick];
+
+        candidates_x[pick] = candidates_x[n_candidates - 1];
+        candidates_y[pick] = candidates_y[n_candidates - 1];
+        n_candidates--;
     }
 
     return n_placed;

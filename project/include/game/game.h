@@ -50,7 +50,8 @@ void    update_player_lives(player_t *player, int change);
 
 // Enemy helpers
 void    enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint);
-int     spawn_enemies(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]);
+int     spawn_enemies_singleplayer(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]);
+int     spawn_enemies_multiplayer(uint8_t *board, int n, t_tuple out[MAX_ENEMIES]);
 bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
 void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
 void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
