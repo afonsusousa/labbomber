@@ -275,8 +275,27 @@ void game_state_update(t_ctx *ctx) {
     }
 }
 
-void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
-    (void)game; (void)x; (void)y;
+void game_state_handle_click(t_game_state *game, int32_t x, int32_t y, bool place_bomb) {
+    if (game == NULL || game->match_state != MATCH_RUNNING || game->is_frozen) return;
+
+    player_t *player = &game->players[game->current_player];
+    if (!player->active) return;
+
+    // Convert screen coordinates to board coordinates
+    int32_t board_x = (x - game->start_x) / (int32_t)game->tile_size;
+    int32_t board_y = (y - game->start_y) / (int32_t)game->tile_size;
+
+    if (board_x < 0 || board_x >= BOARD_COLS || board_y < 0 || board_y >= BOARD_ROWS) return;
+
+    player->has_target = true;
+    player->bomb_at_target = place_bomb;
+    player->target_pos.x = board_x;
+    player->target_pos.y = board_y;
+
+    // If the player is not moving, trigger the first step
+    if (!player->is_moving) {
+        if (player->on_snap) player->on_snap(game, player);
+    }
 }
 
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
@@ -293,6 +312,11 @@ void game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint8_t
     if (player_id >= MAX_PLAYERS) return;
     player_t *player = &game->players[player_id];
     if (!player->active) return;
+
+    // Manual key press clears mouse target
+    if (is_make && (key_index == KEY_W || key_index == KEY_A || key_index == KEY_S || key_index == KEY_D)) {
+        player->has_target = false;
+    }
 
     if (is_make && key_index == KEY_SPACE) {
         uint8_t previous_player = game->current_player;

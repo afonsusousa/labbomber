@@ -132,14 +132,15 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
     gui->input.mouse_y = hw_state->mouse.y;
 
     bool is_pressed = hw_state->mouse.left_click;
+    bool is_right_pressed = hw_state->mouse.right_click;
     t_widget *target = widget_get_at(gui_get_top_view(gui), gui->input.mouse_x, gui->input.mouse_y);
 
     t_widget **clicked = &gui->input.clicked_widget;
     t_widget **hovered = &gui->input.hovered;
 
+    // Handle Left Click (GUI and Bombs)
     if (is_pressed) {
         if (!*clicked) {
-            ctx->game.click_count++;
             WIDGET_SET_CLICKED(gui, target);
 
             if (target != NULL) {
@@ -168,6 +169,16 @@ void handle_mouse(hardware_t *hw_state, t_ctx *ctx) {
         }
 
         gui_end_drag(gui);
+    }
+
+    // Handle Right Click (Movement)
+    if (is_right_pressed && target != NULL && target->type == GAME) {
+        game_state_handle_click(
+            &ctx->game,
+            gui->input.mouse_x - target->abs_x,
+            gui->input.mouse_y - target->abs_y,
+            false
+        );
     }
 
     if (gui->drag.dragged_widget == NULL && *hovered != target) {

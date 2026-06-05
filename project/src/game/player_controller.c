@@ -1,5 +1,6 @@
 #include "game/player_controller.h"
 #include "game/entity_controller.h"
+#include "game/bomb_controller.h"
 #include "core/macros.h"
 #include "view/assets_cache.h"
 #include "i8042.h"
@@ -168,8 +169,95 @@ void update_player_direction(player_t *player, uint8_t key, bool is_make) {
     }
 }
 
+// BFS-based pathfinding to find the next move towards target_pos
+static int get_next_move_to_target(t_game_state *game, player_t *player) {
+    if (!player->has_target) return -1;
+    
+    t_tuple start = player->board_pos;
+    t_tuple target = player->target_pos;
+    
+    if (start.x == target.x && start.y == target.y) {
+        player->has_target = false;
+        return -1;
+    }
+
+    // BFS setup
+    t_tuple queue[BOARD_COLS * BOARD_ROWS];
+    int parent[BOARD_COLS * BOARD_ROWS];
+    int head = 0, tail = 0;
+
+    for (int i = 0; i < BOARD_COLS * BOARD_ROWS; i++) parent[i] = -1;
+
+    queue[tail++] = start;
+    parent[BOARD_IDX(start.x, start.y)] = BOARD_IDX(start.x, start.y); // Root marker
+
+    bool found = false;
+    while (head < tail) {
+        t_tuple curr = queue[head++];
+        if (curr.x == target.x && curr.y == target.y) {
+            found = true;
+            break;
+        }
+
+        t_tuple neighbors[4] = {
+            {curr.x, curr.y - 1}, {curr.x, curr.y + 1},
+            {curr.x - 1, curr.y}, {curr.x + 1, curr.y}
+        };
+
+        for (int i = 0; i < 4; i++) {
+            t_tuple next = neighbors[i];
+            if (next.x < 0 || next.x >= BOARD_COLS || next.y < 0 || next.y >= BOARD_ROWS) continue;
+            
+            int idx = BOARD_IDX(next.x, next.y);
+            if (parent[idx] == -1 && !collision(game, player, next)) {
+                parent[idx] = BOARD_IDX(curr.x, curr.y);
+                queue[tail++] = next;
+            }
+        }
+    }
+
+    if (!found) {
+        player->has_target = false;
+        return -1;
+    }
+
+    // Backtrack to find the first step
+    int curr_idx = BOARD_IDX(target.x, target.y);
+    int start_idx = BOARD_IDX(start.x, start.y);
+    while (parent[curr_idx] != start_idx) {
+        curr_idx = parent[curr_idx];
+    }
+
+    int next_x = curr_idx % BOARD_COLS;
+    int next_y = curr_idx / BOARD_COLS;
+
+    if (next_x > start.x) return DIR_RIGHT;
+    if (next_x < start.x) return DIR_LEFT;
+    if (next_y > start.y) return DIR_DOWN;
+    if (next_y < start.y) return DIR_UP;
+
+    return -1;
+}
+
+// on snapping to grid, immediately probe the next direction
 static void player_on_snap(t_game_state *game, entity_t *player) {
-    (void)game; // Unused
+    if (player->has_target) {
+        int next_dir = get_next_move_to_target(game, player);
+        if (next_dir != -1) {
+            player->dir = (direction_t)next_dir;
+            player->sprite_dir = player->dir;
+            player->is_moving = true;
+            return;
+        } else {
+            // Reached target or target unreachable
+            if (player->bomb_at_target && player->board_pos.x == player->target_pos.x && player->board_pos.y == player->target_pos.y) {
+                place_player_bomb(game, player);
+            }
+            player->has_target = false;
+            player->bomb_at_target = false;
+        }
+    }
+
     if (player->stack_count == 0) {
         player->is_moving = false;
     } else {
@@ -180,6 +268,7 @@ static void player_on_snap(t_game_state *game, entity_t *player) {
                       (top_key == KEY_D) ? DIR_RIGHT : DIR_DOWN;
 
         player->sprite_dir = player->dir;
+        player->is_moving = true;
     }
 }
 
@@ -214,6 +303,8 @@ void player_init(t_game_state *game, player_t *player, t_tuple spawnpoint) {
     player->bomb_available = 1;
     player->on_snap = player_on_snap;
     player->invincibility_timer = 0;
+    player->has_target = false;
+    player->bomb_at_target = false;
     player->powerups = 0;
     player->active = true;
 }

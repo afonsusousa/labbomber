@@ -7,6 +7,7 @@
 #include "time/app_time.h"   
 #include "core/event_handlers.h"
 #include "multiplayer/multiplayer.h"
+#include "game/bomb_controller.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,7 +171,8 @@ static void _callback_game_board_on_press(t_widget *self, void *state) {
     game_state_handle_click(
         game,
         gui->input.mouse_x - self->abs_x,
-        gui->input.mouse_y - self->abs_y
+        gui->input.mouse_y - self->abs_y,
+        true
     );
 }
 

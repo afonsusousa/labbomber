@@ -38,6 +38,9 @@ typedef struct s_entity {
     uint8_t     bomb_available;
     uint8_t     powerups;
     uint32_t    invincibility_timer;
+    bool        has_target;
+    bool        bomb_at_target;
+    t_tuple     target_pos;
     void (*on_snap)(struct s_game_state *game, struct s_entity *entity);
 } entity_t;
 
