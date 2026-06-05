@@ -3,45 +3,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "models/gui_state.h"
 #include "gui/widget.h"
 #include "rtc.h"
 
 struct s_ctx;
-
-#define MAX_VIEWS 10
-
-typedef struct s_state {
-
-    uint32_t width;
-    uint32_t height;
-
-    bool    is_running;
-    struct {
-        t_widget *focused;
-        t_widget *hovered;
-        t_widget *clicked_widget; // Widget that was pressed down on
-        int32_t  mouse_x;
-        int32_t  mouse_y;
-        bool     ctrl_down;
-        bool     shift_down;
-    } input;
-
-    struct {
-        t_widget *dragged_widget;
-        int32_t  drag_offset_x;
-        int32_t  drag_offset_y;
-    } drag;
-
-    struct {
-        t_widget *view_stack[MAX_VIEWS];
-        bool      is_overlay[MAX_VIEWS];
-        int32_t   view_count;
-    } views;
-
-    hw_rtc_t *rtc;
-    hw_video_t *video;
-
-} t_gui;
 
 void      gui_init(struct s_ctx *ctx, uint32_t screen_width, uint32_t screen_height);
 void      gui_destroy(t_gui *gui);
@@ -70,6 +36,8 @@ void gui_show_name_menu(struct s_ctx *ctx, bool is_multiplayer);
 void gui_show_session_menu(struct s_ctx *ctx, const char *title, const char *message);
 void gui_show_info_dialog(struct s_ctx *ctx, const char *title, const char *message);
 void gui_show_scoreboard(struct s_ctx *ctx);
+void gui_show_game_view(struct s_ctx *ctx);
+void gui_reset_game_view(struct s_ctx *ctx);
 void gui_show_confirm_dialog(
     struct s_ctx *ctx,
     const char *title,

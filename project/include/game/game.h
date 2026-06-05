@@ -23,7 +23,4 @@ void    game_state_handle_click(t_game_state *game, int32_t x, int32_t y);
 void    game_state_handle_key_press(t_game_state *game, uint8_t scancode);
 void    game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint8_t scancode);
 
-void    gui_show_game_view(struct s_ctx *ctx);
-void    gui_reset_game_view(struct s_ctx *ctx);
-
 #endif /* LCOM_PROJECT_GAME_H */
