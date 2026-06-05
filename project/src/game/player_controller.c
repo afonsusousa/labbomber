@@ -1,11 +1,9 @@
+#include "game/player_controller.h"
+#include "game/entity_controller.h"
 #include "core/macros.h"
-#include "game/game.h"
 #include "view/assets_cache.h"
 #include "i8042.h"
-#include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
     const int inner_width = BOARD_COLS - 2;

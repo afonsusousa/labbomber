@@ -1,6 +1,10 @@
 #include "game/game.h"
 #include "core/application.h"
 #include "game/board_generator.h"
+#include "game/entity_controller.h"
+#include "game/player_controller.h"
+#include "game/enemy_controller.h"
+#include "game/bomb_controller.h"
 #include "gui/widget.h"
 #include "gui/gui.h"
 #include "view/game/draw_game.h"
@@ -49,6 +53,8 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
         game->players[i].active = false;
     }
 
+    t_tuple spawn_out[MAX_ENEMIES];
+
     // MULTIPLAYER
     if (is_multiplayer) {
         player_init(game, &game->players[PLAYER_1], (t_tuple){1, 1});
@@ -58,6 +64,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
         player_init(game, &game->players[PLAYER_2], (t_tuple){BOARD_COLS - 2, BOARD_ROWS - 2});
         game->players[PLAYER_2].lives = 3;
         game->players[PLAYER_2].active = true;
+
+        game->enemy_count = spawn_enemies_multiplayer(game->board, 5, spawn_out);
+        for (int i = 0; i < game->enemy_count; i++) {
+            enemy_init(game, &game->enemies[i], spawn_out[i]);
+        }
     } 
 
     // SINGLEPLAYER
@@ -66,14 +77,11 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
         player_init(game, &game->players[PLAYER_1], spawnpoint);
         game->players[PLAYER_1].lives = 3;
         game->current_player = PLAYER_1;
-    }
 
-    // --- ENEMIES ---
-    t_tuple spawn_out[MAX_ENEMIES];
-    game->enemy_count = spawn_enemies(game->board, game->players[PLAYER_1].board_pos, 3, spawn_out);
-
-    for (int i = 0; i < game->enemy_count; i++) {
-        enemy_init(game, &game->enemies[i], spawn_out[i]);
+        game->enemy_count = spawn_enemies_singleplayer(game->board, game->players[PLAYER_1].board_pos, 3, spawn_out);
+        for (int i = 0; i < game->enemy_count; i++) {
+            enemy_init(game, &game->enemies[i], spawn_out[i]);
+        }
     }
 
     for (int i = 0; i < MAX_BOMBS; i++) {
@@ -108,12 +116,13 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     _game_state_prepare_match(game, time, is_multiplayer);
     game->score = 0;
-    game->time_limit = 180; // segundos
+    game->time_limit = 180; // seconds
 
     scale_all_game_sprites(game->tile_size, game->players[PLAYER_1].size.x, game->players[PLAYER_1].size.y, MAX_PLAYERS);
 
     return 0;
 }
+
 void game_state_reset(t_game_state *game, t_time time, bool is_multiplayer) {
     if (game == NULL) return;
     game->is_multiplayer = is_multiplayer;
@@ -192,10 +201,13 @@ void game_state_update(t_ctx *ctx) {
 
         if (free_idx != -1) {
             t_tuple spawn;
-            spawn = spawnpoint_generator(game->board, game->logical_ticks); 
-            enemy_init(game, &game->enemies[free_idx], spawn);
-            if (free_idx >= game->enemy_count) {
-                game->enemy_count = (uint8_t)(free_idx + 1);
+
+            if (spawn_new_enemy(game, &spawn)) {
+                enemy_init(game, &game->enemies[free_idx], spawn);
+
+                if (free_idx >= game->enemy_count) {
+                    game->enemy_count = (uint8_t)(free_idx + 1);
+                }
             }
         }
     }
@@ -206,6 +218,13 @@ void game_state_update(t_ctx *ctx) {
         uint32_t elapsed = game->logical_ticks / GAME_TICKS_PER_SECOND;
 
         if (elapsed >= game->time_limit) {
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                player_t *player = &game->players[i];
+                if (player->active) {
+                    player->lives = 0;
+                    player->invincibility_timer = 0;
+                }
+            }
             game->match_state = MATCH_LOST;
             game->animation_timer = GAME_TICKS_PER_SECOND * 5;
             return;
@@ -260,8 +279,6 @@ void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
     (void)game; (void)x; (void)y;
 }
 
-#define KEY_E 0x12
-
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {
     if (game == NULL) return;
     game_state_handle_player_key(game, game->current_player, scancode);
@@ -277,7 +294,7 @@ void game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint8_t
     player_t *player = &game->players[player_id];
     if (!player->active) return;
 
-    if (is_make && key_index == KEY_E) {
+    if (is_make && key_index == KEY_SPACE) {
         uint8_t previous_player = game->current_player;
         game->current_player = player_id;
         place_player_bomb(game, player);

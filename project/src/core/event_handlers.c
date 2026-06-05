@@ -118,8 +118,8 @@ void handle_keyboard(hardware_t *hw_state, t_ctx *ctx, bool *esc_was_pressed) {
         gui->input.focused->on_key_press(gui->input.focused, sc, ctx);
     }
 
-    if (is_make && key_index == KEY_E) {
-        hw_state->keyboard.keys_pressed[KEY_E] = false;
+    if (is_make && key_index == KEY_SPACE) {
+        hw_state->keyboard.keys_pressed[KEY_SPACE] = false;
     }
 }
 

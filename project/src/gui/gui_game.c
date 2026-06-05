@@ -1,5 +1,6 @@
 #include "gui/gui.h"
 #include "game/game.h"
+#include "game/player_controller.h"
 #include "core/macros.h"
 #include "gui/widget.h"
 #include "core/application.h"
