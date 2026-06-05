@@ -1,4 +1,5 @@
-#include "game/game.h"
+#include "game/map_helpers.h"
+#include "models/board.h"
 #include "view/assets_cache.h"
 #include <stdint.h>
 

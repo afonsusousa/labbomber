@@ -1,4 +1,5 @@
 #include "view/game/draw_map.h"
+#include "game/map_helpers.h"
 #include "view/assets_cache.h"
 #include "vbe.h"
 #include <stdint.h>

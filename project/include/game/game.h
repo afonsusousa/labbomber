@@ -26,8 +26,4 @@ void    game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
-// Map helpers
-int     decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
-int     decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y);
-
 #endif /* LCOM_PROJECT_GAME_H */

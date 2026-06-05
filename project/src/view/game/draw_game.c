@@ -4,8 +4,9 @@
 #include "view/game/draw_enemy.h"
 #include "view/game/draw_player.h"
 #include "view/game/draw_hud.h"
-#include "view/assets_cache.h"
 #include "game/game.h"
+#include "game/map_helpers.h"
+#include "view/assets_cache.h"
 #include "core/application.h"
 #include "vbe.h"
 #include <stdio.h>
