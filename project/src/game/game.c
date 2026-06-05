@@ -42,8 +42,6 @@ static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_m
     game->door_pos = door_spawnpoint_generator(game->board);
     game->door_open = false;
 
-    set_date_seed(time.day, time.month, time.year);
-
     // RESET PLAYERS
     for (int i = 0; i < MAX_PLAYERS; i++) {
         player_init(game, &game->players[i], (t_tuple){0, 0});

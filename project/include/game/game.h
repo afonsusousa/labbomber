@@ -47,7 +47,6 @@ void    player_bomb_count(t_game_state *game);
 void    update_player_death_animation(t_game_state *game, player_t *player);
 void    update_player_win_animation(t_game_state *game, player_t *player);
 void    update_player_lives(player_t *player, int change);
-void    set_date_seed(int day, int month, int year);
 
 // Enemy helpers
 void    enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint);

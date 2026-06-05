@@ -48,9 +48,7 @@ static void app_multiplayer_log(t_ctx *ctx, const char *message) {
 static void app_multiplayer_assign_roles(t_ctx *ctx) {
     if (ctx == NULL) return;
 
-    if (ctx->multiplayer_local_nonce > ctx->multiplayer_remote_nonce ||
-        (ctx->multiplayer_local_nonce == ctx->multiplayer_remote_nonce &&
-         ctx->multiplayer_local_tiebreaker >= ctx->multiplayer_remote_tiebreaker)) {
+    if (ctx->multiplayer_local_nonce > ctx->multiplayer_remote_nonce || (ctx->multiplayer_local_nonce == ctx->multiplayer_remote_nonce && ctx->multiplayer_local_tiebreaker >= ctx->multiplayer_remote_tiebreaker)) {
         ctx->multiplayer_local_player = PLAYER_1;
         ctx->multiplayer_remote_player = PLAYER_2;
     } else {
@@ -205,7 +203,6 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
             app_multiplayer_log(ctx, "multiplayer sync: peer went back or cancelled");
             
             if (ctx->multiplayer_game_started) {
-                // Peer quit during the game
                 ctx->multiplayer_game_started = false;
                 ctx->is_multiplayer = false;
                 gui_pop_until_widget_found(&ctx->gui, "start_menu_view");
@@ -214,7 +211,7 @@ static void app_multiplayer_process_packet(t_ctx *ctx) {
 
             ctx->multiplayer_remote_start_ready = false;
             ctx->multiplayer_name_received = false;
-            // ... rest of the code logic for menu phase
+            
             break;
         }
 
@@ -388,8 +385,7 @@ int app_multiplayer_send_key(t_ctx *ctx, uint8_t scancode) {
 
     uint8_t key_index = MAKE_FROM_BREAK(scancode);
 
-    if (key_index != KEY_W && key_index != KEY_A && key_index != KEY_D &&
-        key_index != KEY_S && key_index != KEY_E) {
+    if (key_index != KEY_W && key_index != KEY_A && key_index != KEY_D && key_index != KEY_S && key_index != KEY_E) {
         return 0;
     }
 

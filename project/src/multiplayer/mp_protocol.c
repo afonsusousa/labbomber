@@ -19,12 +19,13 @@ void mp_log(t_ctx *ctx, const char *message) {
     fprintf(f,
         "[MP] %s local=%u remote=%u ready=%d role=%d nonce=%u remote_nonce=%u\n",
         message,
-        ctx != NULL ? ctx->multiplayer_local_player       : 255,
-        ctx != NULL ? ctx->multiplayer_remote_player      : 255,
+        ctx != NULL ? ctx->multiplayer_local_player : 255,
+        ctx != NULL ? ctx->multiplayer_remote_player : 255,
         ctx != NULL && ctx->multiplayer_partner_ready,
         ctx != NULL && ctx->multiplayer_role_assigned,
-        ctx != NULL ? ctx->multiplayer_local_nonce        : 0,
-        ctx != NULL ? ctx->multiplayer_remote_nonce       : 0);
+        ctx != NULL ? ctx->multiplayer_local_nonce : 0,
+        ctx != NULL ? ctx->multiplayer_remote_nonce : 0
+    );
 
     fclose(f);
 }

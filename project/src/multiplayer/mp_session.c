@@ -16,14 +16,14 @@ void app_multiplayer_assign_roles(t_ctx *ctx) {
     if (ctx->multiplayer_local_nonce > ctx->multiplayer_remote_nonce ||
         (ctx->multiplayer_local_nonce == ctx->multiplayer_remote_nonce &&
          ctx->multiplayer_local_tiebreaker >= ctx->multiplayer_remote_tiebreaker)) {
-        ctx->multiplayer_local_player  = PLAYER_1;
+        ctx->multiplayer_local_player = PLAYER_1;
         ctx->multiplayer_remote_player = PLAYER_2;
     } else {
-        ctx->multiplayer_local_player  = PLAYER_2;
+        ctx->multiplayer_local_player = PLAYER_2;
         ctx->multiplayer_remote_player = PLAYER_1;
     }
 
-    ctx->game.current_player      = ctx->multiplayer_local_player;
+    ctx->game.current_player = ctx->multiplayer_local_player;
     ctx->multiplayer_role_assigned = true;
     ctx->multiplayer_partner_ready = true;
     mp_log(ctx, "roles assigned");
@@ -41,7 +41,7 @@ static uint32_t mp_make_match_seed(t_ctx *ctx) {
     uint32_t a = ctx->multiplayer_local_nonce;
     uint32_t b = ctx->multiplayer_remote_nonce;
 
-    uint32_t low  = a < b ? a : b;
+    uint32_t low = a < b ? a : b;
     uint32_t high = a < b ? b : a;
 
     uint32_t seed = low * 1103515245u + high * 12345u + 0xB00B5u;
@@ -56,8 +56,8 @@ static void mp_queue_start_game(t_ctx *ctx, uint32_t seed) {
     if (ctx == NULL || ctx->multiplayer_game_started) return;
 
     seed &= 0x00FFFFFF;
-    ctx->multiplayer_match_seed        = seed;
-    ctx->game.enemy_seed               = seed;
+    ctx->multiplayer_match_seed = seed;
+    ctx->game.enemy_seed = seed;
     ctx->multiplayer_start_game_pending = true;
     mp_log(ctx, "start game queued");
 }
@@ -68,7 +68,7 @@ void app_multiplayer_start_pending_game(t_ctx *ctx) {
     if (widget_find_by_name(&ctx->gui, "game_view") != NULL) return;
 
     ctx->multiplayer_start_game_pending = false;
-    ctx->multiplayer_game_started       = true;
+    ctx->multiplayer_game_started = true;
 
     t_widget *top = gui_get_top_view(&ctx->gui);
     if (top != NULL && top->name != NULL && strcmp(top->name, "info_overlay") == 0) {
@@ -81,9 +81,7 @@ void app_multiplayer_start_pending_game(t_ctx *ctx) {
 void app_multiplayer_try_start_game(t_ctx *ctx) {
     if (ctx == NULL || !ctx->is_multiplayer) return;
     if (ctx->multiplayer_game_started || ctx->multiplayer_start_game_pending) return;
-    if (!ctx->multiplayer_name_received ||
-        !ctx->multiplayer_remote_start_ready ||
-        !ctx->multiplayer_local_start_ready) return;
+    if (!ctx->multiplayer_name_received || !ctx->multiplayer_remote_start_ready || !ctx->multiplayer_local_start_ready) return;
 
     uint32_t seed = mp_make_match_seed(ctx);
     ctx->multiplayer_start_game_sent = true;

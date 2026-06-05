@@ -7,29 +7,54 @@
 #include <string.h>
 #include <stdbool.h>
 
-static int seed = 0;
-
-void set_date_seed(int day, int month, int year) {
-    seed = year * 10000 + month * 100 + day;
-}
-
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count) {
     const int inner_width = BOARD_COLS - 2;
     const int inner_height = BOARD_ROWS - 2;
+    const int inner_size = inner_width * inner_height;
 
-    while (true) {
-        click_count %= (inner_width * inner_height);
-        int x = (click_count % inner_width) + 1;
-        int y = (click_count / inner_width) + 1;
+    click_count %= (inner_size * 2);
+
+    int middle = inner_size / 2;
+
+    int direction;
+    int offset;
+
+    if (click_count == 0) {
+        direction = 1;
+        offset = 0;
+    } else if (click_count % 2 == 0) {
+        direction = 1;
+        offset = click_count / 2;
+    } else {
+        direction = -1;
+        offset = (click_count + 1) / 2;
+    }
+
+    for (int i = 0; i < inner_size; i++) {
+        int inner_index = middle + direction * (offset + i);
+
+        while (inner_index < 0) {
+            inner_index += inner_size;
+        }
+
+        inner_index %= inner_size;
+
+        int x = (inner_index % inner_width) + 1;
+        int y = (inner_index / inner_width) + 1;
         int index = y * BOARD_COLS + x;
+
         if (board[index] == 0) {
             t_tuple result;
             result.x = x;
             result.y = y;
             return result;
         }
-        click_count++;
     }
+
+    t_tuple fallback;
+    fallback.x = 1;
+    fallback.y = 1;
+    return fallback;
 }
 
 
