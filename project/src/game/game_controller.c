@@ -110,6 +110,7 @@ int game_state_init(t_game_state *game, uint32_t width, uint32_t height, t_time 
 
     game->tile_size = tile;
     game->is_multiplayer = is_multiplayer;
+    game->dragged_bomb_idx = -1;
 
     int32_t board_width = BOARD_COLS * tile;
     int32_t board_height = BOARD_ROWS * tile;
@@ -173,6 +174,9 @@ void game_state_update(t_ctx *ctx) {
             } else if (tile == TILE_TYPE_POWERUP_COUNT) {
                 uint8_t current = GET_POWERUP_COUNT(player->powerups);
                 if (current < 3) SET_POWERUP_COUNT(player->powerups, current + 1);
+                game->board[player->board_pos.y * BOARD_COLS + player->board_pos.x] = TILE_TYPE_GRASS;
+            } else if (tile == TILE_TYPE_POWERUP_DRAG) {
+                SET_POWERUP_DRAG(player->powerups, 1);
                 game->board[player->board_pos.y * BOARD_COLS + player->board_pos.x] = TILE_TYPE_GRASS;
             }
         }
@@ -276,8 +280,10 @@ void game_state_update(t_ctx *ctx) {
     }
 }
 
-void game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
-    (void)game; (void)x; (void)y;
+int8_t game_state_handle_click(t_game_state *game, int32_t x, int32_t y) {
+    if (game == NULL) return 0;
+    
+    return bomb_drag_start(game, x, y) >= 0;
 }
 
 void game_state_handle_key_press(t_game_state *game, uint8_t scancode) {

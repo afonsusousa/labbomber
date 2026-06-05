@@ -6,7 +6,7 @@
 static int is_solid(const uint8_t *board, int rows, int cols, int x, int y) {
     if (x < 0 || x >= cols || y < 0 || y >= rows) return 1;
     uint8_t val = board[y * cols + x];
-    return (val != TILE_TYPE_GRASS && val != TILE_TYPE_DOOR && val != TILE_TYPE_POWERUP_REACH && val != TILE_TYPE_POWERUP_COUNT);
+    return (val != TILE_TYPE_GRASS && val != TILE_TYPE_DOOR && val != TILE_TYPE_POWERUP_REACH && val != TILE_TYPE_POWERUP_COUNT && val != TILE_TYPE_POWERUP_DRAG);
 }
 
 int decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y) {

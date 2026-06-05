@@ -457,3 +457,29 @@ static char *player_hat_2[] = {
 "                ",
 "                "
 };
+
+static char *player_hat_3[] = {
+
+"16 16 4 1 ",
+"  c None",
+". c #FFFFFF",
+"X c #B0B0B0",
+"o c #202020",
+
+"                ",
+"                ",
+"      ....      ",
+"     .XXXX.     ",
+"    .XX..XX.    ",
+"    .XX..XX.    ",
+"     .XXXX.     ",
+"      .XX.      ",
+"       oo       ",
+"      oooo      ",
+"     oo  oo     ",
+"    oo    oo    ",
+"    o      o    ",
+"                ",
+"                ",
+"                "
+};

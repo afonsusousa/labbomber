@@ -18,6 +18,7 @@
 #define TILE_TYPE_DOOR          3
 #define TILE_TYPE_POWERUP_REACH 4
 #define TILE_TYPE_POWERUP_COUNT 5
+#define TILE_TYPE_POWERUP_DRAG  6
 
 #define GET_X(game, value) ((game)->start_x + (value) * (game)->tile_size + (game)->tile_size / 2)
 #define GET_Y(game, value) ((game)->start_y + (value) * (game)->tile_size + (game)->tile_size / 2)

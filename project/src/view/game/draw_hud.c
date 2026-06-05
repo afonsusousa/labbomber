@@ -9,7 +9,7 @@
 static void draw_powerups_for_player(hw_video_t *video, player_t *player, int32_t x, int32_t y, bool align_right) {
     if (video == NULL || player == NULL) return;
 
-    int sprites[2];
+    int sprites[3];
     int count = 0;
 
     if (GET_POWERUP_REACH(player->powerups) > 0) {
@@ -18,6 +18,10 @@ static void draw_powerups_for_player(hw_video_t *video, player_t *player, int32_
 
     if (GET_POWERUP_COUNT(player->powerups) > 0) {
         sprites[count++] = SPRITE_PLAYER_HAT_2;
+    }
+
+    if (GET_POWERUP_DRAG(player->powerups) > 0) { 
+        sprites[count++] = SPRITE_PLAYER_HAT_3;
     }
 
     if (count == 0) return;

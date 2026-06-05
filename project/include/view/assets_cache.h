@@ -102,6 +102,7 @@ extern bool sprites_initialized;
 #define BAR                         210
 #define SPRITE_PLAYER_HAT_1         211
 #define SPRITE_PLAYER_HAT_2         212
+#define SPRITE_PLAYER_HAT_3         213
 
 static const int explosion_center_sprites[] = {
     SPRITE_EXPLOSION_1_CENTER,

@@ -189,11 +189,13 @@ void update_enemy_animation(t_game_state *game, enemy_t *enemy, uint32_t logical
                 if (drop_chance > 50) drop_chance = 50;
 
                 int r = rand() % 100;
-                if (r < drop_chance / 2) {
+                if (r < drop_chance / 3) {
                     game->board[enemy->board_pos.y * BOARD_COLS + enemy->board_pos.x] = TILE_TYPE_POWERUP_REACH;
-                } else if (r < drop_chance) {
+                } else if (r < (drop_chance * 2) / 3) {
                     game->board[enemy->board_pos.y * BOARD_COLS + enemy->board_pos.x] = TILE_TYPE_POWERUP_COUNT;
-                }
+                } else if (r < drop_chance) { 
+                  game->board[enemy->board_pos.y * BOARD_COLS + enemy->board_pos.x] = TILE_TYPE_POWERUP_DRAG;
+                }    
             }
         }
     }
