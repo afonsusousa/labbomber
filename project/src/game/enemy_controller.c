@@ -1,4 +1,4 @@
-#include "game/game.h"
+#include "game/enemy_controller.h"
 #include "game/entity_controller.h"
 #include "view/assets_cache.h"
 #include "models/board.h"

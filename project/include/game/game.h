@@ -26,16 +26,10 @@ void    game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
-// Enemy helpers
-void    enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint);
+
 int     spawn_enemies_singleplayer(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]);
 int     spawn_enemies_multiplayer(uint8_t *board, int n, t_tuple out[MAX_ENEMIES]);
 int     spawn_new_enemy(t_game_state *game, t_tuple *out);
-bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
-void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
-void    update_enemy_movement(t_game_state *game, enemy_t *enemy);
-void    update_enemy_animation(t_game_state *game, enemy_t *enemy, uint32_t logical_ticks);
-void    update_enemy_lives(t_game_state *game, enemy_t *enemy, int change);
 
 // Map helpers
 int     decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
