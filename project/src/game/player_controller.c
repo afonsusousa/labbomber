@@ -61,7 +61,8 @@ void update_player_death_animation(t_game_state *game, player_t *player) {
 
     if (player->pos.y == 672) {
         player->active = false;
-        game->animation_timer = 0;
+        if (!game->players[PLAYER_1].active && !game->players[PLAYER_2].active) game->animation_timer = 0;
+        else game->animation_timer--;
         return;
     }
 
@@ -119,9 +120,8 @@ void update_player_win_animation(t_game_state *game, player_t *player) {
         return;
     }
 
-    if (game->animation_timer == 0) {
+    if (game->animation_timer == 1) {
         player->active = false;
-        return;
     }
     game->animation_timer--;
 }
