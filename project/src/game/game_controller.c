@@ -213,6 +213,7 @@ void game_state_update(t_ctx *ctx) {
 
             if (spawn_new_enemy(game, &spawn)) {
                 enemy_init(game, &game->enemies[free_idx], spawn);
+                if (rand() % 2 < 1) game->enemies[free_idx].speed = ENEMY_SPEED * 2;
 
                 if (free_idx >= game->enemy_count) {
                     game->enemy_count = (uint8_t)(free_idx + 1);
