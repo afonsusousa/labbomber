@@ -73,7 +73,7 @@ void handle_timer(hardware_t *hw_state, t_ctx *ctx) {
         draw_mouse(&hw_state->video, &hw_state->mouse);
     }
 
-    draw_debug_overlay(&hw_state->video, gui, ctx->game);
+    // draw_debug_overlay(&hw_state->video, gui, ctx->game);
     hw_vbe_flip_buffer(&hw_state->video);
 }
 

@@ -66,11 +66,14 @@ static void damage_entities_at(t_game_state *game, int32_t cx, int32_t cy) {
     t_tuple exp_pos = { cx * tile + tile / 2, cy * tile + tile / 2 };
     t_tuple exp_size = { tile, tile };
 
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        player_t *p = &game->players[i];
-        if (p->active && entity_overlaps(p->pos, p->size, exp_pos, exp_size))
-            update_player_lives(p, -1);
+    if (!game->is_multiplayer) {
+        for (int i = 0; i < MAX_PLAYERS; i++) {
+            player_t *p = &game->players[i];
+            if (p->active && entity_overlaps(p->pos, p->size, exp_pos, exp_size))
+                update_player_lives(p, -1);
+        }
     }
+
     for (int i = 0; i < game->enemy_count; i++) {
         enemy_t *e = &game->enemies[i];
         if (e->active && entity_overlaps(e->pos, e->size, exp_pos, exp_size))

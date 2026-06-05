@@ -23,24 +23,29 @@ void gui_show_scoreboard(struct s_ctx *ctx) {
 
     if (overlay == NULL) return;
 
-    t_widget *board = widget_add_dialog(overlay, "Scoreboard", 500, 400, gui->width, gui->height, _callback_close_scoreboard, "scoreboard_dialog");
+    t_widget *board = widget_add_dialog(overlay, "Scoreboard", 520, 460, gui->width, gui->height, _callback_close_scoreboard, "scoreboard_dialog");
 
     board->on_quit = _callback_close_scoreboard;
 
     const score_entry_t *entries = scoreboard_entries();
     uint32_t n = scoreboard_count();
 
-    char line[64];
+    char line[80];
     char id[16];
 
     for (uint32_t i = 0; i < n; i++) {
         uint32_t secs = entries[i].duration_ticks / 60;
 
-        snprintf(line, sizeof(line), "%u. %s - %u pts (%u mins %02u secs)", i + 1, entries[i].player_name, entries[i].score, secs / 60, secs % 60);
+        snprintf(line, sizeof(line), "%u. %-6.6s.  %u pts  time %um%02us  %02u.%02u.%02u",
+            i + 1,
+            entries[i].player_name,
+            entries[i].score,
+            secs / 60, secs % 60,
+            entries[i].day, entries[i].month, entries[i].year);
 
         snprintf(id, sizeof(id), "sb_row_%u", i + 1);
         
-        widget_add_text(board, 0, 60 + (int32_t)(i * 25), 450, 20, line, id);
+        widget_add_text(board, 0, 60 + (int32_t)(i * 30), 460, 20, line, id);
     }
 
     if (n == 0) widget_add_text(board, 0, 60, 450, 20, "No scores yet!", "sb_empty");

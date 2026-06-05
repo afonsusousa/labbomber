@@ -157,7 +157,7 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         if (game->animation_timer <= 0) {
             game->match_state = MATCH_EXITING;
 
-            scoreboard_submit(scoreboard_current_player(), ctx->game.score, ctx->game.logical_ticks);
+            scoreboard_submit(scoreboard_current_player(), ctx->game.score, ctx->game.logical_ticks, ctx->real_time.day, ctx->real_time.month, ctx->real_time.year);
             scoreboard_save(SCOREBOARD_PATH);
 
             gui_show_session_menu(

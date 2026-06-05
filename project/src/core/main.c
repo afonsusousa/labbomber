@@ -102,7 +102,10 @@ int(proj_main_loop)(int argc, char* argv[]) {
         scoreboard_submit(
             scoreboard_current_player(),
             app.game.score,
-            app.game.logical_ticks
+            app.game.logical_ticks,
+            app.real_time.day,
+            app.real_time.month,
+            app.real_time.year
         );
     }
 

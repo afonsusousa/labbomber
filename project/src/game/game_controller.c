@@ -20,7 +20,7 @@
 static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_multiplayer) {
     game->logical_ticks = 0;
     game->match_state = MATCH_RUNNING;
-    game->enemies_to_kill = is_multiplayer ? 600 : 400;
+    game->enemies_to_kill = 400;
     game->last_enemy_spawn_ticks = 0;
     game->is_frozen = false;
     game->players[PLAYER_1].invincibility_timer = 0;
