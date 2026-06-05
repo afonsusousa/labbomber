@@ -1,4 +1,7 @@
-#include "game/game.h"
+#include "game/enemy_controller.h"
+#include "models/board.h"
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const int dCol[4] = {0, 0, -1, 1};
