@@ -16,10 +16,8 @@ static char *number_0[] = {
     " ...... ", 
 };
 
-
-
+/* 1 */
 static char *number_1[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
@@ -36,9 +34,8 @@ static char *number_1[] = {
 " ...... ", 
 };
 
-
+/* 2 */
 static char *number_2[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
@@ -56,9 +53,8 @@ static char *number_2[] = {
 "........"
 };
 
-
+/* 3 */
 static char *number_3[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
@@ -76,14 +72,12 @@ static char *number_3[] = {
 " ...... "
 };
 
-/* XPM */
+/* 4 */
 static char *number_4[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 "  ..... ", 
 " ..xxx. ", 
 " .xxxx. ", 
@@ -96,14 +90,12 @@ static char *number_4[] = {
 "    ... "
 };
 
-/* XPM */
+/* 5 */
 static char *number_5[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 "........", 
 ".xxxxxx.", 
 ".xx.....", 
@@ -116,14 +108,12 @@ static char *number_5[] = {
 " ...... ",
 };
 
-/* XPM */
+/* 6 */
 static char *number_6[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 " ...... ", 
 "..xxxx. ", 
 ".xx.... ", 
@@ -136,14 +126,12 @@ static char *number_6[] = {
 " ...... ",
 };
 
-/* XPM */
+/* 7 */
 static char *number_7[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 "........", 
 ".xxxxxx.", 
 ".xxxxxx.", 
@@ -157,14 +145,12 @@ static char *number_7[] = {
 "   .... ",
 };
 
-/* XPM */
+/* 8 */
 static char *number_8[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 " ...... ", 
 "..xxxx..", 
 ".xx..xx.", 
@@ -177,14 +163,12 @@ static char *number_8[] = {
 " ...... "
 };
 
-/* XPM */
+/* 9 */
 static char *number_9[] = {
-/* columns rows colors chars-per-pixel */
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 " ...... ", 
 "..xxxx..", 
 ".xx..xx.", 
@@ -197,13 +181,12 @@ static char *number_9[] = {
 " ...... "
 }; 
 
-static char *doispontos[] = {
-/* columns rows colors chars-per-pixel */
+/* : */
+static char *two_points[] = {
 "8 10 3 1",
 "  c None",
 ". c #000000",
 "x c #004eec",
-/* pixels */
 "   ..   ", 
 "  .xx.  ", 
 "  .xx.  ", 
@@ -214,4 +197,22 @@ static char *doispontos[] = {
 "  .xx.  ",
 "  .xx.  ", 
 "   ..   "
+};
+
+/* / BAR */
+static char *bar[] = {
+"8 10 3 1",
+"  c None",
+". c #000000",
+"x c #004eec",
+"   .... ", 
+"   .xx. ", 
+"  ..xx. ", 
+"  .xx.. ", 
+" ..xx.  ", 
+" .xx..  ", 
+"..xx.   ", 
+".xx.    ",
+".xx.    ", 
+"....    "
 };

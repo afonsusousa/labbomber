@@ -68,10 +68,10 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
 
     for (int i = 0; timer_buf[i] != '\0'; i++) {
         if (timer_buf[i] == ':') {
-            xpm_image_t doispontos = scaled_sprite_cache[DOIS_PONTOS];
-            if (doispontos.bytes != NULL) {
-                hw_vbe_draw_xpm(video, doispontos.bytes, doispontos, tx, ty);
-                tx += doispontos.width + 2;
+            xpm_image_t two_points = scaled_sprite_cache[TWO_POINTS];
+            if (two_points.bytes != NULL) {
+                hw_vbe_draw_xpm(video, two_points.bytes, two_points, tx, ty);
+                tx += two_points.width + 2;
             }
             continue;
         }
@@ -81,6 +81,37 @@ void draw_game_board(t_widget *self, hw_video_t *video, void *state) {
             tx += 10;
             continue;
         }
+        hw_vbe_draw_xpm(video, img.bytes, img, tx, ty);
+        tx += img.width + 2;
+    }
+
+    char score_buf[16];
+    snprintf(score_buf, sizeof(score_buf), "%u/%u", game->score, game->enemies_to_kill);
+
+    tx = self->abs_x + (self->width / 2) - 30;
+    ty = self->abs_y + 80;
+
+    for (int i = 0; score_buf[i] != '\0'; i++) {
+        if (score_buf[i] == '/') {
+            xpm_image_t bar = scaled_sprite_cache[BAR];
+
+            if (bar.bytes != NULL) {
+                hw_vbe_draw_xpm(video, bar.bytes, bar, tx, ty);
+                tx += bar.width + 2;
+            } else {
+                tx += 8;
+            }
+
+            continue;
+        }
+
+        xpm_image_t img = scaled_sprite_cache[NUMBER_0 + (score_buf[i] - '0')];
+
+        if (img.bytes == NULL) {
+            tx += 10;
+            continue;
+        }
+
         hw_vbe_draw_xpm(video, img.bytes, img, tx, ty);
         tx += img.width + 2;
     }

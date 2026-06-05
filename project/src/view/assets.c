@@ -120,7 +120,8 @@ void init_sprite_cache() {
     xpm_load((xpm_map_t)number_7, XPM_5_6_5, &sprite_cache[NUMBER_7]);
     xpm_load((xpm_map_t)number_8, XPM_5_6_5, &sprite_cache[NUMBER_8]);
     xpm_load((xpm_map_t)number_9, XPM_5_6_5, &sprite_cache[NUMBER_9]);
-    xpm_load((xpm_map_t)doispontos, XPM_5_6_5, &sprite_cache[DOIS_PONTOS]);
+    xpm_load((xpm_map_t)two_points, XPM_5_6_5, &sprite_cache[TWO_POINTS]);
+    xpm_load((xpm_map_t)bar, XPM_5_6_5, &sprite_cache[BAR]);
 
     sprites_initialized = true;
 }
@@ -207,9 +208,7 @@ void scale_all_game_sprites(uint32_t tile_size, uint32_t player_w, uint32_t play
 
     // Timer 
 
-    int timer_sprites[] = { NUMBER_0, NUMBER_1, NUMBER_2, NUMBER_3, NUMBER_4, NUMBER_5, NUMBER_6, NUMBER_7, NUMBER_8, NUMBER_9, 
-        DOIS_PONTOS
-    };
+    int timer_sprites[] = { NUMBER_0, NUMBER_1, NUMBER_2, NUMBER_3, NUMBER_4, NUMBER_5, NUMBER_6, NUMBER_7, NUMBER_8, NUMBER_9, TWO_POINTS, BAR};
 
     int total_timer_sprites = sizeof(timer_sprites) / sizeof(timer_sprites[0]);
 
