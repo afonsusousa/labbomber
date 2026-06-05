@@ -30,14 +30,4 @@ void    gui_reset_game_view(struct s_ctx *ctx);
 int     decide_grass_sprite(const uint8_t *board, int rows, int cols, int x, int y);
 int     decide_wall_sprite(const uint8_t *board, int rows, int cols, int x, int y);
 
-// Bomb helpers
-void    bomb_init(bomb_t *bomb);
-void    bomb_reset(bomb_t *bomb);
-void    bomb_clear_explosion(bomb_t *bomb);
-void    bomb_update(t_game_state *game, bomb_t *bomb);
-void    bomb_begin_explosion(t_game_state *game, bomb_t *bomb);
-void    bomb_update_explosion(t_game_state *game, bomb_t *bomb);
-void    place_player_bomb(t_game_state *game, player_t *player);
-uint8_t bomb_explosion_frame(const bomb_t *bomb);
-
 #endif /* LCOM_PROJECT_GAME_H */

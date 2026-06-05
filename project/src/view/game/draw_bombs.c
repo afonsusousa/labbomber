@@ -1,4 +1,5 @@
 #include "view/game/draw_bombs.h"
+#include "game/bomb_controller.h"
 #include "view/assets_cache.h"
 #include "game/game.h"
 #include "core/macros.h"

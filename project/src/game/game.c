@@ -4,6 +4,7 @@
 #include "game/entity_controller.h"
 #include "game/player_controller.h"
 #include "game/enemy_controller.h"
+#include "game/bomb_controller.h"
 #include "gui/widget.h"
 #include "gui/gui.h"
 #include "view/game/draw_game.h"

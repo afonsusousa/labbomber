@@ -1,4 +1,7 @@
-#include "game/game.h"
+#include "game/bomb_controller.h"
+#include "game/player_controller.h"
+#include "game/entity_controller.h"
+#include "models/board.h"
 #include <stddef.h>
 #include <math.h>
 
