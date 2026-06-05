@@ -1,6 +1,7 @@
 #include "gui/gui.h"
 #include "game/game.h"
 #include "game/player_controller.h"
+#include "scoreboard/scoreboard_controller.h"
 #include "core/macros.h"
 #include "gui/widget.h"
 #include "core/application.h"
@@ -153,6 +154,10 @@ static void _callback_game_view_on_tick(t_widget *self, void *state) {
         else update_player_win_animation(game, &game->players[PLAYER_2]);
         if (game->animation_timer <= 0) {
             game->match_state = MATCH_EXITING;
+
+            scoreboard_submit(scoreboard_current_player(), ctx->game.score, ctx->game.logical_ticks);
+            scoreboard_save(SCOREBOARD_PATH);
+
             gui_show_session_menu(
                 ctx,
                 "YOU WIN!",

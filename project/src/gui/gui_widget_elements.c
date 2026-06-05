@@ -28,7 +28,21 @@ void draw_text(t_widget *self, hw_video_t *video, void *state) {
 
 t_widget* widget_add_text(t_widget *parent, int32_t x, int32_t y, uint32_t w, uint32_t h, const char *text, const char *name) {
     t_widget *txt = widget_create(TEXT, x, y, w, h, name);
-    txt->data.text_display.text = (char*)text;
+    if (txt == NULL) return NULL;
+
+    char *text_buffer = txt->data.text_display.text_buf;
+    size_t text_buffer_size = sizeof(txt->data.text_display.text_buf);
+
+    if (text != NULL) {
+        strncpy(text_buffer, text, text_buffer_size - 1);
+        text_buffer[text_buffer_size - 1] = '\0';
+        txt->data.text_display.text = text_buffer;
+    } 
+    else {
+        text_buffer[0] = '\0';
+        txt->data.text_display.text = text_buffer;
+    }
+
     widget_add_child(parent, txt);
     return txt;
 }
