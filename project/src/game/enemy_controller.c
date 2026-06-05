@@ -129,8 +129,42 @@ void update_enemy_lives(t_game_state *game, enemy_t *enemy, int change) {
     }
 }
 
+bool enemy_try_resume_movement(t_game_state *game, enemy_t *enemy) {
+    if (!enemy || !enemy->active || enemy->lives == 0) return false;
+
+    direction_t dirs[4] = {
+        DIR_LEFT,
+        DIR_RIGHT,
+        DIR_UP,
+        DIR_DOWN
+    };
+
+    direction_t valid_dirs[4];
+    int count = 0;
+
+    for (int i = 0; i < 4; i++) {
+        if (enemy_can_move(game, enemy, dirs[i])) {
+            valid_dirs[count] = dirs[i];
+            count++;
+        }
+    }
+
+    if (count == 0) return false;
+
+    enemy->dir = valid_dirs[rand() % count];
+    enemy->sprite_dir = enemy->dir;
+    enemy->is_moving = true;
+
+    return true;
+}
+
 void update_enemy_movement(t_game_state *game, enemy_t *enemy) {
-    if (!enemy || !enemy->active || !enemy->is_moving || enemy->lives == 0) return;
+    if (!enemy || !enemy->active || enemy->lives == 0) return;
+
+    if (!enemy->is_moving) {
+        if (!enemy_try_resume_movement(game, enemy)) return;
+    }
+
     update_entity_movement(game, enemy);
 }
 
