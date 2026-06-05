@@ -125,7 +125,7 @@ void update_enemy_lives(t_game_state *game, enemy_t *enemy, int change) {
 
     if (enemy->lives == 0) {
         enemy->invincibility_timer = GAME_TICKS_PER_SECOND; // 1 second blink before death
-        if (game) game->score += 100;
+        game->score += 100;
     }
 }
 

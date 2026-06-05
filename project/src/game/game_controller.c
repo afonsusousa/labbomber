@@ -20,6 +20,7 @@
 static void _game_state_prepare_match(t_game_state *game, t_time time, bool is_multiplayer) {
     game->logical_ticks = 0;
     game->match_state = MATCH_RUNNING;
+    game->enemies_to_kill = is_multiplayer ? 600 : 400;
     game->is_frozen = false;
     game->players[PLAYER_1].invincibility_timer = 0;
     game->players[PLAYER_2].invincibility_timer = 0;
@@ -245,18 +246,10 @@ void game_state_update(t_ctx *ctx) {
             return;
         }
 
-        int enemies_alive = 0;
-        for (int i = 0; i < game->enemy_count; i++) {
-            if (game->enemies[i].active) enemies_alive++;
-        }
+        bool enough_enemies_killed = game->score >= game->enemies_to_kill;
+        bool players_ready = !game->is_multiplayer || (players_alive <= 1);
 
-        bool enemies_defeated = (game->enemy_count > 0 && enemies_alive == 0);
-        bool players_ready = true;
-        if (game->is_multiplayer) {
-            players_ready = (players_alive <= 1);
-        }
-
-        if (enemies_defeated && players_ready) {
+        if (enough_enemies_killed && players_ready) {
             game->door_open = true;
 
             for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -264,8 +257,7 @@ void game_state_update(t_ctx *ctx) {
 
                 if (!player->active || player->lives <= 0) continue;
 
-                if (player->board_pos.x == game->door_pos.x &&
-                    player->board_pos.y == game->door_pos.y) {
+                if (player->board_pos.x == game->door_pos.x && player->board_pos.y == game->door_pos.y) {
                     game->match_state = MATCH_WON;
                     game->animation_timer = GAME_TICKS_PER_SECOND * 3;
                     return;
