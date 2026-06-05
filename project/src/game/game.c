@@ -198,7 +198,7 @@ void game_state_update(t_ctx *ctx) {
         if (free_idx != -1) {
             t_tuple spawn;
 
-            if (spawnpoint_new_enemy_multiplayer(game, &spawn)) {
+            if (spawn_new_enemy(game, &spawn)) {
                 enemy_init(game, &game->enemies[free_idx], spawn);
 
                 if (free_idx >= game->enemy_count) {

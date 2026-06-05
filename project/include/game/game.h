@@ -26,17 +26,6 @@ void    game_state_handle_player_key(t_game_state *game, uint8_t player_id, uint
 void    gui_show_game_view(struct s_ctx *ctx);
 void    gui_reset_game_view(struct s_ctx *ctx);
 
-// Entity helpers
-bool        collision(struct s_game_state *game, const struct s_entity *entity, t_tuple pos);
-direction_t opposite_dir(direction_t dir);
-int         get_valid_directions(struct s_game_state *game, t_tuple pos, direction_t out[4]);
-bool        entity_overlaps(t_tuple pos_a, t_tuple size_a, t_tuple pos_b, t_tuple size_b);
-bool        player_collides_with_enemy(const t_game_state *game, const player_t *player);
-
-// Entity movement
-t_tuple get_board_pos(const t_game_state *game, const entity_t *entity);
-void    update_entity_movement(t_game_state *game, entity_t *entity);
-
 // Player helpers
 t_tuple spawnpoint_generator(uint8_t *board, uint32_t click_count);
 void    player_init(t_game_state *game, player_t *player, t_tuple spawnpoint);
@@ -52,7 +41,7 @@ void    update_player_lives(player_t *player, int change);
 void    enemy_init(t_game_state *game, enemy_t *enemy, t_tuple spawnpoint);
 int     spawn_enemies_singleplayer(uint8_t *board, t_tuple player, int n, t_tuple out[MAX_ENEMIES]);
 int     spawn_enemies_multiplayer(uint8_t *board, int n, t_tuple out[MAX_ENEMIES]);
-int     spawnpoint_new_enemy_multiplayer(t_game_state *game, t_tuple *out);
+int     spawn_new_enemy(t_game_state *game, t_tuple *out);
 bool    enemy_can_move(t_game_state *game, enemy_t *enemy, direction_t dir);
 void    choose_enemy_direction(t_game_state *game, enemy_t *enemy);
 void    update_enemy_movement(t_game_state *game, enemy_t *enemy);

@@ -1,4 +1,4 @@
-#include "game/game.h"
+#include "game/entity_controller.h"
 
 bool collision(t_game_state *game, const entity_t *entity, t_tuple pos) {
 
