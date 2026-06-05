@@ -195,36 +195,38 @@ void game_state_update(t_ctx *ctx) {
         bomb_update(game, &game->bomb[i]);
     }
 
-    // Every 10 seconds spawn a new enemy if there is space and the door isn't open
-    uint32_t enemy_spawn_interval = GAME_TICKS_PER_SECOND * 10;
+    if (!ctx->is_multiplayer) {
+        // Every 10 seconds spawn a new enemy if there is space and the door isn't open
+        uint32_t enemy_spawn_interval = GAME_TICKS_PER_SECOND * 10;
 
-    if (game->match_state == MATCH_RUNNING &&
-        game->logical_ticks >= enemy_spawn_interval &&
-        game->logical_ticks - game->last_enemy_spawn_ticks >= enemy_spawn_interval) {
+        if (game->match_state == MATCH_RUNNING &&
+            game->logical_ticks >= enemy_spawn_interval &&
+            game->logical_ticks - game->last_enemy_spawn_ticks >= enemy_spawn_interval) {
 
-        game->last_enemy_spawn_ticks = game->logical_ticks;
+            game->last_enemy_spawn_ticks = game->logical_ticks;
 
-        int free_idx = -1;
-        for (int i = 0; i < MAX_ENEMIES; i++) {
-            if (!game->enemies[i].active) {
-                free_idx = i;
-                break;
+            int free_idx = -1;
+            for (int i = 0; i < MAX_ENEMIES; i++) {
+                if (!game->enemies[i].active) {
+                    free_idx = i;
+                    break;
+                }
             }
-        }
 
-        if (free_idx != -1) {
-            t_tuple spawn;
+            if (free_idx != -1) {
+                t_tuple spawn;
 
-            if (spawn_new_enemy(game, &spawn)) {
-                enemy_init(game, &game->enemies[free_idx], spawn);
-                if (rand() % 2 < 1) game->enemies[free_idx].speed = ENEMY_SPEED * 2;
+                if (spawn_new_enemy(game, &spawn)) {
+                    enemy_init(game, &game->enemies[free_idx], spawn);
+                    if (rand() % 2 < 1) game->enemies[free_idx].speed = ENEMY_SPEED * 2;
 
-                if (free_idx >= game->enemy_count) {
-                    game->enemy_count = (uint8_t)(free_idx + 1);
+                    if (free_idx >= game->enemy_count) {
+                        game->enemy_count = (uint8_t)(free_idx + 1);
+                    }
                 }
             }
         }
-    }
+    }    
 
     player_bomb_count(game);
 
