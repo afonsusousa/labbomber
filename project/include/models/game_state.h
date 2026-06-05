@@ -29,7 +29,9 @@ typedef struct s_game_state {
     bomb_t bomb[MAX_BOMBS];
 
     uint32_t      score;
+    uint32_t      enemies_to_kill;
     uint32_t      logical_ticks;
+    uint32_t      last_enemy_spawn_ticks; //solving bug of spawning multiples enemies on the same tick
     uint32_t      time_limit;
     uint32_t      click_count;
     bool          is_frozen;
